@@ -1,0 +1,16 @@
+export const ORGANIZER_COLORS = [
+  { name: "Roxo", value: "#8B5CF6" },
+  { name: "Violeta", value: "#A855F7" },
+  { name: "Lilás", value: "#C084FC" },
+  { name: "Azul", value: "#6366F1" },
+  { name: "Céu", value: "#38BDF8" },
+  { name: "Ciano", value: "#22D3EE" },
+  { name: "Verde", value: "#4ADE80" },
+  { name: "Lima", value: "#A3E635" },
+  { name: "Amarelo", value: "#FACC15" },
+  { name: "Laranja", value: "#FB923C" },
+  { name: "Vermelho", value: "#F87171" },
+  { name: "Rosa", value: "#EC4899" },
+  { name: "Magenta", value: "#F472B6" },
+  { name: "Cinza", value: "#94A3B8" },
+] as const;

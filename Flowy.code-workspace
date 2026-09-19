@@ -1,0 +1,18 @@
+{
+  "folders": [
+    {
+      "name": "Flowy",
+      "path": ".",
+    },
+  ],
+  "settings": {
+    "files.watcherExclude": {
+      "**/.next/**": true,
+      "**/node_modules/**": true,
+    },
+    "search.exclude": {
+      "**/.next": true,
+      "**/node_modules": true,
+    },
+  },
+}
