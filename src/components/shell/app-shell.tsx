@@ -16,6 +16,7 @@ import { RealtimeSync } from "@/components/system/realtime-sync";
 import { GlobalTaskComposer } from "@/components/system/global-task-composer";
 import { GlobalCreateButton } from "@/components/system/global-create-button";
 import { GlobalOrganizer } from "@/components/system/global-organizer";
+import { GlobalInstallPrompt } from "@/components/system/global-install-prompt";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useCategories } from "@/features/categories/use-categories";
@@ -213,6 +214,7 @@ export function AppShell({
       <GlobalTaskComposer />
       <GlobalCreateButton />
       <GlobalOrganizer />
+      <GlobalInstallPrompt />
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 md:hidden" role="presentation">
