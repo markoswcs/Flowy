@@ -63,6 +63,7 @@ function KanbanTaskCard({
   onMove: (taskId: string, status: TaskStatus) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: `task:${task.id}`,
@@ -75,8 +76,9 @@ function KanbanTaskCard({
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform) }}
       className={cn(
-        "rounded-2xl border border-border/50 bg-card/60 p-4 shadow-sm backdrop-blur-md transition-shadow",
+        "relative rounded-2xl border border-border/50 bg-card/60 p-4 shadow-sm backdrop-blur-md transition-shadow",
         isDragging && "z-50 opacity-70 shadow-lg",
+        statusOpen && "z-40",
       )}
     >
       <div className="flex items-start gap-2">
@@ -136,6 +138,7 @@ function KanbanTaskCard({
         <CustomSelect
           value={task.status}
           onChange={(value) => onMove(task.id, value as TaskStatus)}
+          onOpenChange={setStatusOpen}
           options={[
             { value: "todo", label: "A fazer" },
             { value: "in_progress", label: "Em andamento" },
