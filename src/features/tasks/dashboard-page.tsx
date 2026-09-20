@@ -184,12 +184,14 @@ export function DashboardPage({
 
       <div className="space-y-5">
 
-        <TaskFilters
-          value={filters}
-          onChange={setFilters}
-          folders={folders}
-          categories={categories}
-        />
+        {statusBarOpen && (
+          <TaskFilters
+            value={filters}
+            onChange={setFilters}
+            folders={folders}
+            categories={categories}
+          />
+        )}
 
         {initialLayout === "kanban" ? (
           <TaskKanban
