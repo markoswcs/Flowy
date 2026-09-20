@@ -51,7 +51,6 @@ const themeOptions: Array<{
 function ThemePreview({ theme, selected }: { theme: ThemePreference; selected: boolean }) {
   const isPurple = theme === "purple";
   const isBlack = theme === "black";
-  const isWhite = theme === "white";
 
   const bgApp = isPurple ? "bg-[#0d041e]" : isBlack ? "bg-[#000000]" : "bg-[#f5f5f5]";
   const bgSidebar = isPurple ? "bg-[#180a33]" : isBlack ? "bg-[#0a0a0a]" : "bg-white";
@@ -125,6 +124,7 @@ export function SettingsPage() {
 
   const name = draftName ?? profile.data?.display_name ?? "";
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     setSelectedTheme(savedTheme);
   }, [savedTheme]);

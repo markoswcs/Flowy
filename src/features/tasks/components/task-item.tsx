@@ -102,7 +102,7 @@ export function TaskEditor({
         category_ids: categoryIds,
       },
       {
-        onSuccess: (updatedTask) => {
+        onSuccess: () => {
           toast.success("Tarefa salva.");
           onClose();
         },

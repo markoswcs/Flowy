@@ -80,7 +80,7 @@ export function CustomSelect({
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("scroll", handleScroll, { capture: true });
     };
-  }, [open, onOpenChange]);
+  }, [open, onOpenChange, handleOpenChange]);
 
   const selectedOption = options.find((opt) => opt.value === value);
 

@@ -174,7 +174,7 @@ export function FolderManager({
   const deleteMutation = useSoftDeleteFolder();
   const restoreMutation = useRestoreFolder();
   const [name, setName] = useState("");
-  const [color, setColor] = useState(DEFAULT_FOLDER_COLOR);
+  const [color, setColor] = useState<string>(DEFAULT_FOLDER_COLOR);
   const [parentId, setParentId] = useState("");
   const [manualEditingId, setManualEditingId] = useState<string | null>(null);
   const [dismissedInitialEditId, setDismissedInitialEditId] = useState<
