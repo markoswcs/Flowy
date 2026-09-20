@@ -51,7 +51,7 @@ export function DashboardPage({
   const [filters, setFilters] = useState<TaskFilterValues>({
     scope: initialScope,
   });
-  const [statusBarOpen, setStatusBarOpen] = useState(true);
+  const [statusBarOpen, setStatusBarOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 250);
   const effectiveFilters = { ...filters, search: debouncedSearch };
   
