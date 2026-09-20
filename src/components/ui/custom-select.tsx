@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,8 +35,17 @@ export function CustomSelect({
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
 
   const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
     setOpen(newOpen);
     onOpenChange?.(newOpen);
   };
@@ -46,12 +56,29 @@ export function CustomSelect({
         containerRef.current &&
         !containerRef.current.contains(event.target as Node)
       ) {
+        // Also check if click is inside the portal dropdown
+        const portal = document.getElementById("custom-select-portal");
+        if (portal && portal.contains(event.target as Node)) {
+          return;
+        }
         handleOpenChange(false);
       }
     }
+    
+    function handleScroll() {
+      if (open) {
+        handleOpenChange(false);
+      }
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onOpenChange]);
+    window.addEventListener("scroll", handleScroll, { capture: true });
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, { capture: true });
+    };
+  }, [open, onOpenChange]);
 
   const selectedOption = options.find((opt) => opt.value === value);
 
@@ -81,8 +108,16 @@ export function CustomSelect({
         />
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full z-[100] mt-1.5 w-[200px] min-w-full overflow-hidden rounded-xl border border-border/50 bg-popover/60 p-1 shadow-xl backdrop-blur-2xl animate-in fade-in zoom-in-95 slide-in-from-top-2">
+      {open && typeof document !== "undefined" && createPortal(
+        <div 
+          id="custom-select-portal"
+          className="absolute z-[9999] mt-1.5 overflow-hidden rounded-xl border border-border/50 bg-popover/90 p-1 shadow-2xl backdrop-blur-3xl animate-in fade-in zoom-in-95 slide-in-from-top-2"
+          style={{ 
+            top: coords.top, 
+            left: coords.left, 
+            width: Math.max(200, coords.width) 
+          }}
+        >
           <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
             {options.map((option) => (
               <button
@@ -105,7 +140,8 @@ export function CustomSelect({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
