@@ -86,6 +86,7 @@ export function useCreateTask() {
         description: input.description?.trim() || null,
         due_date: input.due_date || null,
         due_time: input.due_date && input.due_time ? input.due_time : null,
+        recurrence: input.recurrence ?? null,
         priority: input.priority ?? "normal",
         status: input.status ?? "todo",
         folder_id: input.folder_id || null,

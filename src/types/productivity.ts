@@ -1,8 +1,10 @@
 export const TASK_PRIORITIES = ["low", "normal", "high"] as const;
 export const TASK_STATUSES = ["todo", "in_progress", "completed"] as const;
+export const TASK_RECURRENCES = ["daily", "weekly", "monthly"] as const;
 
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+export type TaskRecurrence = (typeof TASK_RECURRENCES)[number];
 
 export interface Folder {
   id: string;
@@ -35,6 +37,7 @@ export interface Task {
   description: string | null;
   due_date: string | null;
   due_time: string | null;
+  recurrence: TaskRecurrence | null;
   priority: TaskPriority;
   status: TaskStatus;
   folder_id: string | null;
@@ -63,6 +66,7 @@ export interface CreateTaskInput {
   description?: string | null;
   due_date?: string | null;
   due_time?: string | null;
+  recurrence?: TaskRecurrence | null;
   priority?: TaskPriority;
   status?: TaskStatus;
   folder_id?: string | null;
@@ -76,6 +80,7 @@ export interface UpdateTaskInput {
   description?: string | null;
   due_date?: string | null;
   due_time?: string | null;
+  recurrence?: TaskRecurrence | null;
   priority?: TaskPriority;
   status?: TaskStatus;
   folder_id?: string | null;

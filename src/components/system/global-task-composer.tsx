@@ -43,6 +43,15 @@ export function GlobalTaskComposer() {
     };
   }, []);
 
+  useEffect(() => {
+    if (open) {
+      document.body.classList.add("has-overlay");
+    } else {
+      document.body.classList.remove("has-overlay");
+    }
+    return () => document.body.classList.remove("has-overlay");
+  }, [open]);
+
   if (!open) return null;
 
   return (

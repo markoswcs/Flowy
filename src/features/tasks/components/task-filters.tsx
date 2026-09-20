@@ -1,9 +1,8 @@
 "use client";
 
-import { Search, X, Flag, Folder as FolderIcon, Tag, CircleDashed } from "lucide-react";
+import { X, Flag, Folder as FolderIcon, Tag, CircleDashed } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/ui/custom-select";
 import type {
   Category,
@@ -36,29 +35,11 @@ export function TaskFilters({
 
   return (
     <div 
-      className="relative z-50 flex w-full flex-col gap-3 rounded-3xl border border-white/5 bg-black/20 p-2 shadow-2xl backdrop-blur-2xl ring-1 ring-white/10 lg:flex-row lg:items-center lg:rounded-full lg:p-1.5 transition-all duration-500 hover:bg-black/30 hover:ring-white/20" 
+      className="relative z-50 flex w-full flex-col gap-3 rounded-3xl border border-white/5 bg-black/20 p-2 backdrop-blur-2xl ring-1 ring-white/10 lg:flex-row lg:items-center lg:rounded-full lg:p-1.5 transition-all duration-500 hover:bg-black/30 hover:ring-white/20" 
       aria-label="Filtros de tarefas"
     >
       <div className="absolute inset-0 -z-10 rounded-3xl lg:rounded-full bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-50" aria-hidden="true" />
       
-      {/* Search Input - Sleek and integrated */}
-      <div className="relative flex-1 w-full group">
-        <span className="sr-only">Pesquisar tarefas</span>
-        <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground transition-all duration-300 group-focus-within:text-primary group-hover:scale-110" aria-hidden="true" />
-        <Input
-          value={value.search ?? ""}
-          onChange={(event) =>
-            onChange({ ...value, search: event.target.value })
-          }
-          placeholder="Pesquisar tarefas, notas, ideias..."
-          className="h-11 lg:h-10 w-full appearance-none rounded-2xl lg:rounded-full border-none bg-transparent pl-11 text-sm text-foreground shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300"
-        />
-        {/* Animated glow line on focus */}
-        <div className="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent scale-x-0 opacity-0 transition-all duration-500 group-focus-within:scale-x-100 group-focus-within:opacity-100" />
-      </div>
-
-      <div className="hidden h-6 w-px bg-white/10 lg:block" aria-hidden="true" />
-
       {/* Filters Container */}
       <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap lg:gap-2 px-1 pb-1 lg:pb-0">
         <label className="relative group flex-1 min-w-[110px] lg:min-w-[130px]">

@@ -1,11 +1,13 @@
 "use client";
 
-import { FileText, Loader2, Plus, NotebookPen, Trash2 } from "lucide-react";
+import { FileText, Folder, Plus, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useCreateNote,
   useNotes,
@@ -26,16 +28,18 @@ export function NoteList() {
   const trash = useTrashNote();
   const restore = useRestoreNote();
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
 
   const filteredNotes = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase("pt-BR");
+    const term = deferredSearch.trim().toLocaleLowerCase("pt-BR");
     if (!term) return notes.data ?? [];
+
     return (notes.data ?? []).filter((note) =>
       `${note.title} ${note.plain_text}`
         .toLocaleLowerCase("pt-BR")
         .includes(term),
     );
-  }, [notes.data, search]);
+  }, [deferredSearch, notes.data]);
 
   async function handleCreate() {
     try {
@@ -66,142 +70,115 @@ export function NoteList() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 animate-fade-in">
-      <header className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto w-full max-w-6xl space-y-8">
+      <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-foreground">
+          <p className="text-sm font-medium text-primary">Espaço de escrita</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
             Notas
           </h1>
-          <p className="mt-2 text-base text-muted-foreground">
-            Suas ideias brilhantes, sempre à mão.
+          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+            Capture ideias, referências e planos em um lugar simples de consultar.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={create.isPending}
-          className="group relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-full bg-primary px-8 text-sm font-bold text-primary-foreground shadow-[0_0_20px_hsl(var(--primary)/0.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_30px_hsl(var(--primary)/0.6)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 active:scale-95 disabled:opacity-60"
-        >
-          <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
-            <div className="relative h-full w-8 bg-white/20" />
-          </div>
-          {create.isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Plus className="size-5" />
-          )}
+        <Button type="button" onClick={handleCreate} loading={create.isPending}>
+          <Plus className="size-4" aria-hidden="true" />
           Nova nota
-        </button>
+        </Button>
       </header>
 
-      <div className="relative mb-8 group">
-        <div className="absolute inset-y-0 left-5 z-10 flex items-center pointer-events-none">
-          <NotebookPen className="size-5 text-white transition-colors drop-shadow-sm" aria-hidden="true" />
-        </div>
+      <label className="relative block">
+        <span className="sr-only">Pesquisar notas</span>
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Pesquisar em suas notas..."
-          className="w-full rounded-2xl border border-border/50 bg-card/40 backdrop-blur-md py-4 pl-14 pr-6 text-base shadow-sm transition-all focus:border-primary/50 focus:bg-card/60 focus:outline-none focus:ring-4 focus:ring-primary/10 placeholder:text-muted-foreground/70"
+          placeholder="Pesquisar por título ou conteúdo"
+          className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring"
         />
-      </div>
+      </label>
 
       {notes.isLoading ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Carregando notas">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Carregando notas">
           {Array.from({ length: 6 }, (_, index) => (
-            <div
-              key={index}
-              className="h-48 animate-pulse rounded-3xl bg-card/40 border border-border/30"
-            />
+            <Skeleton key={index} className="h-52 w-full rounded-xl" />
           ))}
         </div>
       ) : notes.isError ? (
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-8 text-center backdrop-blur-md">
-          <p className="text-lg font-medium text-destructive">
-            Não foi possível carregar suas notas.
-          </p>
-          <button
-            className="mt-4 inline-flex items-center justify-center rounded-full bg-destructive px-6 py-2 text-sm font-bold text-destructive-foreground transition-transform hover:scale-105 active:scale-95"
-            onClick={() => notes.refetch()}
-          >
+        <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-6" aria-live="polite">
+          <h2 className="font-medium text-destructive">Não foi possível carregar as notas.</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Verifique sua conexão e tente novamente.</p>
+          <Button className="mt-4" variant="outline" onClick={() => notes.refetch()}>
             Tentar novamente
-          </button>
-        </div>
+          </Button>
+        </section>
       ) : filteredNotes.length === 0 ? (
-        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-dashed border-border/60 bg-card/20 px-4 text-center backdrop-blur-sm">
-          <div className="mb-6 flex size-20 items-center justify-center rounded-full bg-primary/10 shadow-[0_0_30px_hsl(var(--primary)/0.2)]">
-            <FileText className="size-10 text-primary" aria-hidden="true" />
-          </div>
-          <h2 className="mb-2 text-xl font-bold text-foreground">
-            {search ? "Nenhuma nota encontrada" : "Um espaço em branco para a sua mente"}
+        <section className="flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 text-center">
+          <span className="grid size-11 place-items-center rounded-lg bg-muted text-muted-foreground">
+            <FileText className="size-5" aria-hidden="true" />
+          </span>
+          <h2 className="mt-4 text-lg font-semibold">
+            {search ? "Nenhuma nota encontrada" : "Sua primeira nota começa aqui"}
           </h2>
-          <p className="mb-8 max-w-md text-muted-foreground">
-            {search 
-              ? `Não encontramos nenhuma nota com o termo "${search}".` 
-              : "Crie notas para registrar ideias, guardar referências ou estruturar pensamentos longos."}
+          <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
+            {search
+              ? "Tente outro termo ou limpe a pesquisa."
+              : "Crie uma nota para guardar o que importa e retome quando quiser."}
           </p>
-          {!search && (
-            <button
-              onClick={handleCreate}
-              className="rounded-full bg-primary/10 px-6 py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/20 active:scale-95"
-            >
-              Começar a escrever
-            </button>
-          )}
-        </div>
+          {!search ? (
+            <Button className="mt-5" type="button" onClick={handleCreate} loading={create.isPending}>
+              <Plus className="size-4" aria-hidden="true" />
+              Criar nota
+            </Button>
+          ) : null}
+        </section>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredNotes.map((note, index) => (
-            <article 
-              key={note.id} 
-              className="group relative flex h-56 flex-col justify-between overflow-hidden rounded-3xl border border-border/50 bg-card/40 p-6 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:bg-card/60 hover:border-primary/30 animate-slide-up-fade"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <Link
-                href={`/app/notes/${note.id}`}
-                className="absolute inset-0 z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset rounded-3xl"
-              />
-              
-              <div className="mb-2">
-                <h2 className="mb-3 line-clamp-2 text-xl font-bold leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary">
-                  {note.title || "Sem título"}
-                </h2>
-                <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground/90">
-                  {note.plain_text || "Nota vazia..."}
-                </p>
-              </div>
-
-              <div className="mt-auto flex items-end justify-between pt-4 relative z-20">
-                <div className="flex flex-col items-start gap-2.5">
-                  {note.folder && (
-                    <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary border border-primary/20 backdrop-blur-md">
-                      {note.folder.name}
-                    </span>
-                  )}
-                  <time
-                    className="text-[11px] font-semibold text-muted-foreground/60"
-                    dateTime={note.updated_at}
-                  >
-                    {dateFormatter.format(new Date(note.updated_at))}
-                  </time>
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredNotes.map((note) => (
+            <li key={note.id}>
+              <article className="group relative flex min-h-52 flex-col rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-accent/30">
+                <Link
+                  href={`/app/notes/${note.id}`}
+                  className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                  aria-label={`Abrir nota ${note.title || "sem título"}`}
+                />
+                <div className="relative pointer-events-none min-w-0">
+                  <h2 className="line-clamp-2 text-lg font-semibold leading-6">
+                    {note.title || "Sem título"}
+                  </h2>
+                  <p className="mt-3 line-clamp-4 text-sm leading-6 text-muted-foreground">
+                    {note.plain_text || "Nota vazia"}
+                  </p>
                 </div>
-                
-                <button
-                  type="button"
-                  onClick={(e) => { 
-                    e.preventDefault(); 
-                    e.stopPropagation();
-                    handleTrash(note.id); 
-                  }}
-                  className="flex size-9 items-center justify-center rounded-full bg-destructive/10 text-destructive opacity-0 backdrop-blur-md transition-all hover:bg-destructive hover:text-destructive-foreground hover:scale-110 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive group-hover:opacity-100"
-                  aria-label={`Mover ${note.title || "nota"} para a lixeira`}
-                >
-                  <Trash2 className="size-4" />
-                </button>
-              </div>
-            </article>
+
+                <footer className="pointer-events-none relative mt-auto flex items-end justify-between gap-3 pt-5">
+                  <div className="min-w-0 space-y-2 text-xs text-muted-foreground">
+                    {note.folder ? (
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <Folder className="size-3.5 shrink-0" aria-hidden="true" />
+                        <span className="truncate">{note.folder.name}</span>
+                      </span>
+                    ) : null}
+                    <time dateTime={note.updated_at}>
+                      Editada {dateFormatter.format(new Date(note.updated_at))}
+                    </time>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleTrash(note.id)}
+                    className="pointer-events-auto relative z-10 grid size-9 shrink-0 place-items-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive group-hover:opacity-100"
+                    aria-label={`Mover ${note.title || "nota"} para a lixeira`}
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                  </button>
+                </footer>
+              </article>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

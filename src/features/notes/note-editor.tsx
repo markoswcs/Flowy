@@ -7,7 +7,6 @@ import TaskList from "@tiptap/extension-task-list";
 import type { JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Bold,
@@ -34,10 +33,12 @@ import {
   useSaveNote,
   useTrashNote,
 } from "@/features/notes/use-notes";
+import { useCategories } from "@/features/categories/use-categories";
+import { useFolders } from "@/features/folders/use-folders";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { createClient } from "@/lib/supabase/client";
 import { replaceNoteCategories } from "@/services/notes";
-import type { CategorySummary, FolderSummary, Note } from "@/types/content";
+import type { Note } from "@/types/content";
 import { CustomSelect } from "@/components/ui/custom-select";
 
 interface Draft {
@@ -130,30 +131,8 @@ function LoadedNoteEditor({ note }: { note: Note }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [tagsOpen]);
 
-  const folders = useQuery({
-    queryKey: ["folders", "note-picker"],
-    queryFn: async () => {
-      const { data, error } = await client
-        .from("folders")
-        .select("id,name")
-        .is("deleted_at", null)
-        .order("position");
-      if (error) throw error;
-      return (data ?? []) as FolderSummary[];
-    },
-  });
-  const categories = useQuery({
-    queryKey: ["categories", "note-picker"],
-    queryFn: async () => {
-      const { data, error } = await client
-        .from("categories")
-        .select("id,name,color")
-        .is("deleted_at", null)
-        .order("name");
-      if (error) throw error;
-      return (data ?? []) as CategorySummary[];
-    },
-  });
+  const folders = useFolders();
+  const categories = useCategories();
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -277,8 +256,8 @@ function LoadedNoteEditor({ note }: { note: Note }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-4 pb-24 pt-4 sm:px-8">
-      <div className="relative z-50 mb-4 flex min-h-11 items-center gap-3 pb-3">
+    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-4 pb-24 pt-2 sm:px-8">
+      <div className="relative z-30 mb-5 flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card p-2 shadow-sm">
         <button
           type="button"
           onClick={() => router.push("/app/notes")}
@@ -296,10 +275,19 @@ function LoadedNoteEditor({ note }: { note: Note }) {
           placeholder="Sem pasta"
           options={[
             { value: "", label: "Sem pasta" },
-            ...(folders.data || []).map(f => ({ value: f.id, label: f.name, icon: <FolderIcon className="size-3.5 text-blue-500" /> }))
+            ...(folders.data || []).map((folder) => ({
+              value: folder.id,
+              label: folder.name,
+              icon: (
+                <FolderIcon
+                  className="size-3.5"
+                  style={{ color: folder.color ?? undefined }}
+                />
+              ),
+            })),
           ]}
           triggerIcon={<FolderIcon className="size-3.5 text-muted-foreground" />}
-          className="border-0 shadow-none bg-transparent hover:bg-accent h-9"
+          className="h-9 border-border bg-background shadow-none hover:bg-accent"
         />
         <div className="relative" ref={tagsRef}>
           <button 
@@ -310,7 +298,7 @@ function LoadedNoteEditor({ note }: { note: Note }) {
             Tags <ChevronDown className={`size-3 transition-transform ${tagsOpen ? "rotate-180" : ""}`} />
           </button>
           {tagsOpen && (
-            <div className="absolute left-0 top-11 z-[100] min-w-48 rounded-xl border border-border/50 bg-popover/60 p-2 shadow-xl backdrop-blur-2xl animate-in fade-in zoom-in-95">
+            <div className="absolute left-0 top-11 z-[100] min-w-48 rounded-xl border border-border bg-popover p-2 shadow-lg animate-in fade-in zoom-in-95">
               {categories.data?.length ? (
               categories.data.map((category) => (
                 <label
@@ -382,13 +370,13 @@ function LoadedNoteEditor({ note }: { note: Note }) {
           setTitle(event.target.value);
           markChanged();
         }}
-        className="mb-4 w-full bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60 sm:text-4xl"
+        className="mb-5 w-full border-b border-transparent bg-transparent px-1 py-2 text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 sm:text-4xl"
         placeholder="Sem título"
         aria-label="Título da nota"
       />
 
       {editor && (
-        <div className="sticky top-0 z-20 mb-5 flex flex-wrap items-center gap-1 bg-background/60 py-2 backdrop-blur-2xl rounded-xl px-2">
+        <div className="sticky top-0 z-20 mb-5 flex flex-wrap items-center gap-1 rounded-xl border border-border bg-card px-2 py-2 shadow-sm">
           <ToolbarButton
             label="Título"
             active={editor.isActive("heading", { level: 2 })}
@@ -478,7 +466,9 @@ function LoadedNoteEditor({ note }: { note: Note }) {
           )}
         </div>
       )}
-      <EditorContent editor={editor} />
+      <div className="rounded-xl border border-border bg-card px-4 py-5 shadow-sm sm:px-8 sm:py-7 [&_.flowy-editor>h2]:mt-8 [&_.flowy-editor>h2]:text-2xl [&_.flowy-editor>h2]:font-semibold [&_.flowy-editor>p]:mb-4 [&_.flowy-editor_a]:text-primary [&_.flowy-editor_a]:underline [&_.flowy-editor_ul]:mb-4 [&_.flowy-editor_ul]:list-disc [&_.flowy-editor_ul]:pl-6 [&_.flowy-editor_ol]:mb-4 [&_.flowy-editor_ol]:list-decimal [&_.flowy-editor_ol]:pl-6">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 }

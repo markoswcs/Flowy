@@ -146,21 +146,20 @@ export function Sidebar({
               {folder.name}
             </span>
             {count > 0 ? (
-              <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground/80 transition-colors group-hover:bg-white/10 group-hover:text-foreground">
+              <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground/80 transition-colors group-hover:bg-white/10 group-hover:text-foreground">
                 {count}
               </span>
             ) : null}
           </Link>
-          {active ? (
-            <button
-              type="button"
-              onClick={() => openOrganizer("folders", folder.id)}
-              className="mr-1 grid size-8 shrink-0 place-items-center rounded-lg hover:bg-accent focus-visible:outline-none"
-              aria-label={`Editar ${folder.name}`}
-            >
-              <MoreVertical className="size-4" />
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => openOrganizer("folders", folder.id)}
+            className="mr-1 grid size-8 shrink-0 place-items-center rounded-lg hover:bg-accent focus-visible:outline-none"
+            aria-label={`Editar ${folder.name}`}
+            title={`Editar ${folder.name}`}
+          >
+            <MoreVertical className="size-4" />
+          </button>
         </div>
         {expanded ? children.map((child) => renderFolder(child, depth + 1)) : null}
       </div>
@@ -241,7 +240,7 @@ export function Sidebar({
               
               <div
                 className={cn(
-                  "space-y-0.5 overflow-hidden transition-all duration-300",
+                  "space-y-0.5 overflow-hidden transition-all duration-300 px-3 -mx-3 py-1 -my-1",
                   isFoldersOpen ? "max-h-[1000px] opacity-100 mt-2" : "max-h-0 opacity-0"
                 )}
               >
@@ -283,7 +282,7 @@ export function Sidebar({
 
               <div
                 className={cn(
-                  "space-y-0.5 overflow-hidden transition-all duration-300",
+                  "space-y-0.5 overflow-hidden transition-all duration-300 px-3 -mx-3 py-1 -my-1",
                   isCategoriesOpen ? "max-h-[1000px] opacity-100 mt-2" : "max-h-0 opacity-0"
                 )}
               >
@@ -308,7 +307,6 @@ export function Sidebar({
                                 backgroundColor: `${category.color}15`,
                                 color: category.color,
                                 borderColor: `${category.color}50`,
-                                boxShadow: `0 0 15px ${category.color}25`,
                               }
                             : {}
                         }
@@ -319,7 +317,7 @@ export function Sidebar({
                           aria-hidden="true"
                         />
                         <span className="truncate flex-1 font-medium">{category.name}</span>
-                        <span className="ml-2 min-w-6 rounded-full bg-white/5 px-2 py-0.5 text-center text-xs font-semibold tabular-nums text-muted-foreground/80 transition-colors group-hover:bg-white/10 group-hover:text-foreground">
+                        <span className="shrink-0 ml-2 min-w-6 rounded-full bg-white/5 px-2 py-0.5 text-center text-xs font-semibold tabular-nums text-muted-foreground/80 transition-colors group-hover:bg-white/10 group-hover:text-foreground">
                           {category.task_count ?? 0}
                         </span>
                       </Link>

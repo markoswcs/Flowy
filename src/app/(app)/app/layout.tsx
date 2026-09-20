@@ -72,7 +72,7 @@ export default async function PrivateAppLayout({
 
   return (
     <>
-      <PersistedTheme theme={preferences?.theme ?? "system"} />
+      <PersistedTheme theme={preferences?.theme ?? "purple"} />
       <AppShell
         user={{
           name: profile?.display_name || metadataName || emailName,

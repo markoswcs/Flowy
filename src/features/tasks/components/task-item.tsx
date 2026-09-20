@@ -9,6 +9,7 @@ import {
   Flag,
   CircleDashed,
   Pencil,
+  Repeat2,
   Tag,
   Trash2,
 } from "lucide-react";
@@ -18,16 +19,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { formatTaskDate, isOverdueDate } from "@/features/tasks/date-utils";
+import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
 import {
   useRestoreTask,
   useSoftDeleteTask,
   useUpdateTask,
 } from "@/features/tasks/use-tasks";
+import { cn } from "@/lib/utils";
 import type {
   Category,
   Folder,
   Task,
   TaskPriority,
+  TaskRecurrence,
   TaskStatus,
 } from "@/types/productivity";
 
@@ -50,6 +54,12 @@ const statusLabels: Record<TaskStatus, string> = {
   completed: "Concluída",
 };
 
+const recurrenceLabels: Record<TaskRecurrence, string> = {
+  daily: "Diariamente",
+  weekly: "Semanalmente",
+  monthly: "Mensalmente",
+};
+
 export function TaskEditor({
   task,
   folders,
@@ -61,6 +71,9 @@ export function TaskEditor({
   const [description, setDescription] = useState(task.description ?? "");
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
   const [dueTime, setDueTime] = useState(task.due_time?.slice(0, 5) ?? "");
+  const [recurrence, setRecurrence] = useState<TaskRecurrence | "none">(
+    task.recurrence ?? "none",
+  );
   const [priority, setPriority] = useState(task.priority);
   const [status, setStatus] = useState(task.status);
   const [folderId, setFolderId] = useState(task.folder_id ?? "");
@@ -71,6 +84,10 @@ export function TaskEditor({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!title.trim()) return;
+    if (recurrence !== "none" && !dueDate) {
+      toast.error("Escolha uma data para repetir a tarefa.");
+      return;
+    }
     updateMutation.mutate(
       {
         id: task.id,
@@ -78,13 +95,14 @@ export function TaskEditor({
         description: description || null,
         due_date: dueDate || null,
         due_time: dueDate && dueTime ? dueTime : null,
+        recurrence: recurrence === "none" ? null : recurrence,
         priority,
         status,
         folder_id: folderId || null,
         category_ids: categoryIds,
       },
       {
-        onSuccess: () => {
+        onSuccess: (updatedTask) => {
           toast.success("Tarefa salva.");
           onClose();
         },
@@ -121,7 +139,10 @@ export function TaskEditor({
           <Input
             type="date"
             value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
+            onChange={(event) => {
+              setDueDate(event.target.value);
+              if (!event.target.value) setRecurrence("none");
+            }}
             className="h-8 w-[130px] appearance-none rounded-xl border-border/50 bg-muted/30 pl-8 pr-2 text-xs shadow-none transition-all hover:bg-muted/50 focus:border-primary focus:bg-background"
           />
         </div>
@@ -137,6 +158,23 @@ export function TaskEditor({
             />
           </div>
         )}
+
+        <div className={cn(!dueDate && "pointer-events-none opacity-50")}>
+          <CustomSelect
+            value={recurrence}
+            onChange={(value) =>
+              setRecurrence(value as TaskRecurrence | "none")
+            }
+            options={[
+              { value: "none", label: "Não repetir" },
+              { value: "daily", label: "Todos os dias" },
+              { value: "weekly", label: "Toda semana" },
+              { value: "monthly", label: "Todo mês" },
+            ]}
+            triggerIcon={<Repeat2 className="size-3.5" />}
+            placeholder="Repetir"
+          />
+        </div>
 
         <div className="flex rounded-xl border border-border/50 bg-muted/20 backdrop-blur-lg p-0.5">
           {(["low", "normal", "high"] as TaskPriority[]).map((p) => {
@@ -192,44 +230,15 @@ export function TaskEditor({
         />
       </div>
 
-      {categories.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <Tag className="size-3.5 text-muted-foreground mr-1" />
-          {categories.map((category) => {
-            const isSelected = categoryIds.includes(category.id);
-            return (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() =>
-                  setCategoryIds((current) =>
-                    isSelected
-                      ? current.filter((id) => id !== category.id)
-                      : [...current, category.id],
-                  )
-                }
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-medium transition-all duration-200 ${
-                  isSelected
-                    ? "shadow-sm scale-[1.02]"
-                    : "border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                }`}
-                style={isSelected ? { 
-                  backgroundColor: `${category.color}20`,
-                  borderColor: `${category.color}50`,
-                  color: category.color
-                } : {}}
-              >
-                <span
-                  className="size-1.5 rounded-full transition-all"
-                  style={{ backgroundColor: category.color }}
-                  aria-hidden="true"
-                />
-                {category.name}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <Tag className="mr-1 size-3.5 text-muted-foreground" />
+        <TaskTagSelector
+          categories={categories}
+          value={categoryIds}
+          onChange={setCategoryIds}
+          compact
+        />
+      </div>
 
       <div className="flex items-center justify-end gap-2 pt-1">
         <Button 
@@ -246,7 +255,7 @@ export function TaskEditor({
           size="sm"
           className="h-8 rounded-xl px-5 text-xs font-medium shadow-sm transition-all active:scale-95"
           loading={updateMutation.isPending}
-          disabled={!title.trim()}
+          disabled={!title.trim() || (recurrence !== "none" && !dueDate)}
         >
           Salvar
         </Button>
@@ -285,6 +294,15 @@ export function TaskItem({
         onSuccess: () => {
           if (!nextCompleted) {
             toast.success("Tarefa reaberta.");
+            return;
+          }
+          if (task.recurrence) {
+            const nextDate = formatTaskDate(updatedTask.due_date);
+            toast.success("Próxima ocorrência agendada.", {
+              description: `${recurrenceLabels[task.recurrence]}${
+                nextDate ? ` • ${nextDate}` : ""
+              }${updatedTask.due_time ? ` às ${updatedTask.due_time.slice(0, 5)}` : ""}`,
+            });
             return;
           }
           toast.success("Tarefa concluída.", {
@@ -366,6 +384,12 @@ export function TaskItem({
                   <span>
                     <Clock3 className="mr-1 inline size-3.5" aria-hidden="true" />
                     {task.due_time.slice(0, 5)}
+                  </span>
+                ) : null}
+                {task.recurrence ? (
+                  <span>
+                    <Repeat2 className="mr-1 inline size-3.5" aria-hidden="true" />
+                    {recurrenceLabels[task.recurrence]}
                   </span>
                 ) : null}
                 {task.folder ? (

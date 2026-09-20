@@ -95,9 +95,16 @@ export function AppShell({
   }, [categories, categoriesQuery.data]);
 
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+      document.body.classList.add("has-overlay");
+    } else {
+      document.body.style.overflow = "";
+      document.body.classList.remove("has-overlay");
+    }
     return () => {
       document.body.style.overflow = "";
+      document.body.classList.remove("has-overlay");
     };
   }, [mobileOpen]);
 
@@ -135,9 +142,9 @@ export function AppShell({
     setMobileMenu((current) => ({ ...current, open: false }));
 
   return (
-    <div className="flex h-dvh overflow-hidden relative bg-[#05050A]">
+    <div className="relative flex h-dvh overflow-hidden bg-background">
       {/* --- AMBIENT PREMIUM BACKGROUND --- */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <div className="theme-ambient pointer-events-none absolute inset-0 z-0 overflow-hidden">
         {/* Micro-dot grid pattern for texture and scale */}
         <div 
           className="absolute inset-0 opacity-[0.15] mix-blend-screen" 
@@ -166,7 +173,7 @@ export function AppShell({
 
       <aside
         className={cn(
-          "relative z-10 hidden shrink-0 border-r border-border/50 bg-card/30 backdrop-blur-2xl transition-[width] duration-200 md:block",
+          "theme-shell-panel relative z-10 hidden shrink-0 border-r border-border/50 transition-[width] duration-200 md:block",
           collapsed ? "w-20" : "w-64",
         )}
       >
@@ -180,8 +187,7 @@ export function AppShell({
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="relative z-40 flex h-16 shrink-0 items-center justify-between border-b border-border/50 bg-card/30 px-3 md:hidden">
-          <div className="absolute inset-0 -z-10 backdrop-blur-2xl" aria-hidden="true" />
+        <header className="theme-shell-panel relative z-40 flex h-16 shrink-0 items-center justify-between border-b border-border/50 px-3 md:hidden">
           <div className="flex w-full items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Button
@@ -229,7 +235,7 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className="absolute inset-y-0 left-0 w-[min(88vw,320px)] animate-fade-in border-r border-border bg-card shadow-soft"
+            className="theme-shell-panel absolute inset-y-0 left-0 w-[min(88vw,320px)] animate-fade-in border-r border-border shadow-soft"
           >
             <Button
               type="button"

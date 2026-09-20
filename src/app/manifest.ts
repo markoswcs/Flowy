@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Tarefas, notas e projetos em um só lugar.',
     start_url: '/app',
     display: 'standalone',
-    background_color: '#101216',
-    theme_color: '#101216',
+    background_color: '#170a36',
+    theme_color: '#170a36',
     icons: [
       {
         src: '/logo.png',

@@ -2,8 +2,6 @@ import { DashboardPage } from "@/features/tasks/dashboard-page";
 import { createClient } from "@/lib/supabase/server";
 import type { TaskScope } from "@/types/productivity";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 const allowedScopes = new Set<TaskScope>([
   "all",
   "today",
@@ -16,17 +14,6 @@ interface AppHomePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-async function autoTrashOldTasks(supabase: SupabaseClient, userId: string) {
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  await supabase
-    .from("tasks")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("status", "completed")
-    .lt("completed_at", oneDayAgo)
-    .is("deleted_at", null)
-    .eq("user_id", userId);
-}
-
 export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   const supabase = await createClient();
   const {
@@ -34,8 +21,6 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   } = await supabase.auth.getUser();
 
   if (!user) return null;
-
-  await autoTrashOldTasks(supabase, user.id);
 
   const values = await searchParams;
   const initialOrganizer =

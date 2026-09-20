@@ -28,7 +28,7 @@ export function Logo({
         alt="Flowy Logo"
         width={32}
         height={32}
-        className="shrink-0 object-contain rounded-sm"
+        className="shrink-0 object-contain rounded-[10px]"
       />
       {compact ? null : <span className="text-lg">Flowy</span>}
     </Link>

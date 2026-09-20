@@ -94,7 +94,7 @@ export interface UserProfile {
   updated_at: string;
 }
 
-export type ThemePreference = "light" | "dark" | "system";
+export type ThemePreference = "purple" | "black" | "white";
 
 export interface UserPreferences {
   user_id: string;

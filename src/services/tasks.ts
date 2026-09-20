@@ -15,6 +15,7 @@ const TASK_FIELDS = `
   description,
   due_date,
   due_time,
+  recurrence,
   priority,
   status,
   folder_id,
@@ -195,6 +196,9 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
   const { category_ids: categoryIds = [], ...values } = input;
   const now = new Date().toISOString();
   const status = values.status ?? "todo";
+  if (values.recurrence && !values.due_date) {
+    throw new Error("Escolha uma data para repetir a tarefa.");
+  }
   const { data, error } = await supabase
     .from("tasks")
     .insert({
@@ -204,6 +208,7 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       description: values.description?.trim() || null,
       due_date: values.due_date || null,
       due_time: values.due_date && values.due_time ? values.due_time : null,
+      recurrence: values.recurrence ?? null,
       priority: values.priority ?? "normal",
       status,
       folder_id: values.folder_id || null,
@@ -236,7 +241,13 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
   if (typeof changes.description === "string") {
     values.description = changes.description.trim() || null;
   }
-  if (changes.due_date === null) values.due_time = null;
+  if (changes.due_date === null) {
+    if (changes.recurrence) {
+      throw new Error("Escolha uma data para repetir a tarefa.");
+    }
+    values.due_time = null;
+    values.recurrence = null;
+  }
   if (changes.status === "completed" && changes.completed_at === undefined) {
     values.completed_at = new Date().toISOString();
   }

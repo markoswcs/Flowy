@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Calendar, CheckCircle2, ChevronDown, Clock, List, SlidersHorizontal, Sun, Moon, MoonStar, Sunrise, Sparkles } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle2, ChevronDown, Clock, List, SlidersHorizontal, Sun, Moon, MoonStar, Sunrise, Sparkles, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
 import { TaskFilters } from "@/features/tasks/components/task-filters";
@@ -183,6 +184,23 @@ export function DashboardPage({
       </header>
 
       <div className="space-y-5">
+
+        {/* Search Bar - Always Visible */}
+        <div className="relative z-40 flex w-full flex-col gap-3 rounded-3xl border border-white/5 bg-black/20 p-2 backdrop-blur-2xl ring-1 ring-white/10 lg:flex-row lg:items-center lg:rounded-full lg:p-1.5 transition-all duration-500 hover:bg-black/30 hover:ring-white/20">
+          <div className="absolute inset-0 -z-10 rounded-3xl lg:rounded-full bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-50" aria-hidden="true" />
+          <div className="relative flex-1 w-full group">
+            <span className="sr-only">Pesquisar tarefas</span>
+            <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground transition-all duration-300 group-focus-within:text-primary group-hover:scale-110" aria-hidden="true" />
+            <Input
+              value={filters.search ?? ""}
+              onChange={(event) => setFilters({ ...filters, search: event.target.value })}
+              placeholder="Pesquisar tarefas, notas, ideias..."
+              className="h-11 lg:h-10 w-full appearance-none rounded-2xl lg:rounded-full border-none bg-transparent pl-11 text-sm text-foreground shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300"
+            />
+            {/* Animated glow line on focus */}
+            <div className="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent scale-x-0 opacity-0 transition-all duration-500 group-focus-within:scale-x-100 group-focus-within:opacity-100" />
+          </div>
+        </div>
 
         {statusBarOpen && (
           <TaskFilters

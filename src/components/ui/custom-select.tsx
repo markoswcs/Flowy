@@ -51,6 +51,8 @@ export function CustomSelect({
   };
 
   useEffect(() => {
+    if (!open) return;
+
     function handleClickOutside(event: MouseEvent) {
       if (
         containerRef.current &&
