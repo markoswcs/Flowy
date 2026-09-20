@@ -42,7 +42,7 @@ function eligibleParentFolders(folders: Folder[], folderId: string) {
   // If the folder has any children, it cannot be put inside another folder (to prevent 3-level nesting)
   const hasChildren = folders.some((f) => f.parent_id === folderId);
   if (hasChildren) return [];
-  
+
   // Otherwise, it can only be placed in a root folder (parent_id === null)
   return folders.filter((f) => f.id !== folderId && f.parent_id === null);
 }
@@ -337,10 +337,10 @@ export function FolderManager({
             {folders
               .filter((f) => f.parent_id === null)
               .map((folder) => (
-              <option key={folder.id} value={folder.id}>
-                Dentro de {folder.name}
-              </option>
-            ))}
+                <option key={folder.id} value={folder.id}>
+                  Dentro de {folder.name}
+                </option>
+              ))}
           </select>
         </label>
 

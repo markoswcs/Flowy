@@ -291,7 +291,7 @@ export function TaskItem({
         completed_at: nextCompleted ? new Date().toISOString() : null,
       },
       {
-        onSuccess: () => {
+        onSuccess: (updatedTask) => {
           if (!nextCompleted) {
             toast.success("Tarefa reaberta.");
             return;
