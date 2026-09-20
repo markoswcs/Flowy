@@ -185,7 +185,7 @@ function KanbanColumn({
       ref={setNodeRef}
       aria-labelledby={`kanban-${status}`}
       className={cn(
-        "min-h-[500px] w-[85vw] sm:w-[320px] lg:w-auto lg:flex-1 shrink-0 snap-center rounded-3xl border border-border/50 bg-muted/20 p-4 transition-colors backdrop-blur-sm",
+        "min-h-[200px] lg:min-h-[500px] w-full lg:w-auto lg:flex-1 rounded-3xl border border-border/50 bg-muted/20 p-4 transition-colors backdrop-blur-sm",
         isOver && "border-primary/50 bg-primary/10",
       )}
     >
@@ -250,9 +250,9 @@ export function TaskKanban({
 
   if (loading) {
     return (
-      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 lg:grid lg:grid-cols-3 lg:overflow-visible" aria-label="Carregando Kanban">
+      <div className="flex flex-col gap-6 pb-4 lg:grid lg:grid-cols-3 lg:gap-4 lg:overflow-visible" aria-label="Carregando Kanban">
         {columns.map((column) => (
-          <Skeleton key={column.status} className="h-[500px] w-[85vw] shrink-0 snap-center sm:w-[320px] lg:w-auto rounded-3xl" />
+          <Skeleton key={column.status} className="h-[200px] lg:h-[500px] w-full lg:w-auto rounded-3xl" />
         ))}
       </div>
     );
@@ -280,7 +280,7 @@ export function TaskKanban({
       collisionDetection={closestCorners}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-6 lg:grid lg:grid-cols-3 lg:overflow-visible">
+      <div className="flex flex-col gap-6 pb-6 lg:grid lg:grid-cols-3 lg:gap-4 lg:overflow-visible">
         {columns.map((column) => (
           <KanbanColumn
             key={column.status}
