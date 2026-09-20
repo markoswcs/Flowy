@@ -63,7 +63,7 @@ function FolderEditor({
   onCancel,
 }: FolderEditorProps) {
   const [name, setName] = useState(folder.name);
-  const [color, setColor] = useState(resolveFolderColor(folder.color));
+  const [color, setColor] = useState<string>(resolveFolderColor(folder.color));
   const [parentId, setParentId] = useState(folder.parent_id ?? "");
   const eligibleParents = useMemo(
     () => eligibleParentFolders(folders, folder.id),
