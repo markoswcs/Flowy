@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,7 @@ export function CustomSelect({
   const containerRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
 
-  const handleOpenChange = (newOpen: boolean) => {
+  const handleOpenChange = useCallback((newOpen: boolean) => {
     if (newOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       setCoords({
@@ -48,7 +48,7 @@ export function CustomSelect({
     }
     setOpen(newOpen);
     onOpenChange?.(newOpen);
-  };
+  }, [onOpenChange]);
 
   useEffect(() => {
     if (!open) return;

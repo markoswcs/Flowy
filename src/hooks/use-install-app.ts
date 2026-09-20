@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 export function useInstallApp() {
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -14,7 +15,8 @@ export function useInstallApp() {
       setIsInstalled(true);
     }
 
-    const handleBeforeInstallPrompt = (e: Event) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleBeforeInstallPrompt = (e: any) => {
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       // Stash the event so it can be triggered later.

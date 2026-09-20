@@ -124,8 +124,8 @@ export function SettingsPage() {
 
   const name = draftName ?? profile.data?.display_name ?? "";
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedTheme(savedTheme);
   }, [savedTheme]);
 
