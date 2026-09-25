@@ -226,7 +226,7 @@ export function AppShell({
         <div className="fixed inset-0 z-50 md:hidden" role="presentation">
           <button
             type="button"
-            className="absolute inset-0 bg-foreground/20 backdrop-blur-md transition-opacity"
+            className="absolute inset-0 bg-background/95 transition-opacity"
             aria-label="Fechar menu"
             onClick={closeMobileMenu}
           />

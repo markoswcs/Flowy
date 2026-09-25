@@ -24,7 +24,12 @@ export function NavLink({
   return (
     <Link
       href={item.href}
-      onClick={onNavigate}
+      onClick={() => {
+        if (item.href === "/app") {
+          window.dispatchEvent(new Event("flowy:close-overlays"));
+        }
+        onNavigate?.();
+      }}
       aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(

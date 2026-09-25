@@ -89,6 +89,7 @@ export interface NoteChanges {
   content?: JSONContent;
   plain_text?: string;
   folder_id?: string | null;
+  is_favorite?: boolean;
 }
 
 export async function updateNote(

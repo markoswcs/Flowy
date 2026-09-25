@@ -2,10 +2,12 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import type { AuthActionState } from "@/lib/auth-action-state";
 import { getAuthErrorMessage } from "@/lib/supabase/auth-errors";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/utils";
 
@@ -27,7 +29,7 @@ const signupSchema = z
       .max(50, "O nome não pode ter mais de 50 caracteres.")
       .regex(
         /^[^\s]+\s+[^\s]+$/,
-        "Informe apenas nome e sobrenome (duas palavras)."
+        "Informe nome e sobrenome para concluir o cadastro."
       ),
     email,
     password,
@@ -69,7 +71,7 @@ function validationError(error: z.ZodError): AuthActionState {
 async function getSiteUrl() {
   const requestHeaders = await headers();
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  return configured || requestHeaders.get("origin") || "http://localhost:3000";
+  return requestHeaders.get("origin") || configured || "http://localhost:3000";
 }
 
 export async function signInAction(
@@ -104,7 +106,7 @@ export async function signUpAction(
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      emailRedirectTo: `${siteUrl}/auth/callback?next=/app`,
+      emailRedirectTo: `${siteUrl}/auth/callback?next=/login?confirmacao=email`,
       data: { display_name: parsed.data.name },
     },
   });
@@ -179,4 +181,32 @@ export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
+}
+
+export async function deleteAccountAction(formData: FormData) {
+  if (formData.get("confirmation") !== "EXCLUIR MINHA CONTA") {
+    throw new Error("Digite a frase de confirmação exatamente como informada.");
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    throw new Error("A exclusão de conta não está configurada no servidor.");
+  }
+
+  const { url } = getSupabaseEnv();
+  const admin = createAdminClient(url, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  await admin.storage.from("avatars").remove([`${user.id}/avatar`]);
+  const { error } = await admin.auth.admin.deleteUser(user.id);
+  if (error) throw new Error(getAuthErrorMessage(error.message));
+
+  await supabase.auth.signOut({ scope: "local" });
+  redirect("/login?conta=excluida");
 }

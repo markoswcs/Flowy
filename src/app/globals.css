@@ -61,6 +61,34 @@
     color-scheme: dark;
   }
 
+  .oled {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 96%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 5%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 5%;
+    --muted-foreground: 0 0% 62%;
+    --accent: 0 0% 9%;
+    --accent-foreground: 0 0% 96%;
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 52% 44%;
+    --success-foreground: 0 0% 100%;
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 0 0% 80%;
+    --radius: 0.5rem;
+    --logo-mark-background: #ffffff;
+    --logo-mark-foreground: #000000;
+    --logo-mark-border: #ffffff;
+    --logo-mark-shadow: none;
+    color-scheme: dark;
+  }
+
   .white {
     --background: 0 0% 100%;
     --foreground: 0 0% 14%;
@@ -175,17 +203,20 @@
   }
 
   .black .theme-shell-panel,
+  .oled .theme-shell-panel,
   .white .theme-shell-panel {
     background-color: hsl(var(--card));
     backdrop-filter: none;
   }
 
   .black .theme-ambient,
+  .oled .theme-ambient,
   .white .theme-ambient {
     display: none;
   }
 
   .black .theme-sidebar-item,
+  .oled .theme-sidebar-item,
   .white .theme-sidebar-item {
     border-radius: 0.5rem;
     box-shadow: none;
@@ -193,16 +224,19 @@
   }
 
   .black .theme-sidebar-item:hover,
+  .oled .theme-sidebar-item:hover,
   .white .theme-sidebar-item:hover {
     transform: none;
   }
 
   .black .theme-sidebar-active,
+  .oled .theme-sidebar-active,
   .white .theme-sidebar-active {
     box-shadow: none;
   }
 
   .black .liquid-glass,
+  .oled .liquid-glass,
   .white .liquid-glass {
     box-shadow: none;
     backdrop-filter: none;
@@ -241,6 +275,7 @@
   }
 
   .black .flowy-logo-mark,
+  .oled .flowy-logo-mark,
   .white .flowy-logo-mark {
     border-radius: 0.375rem;
   }

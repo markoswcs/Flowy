@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Folder, Plus, Search, Trash2 } from "lucide-react";
+import { FileText, Folder, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useMemo, useState } from "react";
@@ -12,6 +12,7 @@ import {
   useCreateNote,
   useNotes,
   useRestoreNote,
+  useToggleNoteFavorite,
   useTrashNote,
 } from "@/features/notes/use-notes";
 
@@ -27,6 +28,7 @@ export function NoteList() {
   const create = useCreateNote();
   const trash = useTrashNote();
   const restore = useRestoreNote();
+  const toggleFavorite = useToggleNoteFavorite();
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
 
@@ -66,6 +68,14 @@ export function NoteList() {
       });
     } catch {
       toast.error("Não foi possível excluir a nota.");
+    }
+  }
+
+  async function handleFavorite(noteId: string, isFavorite: boolean) {
+    try {
+      await toggleFavorite.mutateAsync({ noteId, isFavorite });
+    } catch {
+      toast.error("Não foi possível atualizar o favorito.");
     }
   }
 
@@ -136,26 +146,26 @@ export function NoteList() {
           ) : null}
         </section>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {filteredNotes.map((note) => (
             <li key={note.id}>
-              <article className="group relative flex min-h-52 flex-col rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-accent/30">
+              <article className="group relative flex min-h-44 flex-col rounded-xl border border-border bg-card p-4 pt-12 transition-colors hover:border-primary/40 hover:bg-accent/30 sm:min-h-48 sm:p-5 sm:pt-12">
                 <Link
                   href={`/app/notes/${note.id}`}
                   className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                   aria-label={`Abrir nota ${note.title || "sem título"}`}
                 />
                 <div className="relative pointer-events-none min-w-0">
-                  <h2 className="line-clamp-2 text-lg font-semibold leading-6">
+                  <h2 className="line-clamp-2 text-base font-semibold leading-5 sm:text-lg sm:leading-6">
                     {note.title || "Sem título"}
                   </h2>
-                  <p className="mt-3 line-clamp-4 text-sm leading-6 text-muted-foreground">
+                  <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground sm:mt-3 sm:text-sm sm:leading-6">
                     {note.plain_text || "Nota vazia"}
                   </p>
                 </div>
 
-                <footer className="pointer-events-none relative mt-auto flex items-end justify-between gap-3 pt-5">
-                  <div className="min-w-0 space-y-2 text-xs text-muted-foreground">
+                <footer className="pointer-events-none relative mt-auto flex items-end justify-between gap-2 pt-4">
+                  <div className="pointer-events-none min-w-0 space-y-1 text-[11px] text-muted-foreground sm:space-y-2 sm:text-xs">
                     {note.folder ? (
                       <span className="flex min-w-0 items-center gap-1.5">
                         <Folder className="size-3.5 shrink-0" aria-hidden="true" />
@@ -166,15 +176,32 @@ export function NoteList() {
                       Editada {dateFormatter.format(new Date(note.updated_at))}
                     </time>
                   </div>
+                </footer>
+                <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleFavorite(note.id, !note.is_favorite)}
+                    className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={`${note.is_favorite ? "Remover" : "Adicionar"} ${note.title || "nota"} dos favoritos`}
+                  >
+                    <Star className={`size-4 ${note.is_favorite ? "fill-primary text-primary" : ""}`} aria-hidden="true" />
+                  </button>
+                  <Link
+                    href={`/app/notes/${note.id}`}
+                    className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={`Editar ${note.title || "nota"}`}
+                  >
+                    <Pencil className="size-4" aria-hidden="true" />
+                  </Link>
                   <button
                     type="button"
                     onClick={() => handleTrash(note.id)}
-                    className="pointer-events-auto relative z-10 grid size-9 shrink-0 place-items-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive group-hover:opacity-100"
+                    className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                     aria-label={`Mover ${note.title || "nota"} para a lixeira`}
                   >
                     <Trash2 className="size-4" aria-hidden="true" />
                   </button>
-                </footer>
+                </div>
               </article>
             </li>
           ))}

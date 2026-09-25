@@ -21,6 +21,7 @@ export interface Note {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  is_favorite: boolean;
   folder?: FolderSummary | null;
   categories?: CategorySummary[];
 }
@@ -94,7 +95,7 @@ export interface UserProfile {
   updated_at: string;
 }
 
-export type ThemePreference = "purple" | "black" | "white";
+export type ThemePreference = "purple" | "black" | "oled" | "white";
 
 export interface UserPreferences {
   user_id: string;

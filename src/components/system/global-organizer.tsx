@@ -26,7 +26,12 @@ export function GlobalOrganizer() {
       setOpen(true);
     };
     window.addEventListener("flowy:open-organizer", handleOpen);
-    return () => window.removeEventListener("flowy:open-organizer", handleOpen);
+    const handleClose = () => setOpen(false);
+    window.addEventListener("flowy:close-overlays", handleClose);
+    return () => {
+      window.removeEventListener("flowy:open-organizer", handleOpen);
+      window.removeEventListener("flowy:close-overlays", handleClose);
+    };
   }, []);
 
   useEffect(() => {

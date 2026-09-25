@@ -42,6 +42,11 @@ const themeOptions: Array<{
     description: "Monocromático e discreto, com contraste alto.",
   },
   {
+    value: "oled",
+    label: "Preto OLED",
+    description: "Preto absoluto para telas OLED, com menor consumo de energia.",
+  },
+  {
     value: "white",
     label: "Branco",
     description: "Claro, limpo e focado no conteúdo.",
@@ -51,15 +56,16 @@ const themeOptions: Array<{
 function ThemePreview({ theme, selected }: { theme: ThemePreference; selected: boolean }) {
   const isPurple = theme === "purple";
   const isBlack = theme === "black";
+  const isOled = theme === "oled";
 
-  const bgApp = isPurple ? "bg-[#0d041e]" : isBlack ? "bg-[#000000]" : "bg-[#f5f5f5]";
-  const bgSidebar = isPurple ? "bg-[#180a33]" : isBlack ? "bg-[#0a0a0a]" : "bg-white";
-  const bgCard = isPurple ? "bg-[#210d47]" : isBlack ? "bg-[#141414]" : "bg-white";
-  const primary = isPurple ? "bg-[#7c3aed]" : isBlack ? "bg-white" : "bg-[#171717]";
-  const border = isPurple ? "border-[#311561]" : isBlack ? "border-[#262626]" : "border-[#e5e5e5]";
-  const textMuted = isPurple ? "bg-[#6d28d9]/40" : isBlack ? "bg-white/20" : "bg-black/20";
-  const textTitle = isPurple ? "bg-[#c4b5fd]" : isBlack ? "bg-white/80" : "bg-black/80";
-  const plusColor = isBlack ? "bg-black" : "bg-white";
+  const bgApp = isPurple ? "bg-[#0d041e]" : isOled ? "bg-black" : isBlack ? "bg-[#000000]" : "bg-[#f5f5f5]";
+  const bgSidebar = isPurple ? "bg-[#180a33]" : isOled ? "bg-black" : isBlack ? "bg-[#0a0a0a]" : "bg-white";
+  const bgCard = isPurple ? "bg-[#210d47]" : isOled ? "bg-black" : isBlack ? "bg-[#141414]" : "bg-white";
+  const primary = isPurple ? "bg-[#7c3aed]" : isBlack || isOled ? "bg-white" : "bg-[#171717]";
+  const border = isPurple ? "border-[#311561]" : isOled ? "border-[#242424]" : isBlack ? "border-[#262626]" : "border-[#e5e5e5]";
+  const textMuted = isPurple ? "bg-[#6d28d9]/40" : isBlack || isOled ? "bg-white/20" : "bg-black/20";
+  const textTitle = isPurple ? "bg-[#c4b5fd]" : isBlack || isOled ? "bg-white/80" : "bg-black/80";
+  const plusColor = isBlack || isOled ? "bg-black" : "bg-white";
 
   return (
     <div
@@ -100,6 +106,9 @@ function ThemePreview({ theme, selected }: { theme: ThemePreference; selected: b
         <div className={`h-2.5 w-0.5 rounded-full ${plusColor}`} />
         <div className={`absolute h-0.5 w-2.5 rounded-full ${plusColor}`} />
       </div>
+      <p className="mt-10 text-center text-[10px] font-medium tracking-wide text-muted-foreground/60">
+        Flowy · versão 0.1.0
+      </p>
     </div>
   );
 }
@@ -330,7 +339,7 @@ export function SettingsPage() {
             Escolha a aparência que você quer usar no Flowy.
           </p>
           <div
-            className="mt-6 grid gap-4 sm:grid-cols-3"
+            className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
             role="group"
             aria-label="Escolher tema"
           >

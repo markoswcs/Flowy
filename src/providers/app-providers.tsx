@@ -24,7 +24,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       defaultTheme="purple"
       enableSystem={false}
       storageKey="flowy:theme"
-      themes={["purple", "black", "white"]}
+      themes={["purple", "black", "oled", "white"]}
     >
       <QueryProvider>{children}</QueryProvider>
       <NetworkStatus />

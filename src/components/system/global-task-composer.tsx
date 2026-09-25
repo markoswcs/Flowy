@@ -18,6 +18,7 @@ export function GlobalTaskComposer() {
     const handleClose = () => setOpen(false);
 
     window.addEventListener("flowy:open-task-composer", handleOpen);
+    window.addEventListener("flowy:close-overlays", handleClose);
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") handleClose();
@@ -39,6 +40,7 @@ export function GlobalTaskComposer() {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("flowy:open-task-composer", handleOpen);
+      window.removeEventListener("flowy:close-overlays", handleClose);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);

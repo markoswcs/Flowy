@@ -23,7 +23,7 @@ Todas as tabelas privadas têm RLS habilitada e forçada. As policies exigem `au
 
 As funções de trigger e de purge não são executáveis por usuários do navegador. As RPCs disponíveis para `authenticated` são `create_board_with_defaults`, `move_board_card`, `reorder_board_columns` e `global_search`; elas são `SECURITY INVOKER`, validam a sessão e continuam sujeitas a RLS.
 
-Nunca coloque `service_role` ou secrets em variáveis `NEXT_PUBLIC_*`. O navegador deve receber somente a URL e a chave pública/publishable do projeto. Operações administrativas devem ficar em ambiente server-side seguro.
+Nunca coloque `service_role` ou secrets em variáveis `NEXT_PUBLIC_*`. O navegador deve receber somente a URL e a chave pública/publishable do projeto. Operações administrativas devem ficar em ambiente server-side seguro. Para a exclusão definitiva de conta, defina `SUPABASE_SERVICE_ROLE_KEY` somente no ambiente do servidor (por exemplo, nas variáveis de ambiente da Vercel).
 
 O bucket público `avatars` aceita JPEG, PNG, WebP e AVIF até 2 MB. O cliente deve gravar exatamente em `{auth.uid()}/avatar`; isso limita cada conta a um objeto nesse bucket. Apenas o dono pode inserir, substituir, listar os metadados ou remover seu objeto. A entrega por URL pública é intencional, pois avatar não é tratado como dado privado.
 

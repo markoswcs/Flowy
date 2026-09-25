@@ -93,6 +93,21 @@ export function useTrashNote() {
   });
 }
 
+export function useToggleNoteFavorite() {
+  const client = createClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ noteId, isFavorite }: { noteId: string; isFavorite: boolean }) =>
+      updateNote(client, noteId, { is_favorite: isFavorite }),
+    onSuccess: (note) => {
+      queryClient.setQueryData(noteKeys.detail(note.id), note);
+      queryClient.setQueryData<Note[]>(noteKeys.all, (current = []) =>
+        current.map((item) => (item.id === note.id ? note : item)),
+      );
+    },
+  });
+}
+
 export function useRestoreNote() {
   const client = createClient();
   const queryClient = useQueryClient();

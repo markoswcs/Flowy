@@ -8,14 +8,30 @@ import { safeNextPath } from "@/lib/utils";
 export const metadata: Metadata = { title: "Entrar" };
 
 interface LoginPageProps {
-  searchParams: Promise<{ next?: string; erro?: string; senha?: string }>;
+  searchParams: Promise<{
+    next?: string;
+    erro?: string;
+    senha?: string;
+    confirmacao?: string;
+    conta?: string;
+  }>;
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const next = params.next ? safeNextPath(params.next) : undefined;
   const message =
-    params.senha === "alterada"
+    params.conta === "excluida"
+      ? {
+          status: "success" as const,
+          text: "Sua conta e seus dados foram excluídos.",
+        }
+      : params.confirmacao === "email"
+        ? {
+            status: "success" as const,
+            text: "E-mail confirmado. Entre para acessar o Flowy.",
+          }
+      : params.senha === "alterada"
       ? {
           status: "success" as const,
           text: "Senha alterada. Entre novamente para continuar.",

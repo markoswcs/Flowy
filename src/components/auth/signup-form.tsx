@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { signUpAction } from "@/app/(auth)/actions";
 import { AuthMessage, FieldError } from "@/components/auth/auth-card";
@@ -15,6 +15,14 @@ export function SignupForm() {
     signUpAction,
     initialAuthState,
   );
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const setField = (field: keyof typeof form, value: string) =>
+    setForm((current) => ({ ...current, [field]: value }));
 
   return (
     <form action={action} className="space-y-4" noValidate>
@@ -24,12 +32,14 @@ export function SignupForm() {
         </AuthMessage>
       ) : null}
       <div className="space-y-2">
-        <Label htmlFor="name">Nome</Label>
+        <Label htmlFor="name">Nome e sobrenome</Label>
         <Input
           id="name"
           name="name"
           autoComplete="name"
           autoFocus
+          value={form.name}
+          onChange={(event) => setField("name", event.target.value)}
           required
           aria-invalid={Boolean(state.errors?.name?.[0])}
           aria-describedby={state.errors?.name?.[0] ? "name-error" : undefined}
@@ -45,6 +55,8 @@ export function SignupForm() {
           autoComplete="email"
           inputMode="email"
           required
+          value={form.email}
+          onChange={(event) => setField("email", event.target.value)}
           aria-invalid={Boolean(state.errors?.email?.[0])}
           aria-describedby={
             state.errors?.email?.[0] ? "email-error" : undefined
@@ -59,6 +71,8 @@ export function SignupForm() {
           name="password"
           autoComplete="new-password"
           required
+          value={form.password}
+          onChange={(event) => setField("password", event.target.value)}
           aria-invalid={Boolean(state.errors?.password?.[0])}
           aria-describedby={
             state.errors?.password?.[0] ? "password-error" : "password-hint"
@@ -76,6 +90,8 @@ export function SignupForm() {
           name="confirmPassword"
           autoComplete="new-password"
           required
+          value={form.confirmPassword}
+          onChange={(event) => setField("confirmPassword", event.target.value)}
           aria-invalid={Boolean(state.errors?.confirmPassword?.[0])}
           aria-describedby={
             state.errors?.confirmPassword?.[0]
