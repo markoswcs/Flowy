@@ -14,7 +14,6 @@ import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { signOutAction } from "@/app/(auth)/actions";
-import { DeleteAccountButton } from "@/components/auth/delete-account-button";
 import { NavLink } from "@/components/shell/nav-link";
 import {
   mainNavigation,
@@ -392,7 +391,6 @@ export function Sidebar({
                 </span>
               </span>
             </Link>
-            <DeleteAccountButton />
             <form action={signOutAction}>
               <Button
                 type="submit"

@@ -22,6 +22,7 @@ import {
   Trash2,
   Unlink,
   Folder as FolderIcon,
+  Palette,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -40,6 +41,9 @@ import { createClient } from "@/lib/supabase/client";
 import { replaceNoteCategories } from "@/services/notes";
 import type { Note } from "@/types/content";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { NoteDrawing } from "@/components/notes/note-drawing";
+
+const noteColors = ["#1f2937", "#312e81", "#4c1d3f", "#3f2a19", "#1f3d36", "#3b2f63"];
 
 interface Draft {
   title: string;
@@ -47,6 +51,8 @@ interface Draft {
   plainText: string;
   folderId: string | null;
   categoryIds: string[];
+  color: string | null;
+  drawingData: string | null;
   changedAt: number;
 }
 
@@ -109,6 +115,10 @@ function LoadedNoteEditor({ note }: { note: Note }) {
   );
   const [plainText, setPlainText] = useState(
     draft?.plainText ?? note.plain_text,
+  );
+  const [noteColor, setNoteColor] = useState<string | null>(draft?.color ?? note.color);
+  const [drawingData, setDrawingData] = useState<string | null>(
+    draft?.drawingData ?? note.drawing_data,
   );
   const [status, setStatus] = useState<
     "saved" | "saving" | "offline" | "error"
@@ -173,6 +183,8 @@ function LoadedNoteEditor({ note }: { note: Note }) {
       plainText,
       folderId,
       categoryIds,
+      color: noteColor,
+      drawingData,
       changedAt: Date.now(),
     };
     localStorage.setItem(
@@ -189,6 +201,8 @@ function LoadedNoteEditor({ note }: { note: Note }) {
           content,
           plain_text: plainText,
           folder_id: folderId,
+          color: noteColor,
+          drawing_data: drawingData,
         });
         if (categoryDirty) {
           await replaceNoteCategories(client, note.id, categoryIds);
@@ -214,9 +228,11 @@ function LoadedNoteEditor({ note }: { note: Note }) {
     folderId,
     isOnline,
     note.id,
+    noteColor,
     plainText,
     saveNote,
     title,
+    drawingData,
   ]);
 
   function markChanged() {
@@ -375,6 +391,35 @@ function LoadedNoteEditor({ note }: { note: Note }) {
         aria-label="Título da nota"
       />
 
+      <div className="mb-5 flex items-center gap-2">
+        <Palette className="size-4 text-muted-foreground" aria-hidden="true" />
+        <span className="text-xs font-medium text-muted-foreground">Cor da nota</span>
+        <button
+          type="button"
+          onClick={() => {
+            setNoteColor(null);
+            markChanged();
+          }}
+          className={`size-5 rounded-full border border-border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${!noteColor ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
+          aria-label="Sem cor"
+          aria-pressed={!noteColor}
+        />
+        {noteColors.map((color) => (
+          <button
+            key={color}
+            type="button"
+            onClick={() => {
+              setNoteColor(color);
+              markChanged();
+            }}
+            className={`size-5 rounded-full border border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${noteColor === color ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
+            style={{ backgroundColor: color }}
+            aria-label={`Usar cor ${color}`}
+            aria-pressed={noteColor === color}
+          />
+        ))}
+      </div>
+
       {editor && (
         <div className="sticky top-0 z-20 mb-5 flex flex-wrap items-center gap-1 rounded-xl border border-border bg-card px-2 py-2 shadow-sm">
           <ToolbarButton
@@ -466,9 +511,19 @@ function LoadedNoteEditor({ note }: { note: Note }) {
           )}
         </div>
       )}
-      <div className="rounded-xl border border-border bg-card px-4 py-5 shadow-sm sm:px-8 sm:py-7 [&_.flowy-editor>h2]:mt-8 [&_.flowy-editor>h2]:text-2xl [&_.flowy-editor>h2]:font-semibold [&_.flowy-editor>p]:mb-4 [&_.flowy-editor_a]:text-primary [&_.flowy-editor_a]:underline [&_.flowy-editor_ul]:mb-4 [&_.flowy-editor_ul]:list-disc [&_.flowy-editor_ul]:pl-6 [&_.flowy-editor_ol]:mb-4 [&_.flowy-editor_ol]:list-decimal [&_.flowy-editor_ol]:pl-6">
+      <div
+        className="rounded-xl border border-border bg-card px-4 py-5 shadow-sm sm:px-8 sm:py-7 [&_.flowy-editor>h2]:mt-8 [&_.flowy-editor>h2]:text-2xl [&_.flowy-editor>h2]:font-semibold [&_.flowy-editor>p]:mb-4 [&_.flowy-editor_a]:text-primary [&_.flowy-editor_a]:underline [&_.flowy-editor_ul]:mb-4 [&_.flowy-editor_ul]:list-disc [&_.flowy-editor_ul]:pl-6 [&_.flowy-editor_ol]:mb-4 [&_.flowy-editor_ol]:list-decimal [&_.flowy-editor_ol]:pl-6"
+        style={noteColor ? { backgroundColor: noteColor } : undefined}
+      >
         <EditorContent editor={editor} />
       </div>
+      <NoteDrawing
+        value={drawingData}
+        onChange={(value) => {
+          setDrawingData(value);
+          markChanged();
+        }}
+      />
     </div>
   );
 }

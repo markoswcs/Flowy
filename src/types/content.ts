@@ -22,6 +22,8 @@ export interface Note {
   updated_at: string;
   deleted_at: string | null;
   is_favorite: boolean;
+  color: string | null;
+  drawing_data: string | null;
   folder?: FolderSummary | null;
   categories?: CategorySummary[];
 }

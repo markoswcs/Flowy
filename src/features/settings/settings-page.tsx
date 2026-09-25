@@ -22,6 +22,7 @@ import {
   useUploadAvatar,
 } from "@/features/settings/use-settings";
 import { optimizeImage } from "@/lib/image-optimizer";
+import { DeleteAccountButton } from "@/components/auth/delete-account-button";
 import { normalizeThemePreference } from "@/lib/theme";
 import { createClient } from "@/lib/supabase/client";
 import type { ThemePreference } from "@/types/content";
@@ -69,14 +70,14 @@ function ThemePreview({ theme, selected }: { theme: ThemePreference; selected: b
 
   return (
     <div
-      className={`relative h-28 w-full overflow-hidden rounded-lg border ${border} ${bgApp} transition-all duration-300 ${
+      className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border ${border} ${bgApp} transition-all duration-300 ${
         selected ? "scale-100 ring-2 ring-primary ring-offset-2 ring-offset-background" : "scale-[0.98] group-hover:scale-100"
       }`}
       aria-hidden="true"
     >
       <div className="flex h-full w-full">
         {/* Sidebar */}
-        <div className={`flex w-1/3 flex-col gap-2 border-r p-2 ${border} ${bgSidebar}`}>
+        <div className={`flex w-1/3 flex-col gap-1 border-r p-1 ${border} ${bgSidebar}`}>
           <div className={`h-2 w-3/4 rounded-full opacity-80 ${primary}`} />
           <div className="mt-2 space-y-1.5">
             <div className={`h-1.5 w-full rounded-full ${textMuted}`} />
@@ -85,11 +86,11 @@ function ThemePreview({ theme, selected }: { theme: ThemePreference; selected: b
           </div>
         </div>
         {/* Main Content */}
-        <div className="flex flex-1 flex-col gap-2 p-3">
+        <div className="flex flex-1 flex-col gap-1 p-1.5">
           {/* Header */}
           <div className={`h-2.5 w-1/2 rounded-full ${textTitle}`} />
           {/* Tasks */}
-          <div className="mt-1 flex flex-col gap-1.5">
+          <div className="mt-0.5 flex flex-col gap-1">
             <div className={`flex items-center gap-1.5 rounded-md border p-1.5 ${border} ${bgCard}`}>
               <div className={`size-2.5 shrink-0 rounded-sm ${primary}`} />
               <div className={`h-1.5 w-full rounded-full ${textTitle}`} />
@@ -102,9 +103,9 @@ function ThemePreview({ theme, selected }: { theme: ThemePreference; selected: b
         </div>
       </div>
       {/* Floating Action Button */}
-      <div className={`absolute bottom-2 right-2 flex size-5 items-center justify-center rounded-full shadow-sm ${primary}`}>
-        <div className={`h-2.5 w-0.5 rounded-full ${plusColor}`} />
-        <div className={`absolute h-0.5 w-2.5 rounded-full ${plusColor}`} />
+      <div className={`absolute bottom-1 right-1 flex size-3 items-center justify-center rounded-full shadow-sm ${primary}`}>
+        <div className={`h-1.5 w-0.5 rounded-full ${plusColor}`} />
+        <div className={`absolute h-0.5 w-1.5 rounded-full ${plusColor}`} />
       </div>
       <p className="mt-10 text-center text-[10px] font-medium tracking-wide text-muted-foreground/60">
         Flowy · versão 0.1.0
@@ -339,7 +340,7 @@ export function SettingsPage() {
             Escolha a aparência que você quer usar no Flowy.
           </p>
           <div
-            className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+            className="mt-4 grid gap-2 sm:grid-cols-2"
             role="group"
             aria-label="Escolher tema"
           >
@@ -353,28 +354,27 @@ export function SettingsPage() {
                   onClick={() => changeTheme(option.value)}
                   disabled={updatePreferences.isPending}
                   aria-pressed={selected}
-                  className={`group relative rounded-xl border p-3 text-left transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 ${
+                  className={`group flex items-center gap-3 rounded-lg border p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
                     selected
                       ? "border-primary bg-primary/5"
                       : "border-transparent hover:border-border hover:bg-accent/50"
                   }`}
                 >
                   <ThemePreview theme={option.value} selected={selected} />
-                  
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="block font-semibold">
+                  <div className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">
                       {option.label}
                     </span>
+                    <span className="mt-0.5 block line-clamp-1 text-xs text-muted-foreground">
+                      {option.description}
+                    </span>
+                  </div>
                     {selected ? (
                       <span className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm">
                         <Check className="size-3" aria-hidden="true" />
                         <span className="sr-only">Selecionado</span>
                       </span>
                     ) : null}
-                  </div>
-                  <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                    {option.description}
-                  </span>
                 </button>
               );
             })}
@@ -463,6 +463,9 @@ export function SettingsPage() {
           >
             <LogOut className="size-4" /> Sair da conta
           </button>
+          <div className="mt-3">
+            <DeleteAccountButton showLabel />
+          </div>
         </section>
       </div>
     </div>

@@ -24,7 +24,7 @@ function DeleteSubmit({ enabled }: { enabled: boolean }) {
   );
 }
 
-export function DeleteAccountButton() {
+export function DeleteAccountButton({ showLabel = false }: { showLabel?: boolean }) {
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
 
@@ -33,13 +33,14 @@ export function DeleteAccountButton() {
       <Button
         type="button"
         variant="ghost"
-        size="icon"
+        size={showLabel ? "default" : "icon"}
         title="Excluir conta"
         aria-label="Excluir conta"
         onClick={() => setOpen(true)}
         className="text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
       >
         <Trash2 className="size-4" aria-hidden="true" />
+        {showLabel ? "Excluir conta" : null}
       </Button>
 
       {open ? (

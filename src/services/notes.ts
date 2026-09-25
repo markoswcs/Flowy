@@ -90,6 +90,8 @@ export interface NoteChanges {
   plain_text?: string;
   folder_id?: string | null;
   is_favorite?: boolean;
+  color?: string | null;
+  drawing_data?: string | null;
 }
 
 export async function updateNote(

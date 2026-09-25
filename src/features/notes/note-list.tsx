@@ -149,7 +149,10 @@ export function NoteList() {
         <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {filteredNotes.map((note) => (
             <li key={note.id}>
-              <article className="group relative flex min-h-44 flex-col rounded-xl border border-border bg-card p-4 pt-12 transition-colors hover:border-primary/40 hover:bg-accent/30 sm:min-h-48 sm:p-5 sm:pt-12">
+              <article
+                className="group relative flex min-h-44 flex-col rounded-xl border border-border bg-card p-4 pt-12 transition-colors hover:border-primary/40 hover:bg-accent/30 sm:min-h-48 sm:p-5 sm:pt-12"
+                style={note.color ? { backgroundColor: note.color } : undefined}
+              >
                 <Link
                   href={`/app/notes/${note.id}`}
                   className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
