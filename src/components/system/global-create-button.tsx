@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare, Folder, NotebookPen, Tag, X } from "lucide-react";
+import { CheckSquare, Folder, NotebookPen, Plus, Tag, X } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -8,36 +8,6 @@ import { toast } from "sonner";
 
 import { useCreateNote } from "@/features/notes/use-notes";
 import { cn } from "@/lib/utils";
-
-const NeonLogo = () => (
-  <svg
-    viewBox="0 0 100 100"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className="size-full drop-shadow-[0_0_8px_hsl(var(--primary)/0.8)]"
-  >
-    <g transform="rotate(-24 50 50)">
-      <rect
-        x="25"
-        y="20"
-        width="60"
-        height="28"
-        rx="14"
-        stroke="currentColor"
-        strokeWidth="4.5"
-      />
-      <rect
-        x="15"
-        y="52"
-        width="60"
-        height="28"
-        rx="14"
-        stroke="currentColor"
-        strokeWidth="4.5"
-      />
-    </g>
-  </svg>
-);
 
 export function GlobalCreateButton({ className }: { className?: string }) {
   const router = useRouter();
@@ -86,7 +56,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
     <div
       ref={containerRef}
       className={cn(
-        "global-create-button fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
+        "global-create-button fixed bottom-20 left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
         className,
       )}
     >
@@ -145,21 +115,13 @@ export function GlobalCreateButton({ className }: { className?: string }) {
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "group relative flex size-14 items-center justify-center rounded-full transition-all active:scale-95 md:size-16 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40",
-          open ? "rotate-45" : "hover:-translate-y-1",
-          "bg-primary shadow-xl shadow-primary/30"
+          "group relative flex size-11 items-center justify-center rounded-2xl transition-all active:scale-95 md:size-16 md:rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40",
+          open ? "rotate-45" : "hover:-translate-y-0.5",
+          "bg-primary shadow-lg shadow-primary/25"
         )}
         aria-label={open ? "Fechar menu" : "Criar novo item"}
       >
-        <div
-          className={cn(
-            "absolute inset-0 transition-all duration-300 flex items-center justify-center text-primary-foreground",
-            open ? "scale-50 opacity-0" : "scale-100 opacity-100",
-          )}
-          style={{ padding: "22%" }}
-        >
-          <NeonLogo />
-        </div>
+        <Plus className={cn("absolute size-6 text-primary-foreground transition-all duration-300", open ? "scale-50 opacity-0" : "scale-100 opacity-100")} />
         <X
           className={cn(
             "absolute size-8 text-primary-foreground transition-all duration-300",

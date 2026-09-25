@@ -30,87 +30,42 @@ import type { ThemePreference } from "@/types/content";
 const themeOptions: Array<{
   value: ThemePreference;
   label: string;
-  description: string;
 }> = [
   {
     value: "purple",
     label: "Roxo",
-    description: "O visual original do Flowy, com profundidade violeta.",
   },
   {
     value: "black",
     label: "Preto",
-    description: "Monocromático e discreto, com contraste alto.",
   },
   {
     value: "oled",
     label: "Preto OLED",
-    description: "Preto absoluto para telas OLED, com menor consumo de energia.",
   },
   {
     value: "white",
     label: "Branco",
-    description: "Claro, limpo e focado no conteúdo.",
   },
 ];
 
 function ThemePreview({ theme, selected }: { theme: ThemePreference; selected: boolean }) {
-  const isPurple = theme === "purple";
-  const isBlack = theme === "black";
-  const isOled = theme === "oled";
-
-  const bgApp = isPurple ? "bg-[#0d041e]" : isOled ? "bg-black" : isBlack ? "bg-[#000000]" : "bg-[#f5f5f5]";
-  const bgSidebar = isPurple ? "bg-[#180a33]" : isOled ? "bg-black" : isBlack ? "bg-[#0a0a0a]" : "bg-white";
-  const bgCard = isPurple ? "bg-[#210d47]" : isOled ? "bg-black" : isBlack ? "bg-[#141414]" : "bg-white";
-  const primary = isPurple ? "bg-[#7c3aed]" : isBlack || isOled ? "bg-white" : "bg-[#171717]";
-  const border = isPurple ? "border-[#311561]" : isOled ? "border-[#242424]" : isBlack ? "border-[#262626]" : "border-[#e5e5e5]";
-  const textMuted = isPurple ? "bg-[#6d28d9]/40" : isBlack || isOled ? "bg-white/20" : "bg-black/20";
-  const textTitle = isPurple ? "bg-[#c4b5fd]" : isBlack || isOled ? "bg-white/80" : "bg-black/80";
-  const plusColor = isBlack || isOled ? "bg-black" : "bg-white";
+  const color =
+    theme === "purple"
+      ? "bg-violet-500"
+      : theme === "black"
+        ? "bg-neutral-800"
+        : theme === "oled"
+          ? "bg-black"
+          : "bg-white";
 
   return (
-    <div
-      className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border ${border} ${bgApp} transition-all duration-300 ${
-        selected ? "scale-100 ring-2 ring-primary ring-offset-2 ring-offset-background" : "scale-[0.98] group-hover:scale-100"
+    <span
+      className={`size-5 shrink-0 rounded-full border border-border ${color} ${
+        selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
       }`}
       aria-hidden="true"
-    >
-      <div className="flex h-full w-full">
-        {/* Sidebar */}
-        <div className={`flex w-1/3 flex-col gap-1 border-r p-1 ${border} ${bgSidebar}`}>
-          <div className={`h-2 w-3/4 rounded-full opacity-80 ${primary}`} />
-          <div className="mt-2 space-y-1.5">
-            <div className={`h-1.5 w-full rounded-full ${textMuted}`} />
-            <div className={`h-1.5 w-5/6 rounded-full ${textMuted}`} />
-            <div className={`h-1.5 w-4/6 rounded-full ${textMuted}`} />
-          </div>
-        </div>
-        {/* Main Content */}
-        <div className="flex flex-1 flex-col gap-1 p-1.5">
-          {/* Header */}
-          <div className={`h-2.5 w-1/2 rounded-full ${textTitle}`} />
-          {/* Tasks */}
-          <div className="mt-0.5 flex flex-col gap-1">
-            <div className={`flex items-center gap-1.5 rounded-md border p-1.5 ${border} ${bgCard}`}>
-              <div className={`size-2.5 shrink-0 rounded-sm ${primary}`} />
-              <div className={`h-1.5 w-full rounded-full ${textTitle}`} />
-            </div>
-            <div className={`flex items-center gap-1.5 rounded-md border p-1.5 ${border} ${bgCard}`}>
-              <div className={`size-2.5 shrink-0 rounded-sm border ${border}`} />
-              <div className={`h-1.5 w-4/5 rounded-full ${textMuted}`} />
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Floating Action Button */}
-      <div className={`absolute bottom-1 right-1 flex size-3 items-center justify-center rounded-full shadow-sm ${primary}`}>
-        <div className={`h-1.5 w-0.5 rounded-full ${plusColor}`} />
-        <div className={`absolute h-0.5 w-1.5 rounded-full ${plusColor}`} />
-      </div>
-      <p className="mt-10 text-center text-[10px] font-medium tracking-wide text-muted-foreground/60">
-        Flowy · versão 0.1.0
-      </p>
-    </div>
+    />
   );
 }
 
@@ -340,7 +295,7 @@ export function SettingsPage() {
             Escolha a aparência que você quer usar no Flowy.
           </p>
           <div
-            className="mt-4 grid gap-2 sm:grid-cols-2"
+            className="mt-4 grid grid-cols-2 gap-2"
             role="group"
             aria-label="Escolher tema"
           >
@@ -354,7 +309,7 @@ export function SettingsPage() {
                   onClick={() => changeTheme(option.value)}
                   disabled={updatePreferences.isPending}
                   aria-pressed={selected}
-                  className={`group flex items-center gap-3 rounded-lg border p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
+                  className={`group flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
                     selected
                       ? "border-primary bg-primary/5"
                       : "border-transparent hover:border-border hover:bg-accent/50"
@@ -364,9 +319,6 @@ export function SettingsPage() {
                   <div className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">
                       {option.label}
-                    </span>
-                    <span className="mt-0.5 block line-clamp-1 text-xs text-muted-foreground">
-                      {option.description}
                     </span>
                   </div>
                     {selected ? (

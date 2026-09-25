@@ -14,7 +14,7 @@ export function MobileNav({ onOpenMenu }: { onOpenMenu: () => void }) {
       aria-label="Navegação móvel"
       className="theme-shell-panel safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border/50 md:hidden"
     >
-      <div className="grid h-16 grid-cols-4">
+      <div className="grid h-16 grid-cols-3">
         <Link
           href="/app"
           aria-current={pathname === "/app" ? "page" : undefined}
@@ -26,8 +26,6 @@ export function MobileNav({ onOpenMenu }: { onOpenMenu: () => void }) {
           <Home className="size-5" aria-hidden="true" />
           <span>Início</span>
         </Link>
-
-        <div className="flex justify-center" aria-hidden="true" />
 
         <Link
           href="/app/notes"
