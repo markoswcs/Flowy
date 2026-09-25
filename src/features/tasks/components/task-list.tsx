@@ -75,14 +75,19 @@ export function TaskList({
 
   return (
     <div>
-      {tasks.map((task) => (
-        <TaskItem
+      {tasks.map((task, index) => (
+        <div
           key={task.id}
-          task={task}
-          folders={folders}
-          categories={categories}
-          compact={compact}
-        />
+          className="flowy-list-item"
+          style={{ animationDelay: `${Math.min(index * 35, 210)}ms` }}
+        >
+          <TaskItem
+            task={task}
+            folders={folders}
+            categories={categories}
+            compact={compact}
+          />
+        </div>
       ))}
     </div>
   );

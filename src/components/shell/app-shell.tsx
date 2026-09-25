@@ -213,7 +213,7 @@ export function AppShell({
         <div className="fixed inset-0 z-50 md:hidden" role="presentation">
           <button
             type="button"
-            className="absolute inset-0 bg-background/95 transition-opacity"
+            className="absolute inset-0 animate-fade-in bg-background/95"
             aria-label="Fechar menu"
             onClick={closeMobileMenu}
           />
@@ -222,7 +222,7 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className="theme-shell-panel absolute inset-y-0 left-0 w-[min(88vw,320px)] animate-fade-in border-r border-border shadow-soft"
+            className="theme-shell-panel absolute inset-y-0 left-0 w-[min(88vw,320px)] animate-in slide-in-from-left-4 duration-300 border-r border-border shadow-soft"
           >
             <Button
               type="button"

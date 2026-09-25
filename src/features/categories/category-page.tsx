@@ -178,7 +178,8 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
       <div className="space-y-5">
         <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-4 py-3 text-sm text-muted-foreground">
           <Tag className="size-4" style={{ color: category.color }} />
-          Pressione <kbd className="pointer-events-none mx-1 inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">N</kbd> em qualquer lugar para criar tarefas e adicione a tag <strong className="text-foreground">{category.name}</strong>.
+          Use o botão <strong className="text-foreground">+</strong> abaixo para criar uma tarefa e adicionar a tag{" "}
+          <strong className="text-foreground">{category.name}</strong>.
         </div>
         <section className="mt-4">
           <TaskList

@@ -154,7 +154,7 @@ export function NoteList() {
           {filteredNotes.map((note) => (
             <li key={note.id}>
               <article
-                className="group relative flex min-h-44 flex-col rounded-xl border border-border bg-card p-4 pt-12 transition-colors hover:border-primary/40 hover:bg-accent/30 sm:min-h-48 sm:p-5 sm:pt-12"
+                className="group relative flex min-h-44 flex-col rounded-2xl border border-border/80 bg-card p-4 pt-12 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/30 hover:shadow-md active:translate-y-0 sm:min-h-48 sm:p-5 sm:pt-12"
                 style={note.color ? { backgroundColor: note.color } : undefined}
               >
                 <Link
@@ -188,14 +188,14 @@ export function NoteList() {
                   <button
                     type="button"
                     onClick={() => handleFavorite(note.id, !note.is_favorite)}
-                    className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-105 hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
                     aria-label={`${note.is_favorite ? "Remover" : "Adicionar"} ${note.title || "nota"} dos favoritos`}
                   >
                     <Star className={`size-4 ${note.is_favorite ? "fill-primary text-primary" : ""}`} aria-hidden="true" />
                   </button>
                   <Link
                     href={`/app/notes/${note.id}`}
-                    className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-105 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
                     aria-label={`Editar ${note.title || "nota"}`}
                   >
                     <Pencil className="size-4" aria-hidden="true" />
@@ -208,7 +208,7 @@ export function NoteList() {
                         title: note.title || "Sem título",
                       })
                     }
-                    className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
+                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-105 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive active:scale-95"
                     aria-label={`Mover ${note.title || "nota"} para a lixeira`}
                   >
                     <Trash2 className="size-4" aria-hidden="true" />
@@ -220,8 +220,16 @@ export function NoteList() {
         </ul>
       )}
       {notePendingDeletion ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" role="presentation">
-          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="delete-note-title">
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 animate-fade-in"
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl animate-scale-in"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-note-title"
+          >
             <h2 id="delete-note-title" className="font-semibold">Mover nota para a lixeira?</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               “{notePendingDeletion.title}” será movida para a lixeira. Você poderá restaurá-la depois.

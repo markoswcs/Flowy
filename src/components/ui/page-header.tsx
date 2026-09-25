@@ -18,14 +18,14 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <header className={cn("mb-6", className)}>
+    <header className={cn("mb-7 border-b border-border/60 pb-5", className)}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-semibold tracking-tight sm:text-3xl">
             {title}
           </h1>
           {description ? (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
           ) : null}
         </div>
         {actions ? (
