@@ -30,6 +30,10 @@ export function NoteList() {
   const restore = useRestoreNote();
   const toggleFavorite = useToggleNoteFavorite();
   const [search, setSearch] = useState("");
+  const [notePendingDeletion, setNotePendingDeletion] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const deferredSearch = useDeferredValue(search);
 
   const filteredNotes = useMemo(() => {
@@ -198,7 +202,12 @@ export function NoteList() {
                   </Link>
                   <button
                     type="button"
-                    onClick={() => handleTrash(note.id)}
+                    onClick={() =>
+                      setNotePendingDeletion({
+                        id: note.id,
+                        title: note.title || "Sem título",
+                      })
+                    }
                     className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                     aria-label={`Mover ${note.title || "nota"} para a lixeira`}
                   >
@@ -210,6 +219,32 @@ export function NoteList() {
           ))}
         </ul>
       )}
+      {notePendingDeletion ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" role="presentation">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="delete-note-title">
+            <h2 id="delete-note-title" className="font-semibold">Mover nota para a lixeira?</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              “{notePendingDeletion.title}” será movida para a lixeira. Você poderá restaurá-la depois.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setNotePendingDeletion(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={async () => {
+                  const noteId = notePendingDeletion.id;
+                  setNotePendingDeletion(null);
+                  await handleTrash(noteId);
+                }}
+              >
+                Mover para lixeira
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

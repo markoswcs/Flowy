@@ -4,7 +4,7 @@ import LinkExtension from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
-import type { JSONContent } from "@tiptap/core";
+import { Node, type JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
@@ -23,6 +23,7 @@ import {
   Unlink,
   Folder as FolderIcon,
   Palette,
+  PencilLine,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -41,7 +42,7 @@ import { createClient } from "@/lib/supabase/client";
 import { replaceNoteCategories } from "@/services/notes";
 import type { Note } from "@/types/content";
 import { CustomSelect } from "@/components/ui/custom-select";
-import { NoteDrawing } from "@/components/notes/note-drawing";
+import { DrawingDialog } from "@/components/notes/note-drawing";
 
 const noteColors = ["#1f2937", "#312e81", "#4c1d3f", "#3f2a19", "#1f3d36", "#3b2f63"];
 
@@ -52,9 +53,24 @@ interface Draft {
   folderId: string | null;
   categoryIds: string[];
   color: string | null;
-  drawingData: string | null;
   changedAt: number;
 }
+
+const DrawingNode = Node.create({
+  name: "drawing",
+  group: "block",
+  atom: true,
+  draggable: true,
+  addAttributes() {
+    return { src: { default: null } };
+  },
+  parseHTML() {
+    return [{ tag: "img[data-flowy-drawing]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["img", { ...HTMLAttributes, "data-flowy-drawing": "", class: "my-4 max-w-full rounded-lg border border-border" }];
+  },
+});
 
 function readDraft(note: Note): Draft | null {
   try {
@@ -117,9 +133,7 @@ function LoadedNoteEditor({ note }: { note: Note }) {
     draft?.plainText ?? note.plain_text,
   );
   const [noteColor, setNoteColor] = useState<string | null>(draft?.color ?? note.color);
-  const [drawingData, setDrawingData] = useState<string | null>(
-    draft?.drawingData ?? note.drawing_data,
-  );
+  const [drawingOpen, setDrawingOpen] = useState(false);
   const [status, setStatus] = useState<
     "saved" | "saving" | "offline" | "error"
   >(draft ? "offline" : "saved");
@@ -148,6 +162,7 @@ function LoadedNoteEditor({ note }: { note: Note }) {
     immediatelyRender: false,
     extensions: [
       StarterKit,
+      DrawingNode,
       LinkExtension.configure({ openOnClick: false, autolink: true }),
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -184,7 +199,6 @@ function LoadedNoteEditor({ note }: { note: Note }) {
       folderId,
       categoryIds,
       color: noteColor,
-      drawingData,
       changedAt: Date.now(),
     };
     localStorage.setItem(
@@ -202,7 +216,6 @@ function LoadedNoteEditor({ note }: { note: Note }) {
           plain_text: plainText,
           folder_id: folderId,
           color: noteColor,
-          drawing_data: drawingData,
         });
         if (categoryDirty) {
           await replaceNoteCategories(client, note.id, categoryIds);
@@ -232,7 +245,6 @@ function LoadedNoteEditor({ note }: { note: Note }) {
     plainText,
     saveNote,
     title,
-    drawingData,
   ]);
 
   function markChanged() {
@@ -468,6 +480,10 @@ function LoadedNoteEditor({ note }: { note: Note }) {
             <CheckSquare className="size-4" />
           </ToolbarButton>
           <span className="mx-1 h-5 w-px bg-border" />
+          <ToolbarButton label="Inserir desenho" onClick={() => setDrawingOpen(true)}>
+            <PencilLine className="size-4" />
+          </ToolbarButton>
+          <span className="mx-1 h-5 w-px bg-border" />
           <div className="relative">
             <ToolbarButton
               label="Adicionar link"
@@ -517,12 +533,16 @@ function LoadedNoteEditor({ note }: { note: Note }) {
       >
         <EditorContent editor={editor} />
       </div>
-      <NoteDrawing
-        value={drawingData}
-        onChange={(value) => {
-          setDrawingData(value);
-          markChanged();
-        }}
+      <DrawingDialog
+        open={drawingOpen}
+        onClose={() => setDrawingOpen(false)}
+        onSave={(src) =>
+          editor
+            ?.chain()
+            .focus()
+            .insertContent({ type: "drawing", attrs: { src } })
+            .run()
+        }
       />
     </div>
   );

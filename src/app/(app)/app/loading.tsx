@@ -1,18 +1,14 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
 
 export default function AppLoading() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8" aria-label="Carregando">
-      <div className="space-y-3">
-        <Skeleton className="h-9 w-56" />
-        <Skeleton className="h-5 w-80 max-w-full" />
+    <div className="flex min-h-[70vh] flex-col items-center justify-center text-center" aria-label="Carregando o Flowy">
+      <div className="flowy-loader-orbit relative grid size-24 place-items-center rounded-[2rem] border border-primary/20 bg-primary/10">
+        <Image src="/logo.png" alt="" width={58} height={58} priority className="flowy-loader-logo object-contain" />
       </div>
-      <Skeleton className="h-24 w-full rounded-2xl" />
-      <div className="space-y-3">
-        {[0, 1, 2].map((item) => (
-          <Skeleton key={item} className="h-20 w-full rounded-2xl" />
-        ))}
-      </div>
+      <h1 className="mt-7 text-xl font-semibold tracking-tight">Preparando seu espaço</h1>
+      <p className="mt-2 text-sm text-muted-foreground">Organizando suas tarefas, notas e ideias.</p>
+      <div className="flowy-loader-progress mt-6 h-1 w-36 overflow-hidden rounded-full bg-muted" aria-hidden="true"><span /></div>
     </div>
   );
 }

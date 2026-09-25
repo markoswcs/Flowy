@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   useEffect,
@@ -187,23 +187,8 @@ export function AppShell({
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="theme-shell-panel relative z-40 flex h-16 shrink-0 items-center justify-between border-b border-border/50 px-3 md:hidden">
-          <div className="flex w-full items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenu({ open: true, pathname })}
-                aria-expanded={mobileOpen}
-                aria-controls="mobile-sidebar"
-                aria-label="Abrir menu"
-              >
-                <Menu className="size-5" aria-hidden="true" />
-              </Button>
-              <Logo />
-            </div>
-          </div>
+        <header className="theme-shell-panel relative z-40 flex h-16 shrink-0 items-center justify-center border-b border-border/50 px-3 md:hidden">
+          <Logo />
         </header>
 
         <main
@@ -211,11 +196,13 @@ export function AppShell({
           tabIndex={-1}
           className="scrollbar-thin min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-5 pb-24 sm:px-6 md:px-8 md:py-12 md:pb-8"
         >
-          <div className="mx-auto w-full max-w-[1600px]">{children}</div>
+          <div key={pathname} className="app-page-transition mx-auto w-full max-w-[1600px]">
+            {children}
+          </div>
         </main>
       </div>
 
-      <MobileNav />
+      <MobileNav onOpenMenu={() => setMobileMenu({ open: true, pathname })} />
       <RealtimeSync />
       <GlobalTaskComposer />
       <GlobalCreateButton />

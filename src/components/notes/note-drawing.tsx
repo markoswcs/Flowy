@@ -1,45 +1,26 @@
 "use client";
 
-import { Eraser } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Check, X } from "lucide-react";
+import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 
-export function NoteDrawing({
-  value,
-  onChange,
-}: {
-  value: string | null;
-  onChange: (value: string | null) => void;
-}) {
+export function DrawingDialog({ open, onClose, onSave }: { open: boolean; onClose: () => void; onSave: (dataUrl: string) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
-  const [hasDrawing, setHasDrawing] = useState(Boolean(value));
-
-  useEffect(() => {
-    if (!value || !canvasRef.current) return;
-    const image = new Image();
-    image.onload = () => {
-      const context = canvasRef.current?.getContext("2d");
-      if (context) context.drawImage(image, 0, 0, 800, 400);
-    };
-    image.src = value;
-  }, [value]);
+  if (!open) return null;
 
   function point(event: React.PointerEvent<HTMLCanvasElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
-    return {
-      x: ((event.clientX - rect.left) / rect.width) * 800,
-      y: ((event.clientY - rect.top) / rect.height) * 400,
-    };
+    return { x: ((event.clientX - rect.left) / rect.width) * 800, y: ((event.clientY - rect.top) / rect.height) * 400 };
   }
 
   function draw(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (!drawing.current) return;
+    if (!drawing.current || !lastPoint.current) return;
     const context = canvasRef.current?.getContext("2d");
     const current = point(event);
-    if (!context || !lastPoint.current) return;
+    if (!context) return;
     context.lineCap = "round";
     context.lineJoin = "round";
     context.lineWidth = 5;
@@ -51,49 +32,32 @@ export function NoteDrawing({
     lastPoint.current = current;
   }
 
-  function finish() {
-    if (!drawing.current || !canvasRef.current) return;
-    drawing.current = false;
-    lastPoint.current = null;
-    setHasDrawing(true);
-    onChange(canvasRef.current.toDataURL("image/png"));
-  }
-
-  function clear() {
-    const context = canvasRef.current?.getContext("2d");
-    context?.clearRect(0, 0, 800, 400);
-    setHasDrawing(false);
-    onChange(null);
-  }
-
   return (
-    <section className="mt-5 rounded-xl border border-border bg-card p-3">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-medium">Desenho</h2>
-          <p className="text-xs text-muted-foreground">Desenhe com o dedo ou mouse. Salva automaticamente.</p>
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4" role="presentation">
+      <section className="w-full max-w-2xl rounded-xl border border-border bg-card p-4" role="dialog" aria-modal="true" aria-labelledby="drawing-title">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h2 id="drawing-title" className="font-semibold">Inserir desenho</h2>
+            <p className="text-xs text-muted-foreground">O desenho será inserido no texto da nota.</p>
+          </div>
+          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Fechar desenho"><X className="size-4" /></Button>
         </div>
-        {hasDrawing ? (
-          <Button type="button" variant="ghost" size="sm" onClick={clear}>
-            <Eraser className="size-3.5" /> Limpar
-          </Button>
-        ) : null}
-      </div>
-      <canvas
-        ref={canvasRef}
-        width={800}
-        height={400}
-        onPointerDown={(event) => {
-          event.currentTarget.setPointerCapture(event.pointerId);
-          drawing.current = true;
-          lastPoint.current = point(event);
-        }}
-        onPointerMove={draw}
-        onPointerUp={finish}
-        onPointerCancel={finish}
-        className="h-44 w-full touch-none rounded-lg border border-dashed border-border bg-background"
-        aria-label="Área para desenhar na nota"
-      />
-    </section>
+        <canvas
+          ref={canvasRef}
+          width={800}
+          height={400}
+          onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); drawing.current = true; lastPoint.current = point(event); }}
+          onPointerMove={draw}
+          onPointerUp={() => { drawing.current = false; lastPoint.current = null; }}
+          onPointerCancel={() => { drawing.current = false; lastPoint.current = null; }}
+          className="h-64 w-full touch-none rounded-lg border border-dashed border-border bg-background"
+          aria-label="Área para desenhar"
+        />
+        <div className="mt-4 flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="button" onClick={() => { if (canvasRef.current) onSave(canvasRef.current.toDataURL("image/png")); onClose(); }}><Check className="size-4" /> Inserir no texto</Button>
+        </div>
+      </section>
+    </div>
   );
 }
