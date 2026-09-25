@@ -1,10 +1,11 @@
 "use client";
 
 import LinkExtension from "@tiptap/extension-link";
+import ImageExtension from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
-import { Node, type JSONContent } from "@tiptap/core";
+import type { JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
@@ -55,22 +56,6 @@ interface Draft {
   color: string | null;
   changedAt: number;
 }
-
-const DrawingNode = Node.create({
-  name: "drawing",
-  group: "block",
-  atom: true,
-  draggable: true,
-  addAttributes() {
-    return { src: { default: null } };
-  },
-  parseHTML() {
-    return [{ tag: "img[data-flowy-drawing]" }];
-  },
-  renderHTML({ HTMLAttributes }) {
-    return ["img", { ...HTMLAttributes, "data-flowy-drawing": "", class: "my-4 max-w-full rounded-lg border border-border" }];
-  },
-});
 
 function readDraft(note: Note): Draft | null {
   try {
@@ -162,7 +147,13 @@ function LoadedNoteEditor({ note }: { note: Note }) {
     immediatelyRender: false,
     extensions: [
       StarterKit,
-      DrawingNode,
+      ImageExtension.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: "my-4 max-w-full rounded-lg border border-border",
+        },
+      }),
       LinkExtension.configure({ openOnClick: false, autolink: true }),
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -540,7 +531,7 @@ function LoadedNoteEditor({ note }: { note: Note }) {
           editor
             ?.chain()
             .focus()
-            .insertContent({ type: "drawing", attrs: { src } })
+            .setImage({ src })
             .run()
         }
       />
