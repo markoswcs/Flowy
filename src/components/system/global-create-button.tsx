@@ -56,7 +56,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
     <div
       ref={containerRef}
       className={cn(
-        "global-create-button fixed bottom-20 left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
+        "global-create-button fixed bottom-24 left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
         className,
       )}
     >

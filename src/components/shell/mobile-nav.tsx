@@ -12,9 +12,9 @@ export function MobileNav({ onOpenMenu }: { onOpenMenu: () => void }) {
   return (
     <nav
       aria-label="Navegação móvel"
-      className="theme-shell-panel safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border/50 md:hidden"
+      className="theme-shell-panel safe-bottom fixed inset-x-4 bottom-3 z-40 overflow-hidden rounded-[1.75rem] border border-border/70 shadow-lg shadow-black/20 md:hidden"
     >
-      <div className="grid h-[4.75rem] grid-cols-3 px-6">
+      <div className="grid h-[4.5rem] grid-cols-3 px-4">
         <button
           type="button"
           onClick={onOpenMenu}
