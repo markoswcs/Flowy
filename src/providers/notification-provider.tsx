@@ -33,6 +33,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   });
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "reduce-motion",
+      window.localStorage.getItem("flowy:reduce-motion") === "true",
+    );
+  }, []);
   useEffect(() => { window.localStorage.setItem(storageKey, JSON.stringify(items)); }, [items]);
   useEffect(() => { const close = (event: MouseEvent) => { if (panelRef.current && !panelRef.current.contains(event.target as Node)) setOpen(false); }; if (open) window.addEventListener("mousedown", close); return () => window.removeEventListener("mousedown", close); }, [open]);
   const addNotification = useCallback((notification: Omit<Notification, "id" | "createdAt" | "read">) => { setItems((current) => [{ ...notification, id: crypto.randomUUID(), createdAt: Date.now(), read: false }, ...current].slice(0, 50)); }, []);

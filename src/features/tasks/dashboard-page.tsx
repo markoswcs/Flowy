@@ -161,14 +161,14 @@ export function DashboardPage({
           </div> : null}
         </div>
 
-        <div className="flex max-w-full flex-wrap items-center justify-end gap-2 mt-2 lg:mt-0">
+        <div className="scrollbar-none -mx-1 flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto px-1 pb-2 lg:mx-0 lg:justify-end lg:pb-0">
           <Button
             type="button"
             variant="outline"
             size="icon"
             onClick={openNotifications}
             aria-label="Abrir notificações"
-            className="rounded-full border-border/50 bg-card/60 text-muted-foreground shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:text-primary hover:shadow-primary/20"
+            className="shrink-0 rounded-full border-border/50 bg-card/60 text-muted-foreground shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:text-primary hover:shadow-primary/20"
           >
             <Bell className="size-4" aria-hidden="true" />
           </Button>

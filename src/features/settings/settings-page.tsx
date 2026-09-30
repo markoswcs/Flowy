@@ -5,6 +5,7 @@ import {
   Check,
   Loader2,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -87,6 +88,7 @@ export function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const savedTheme = normalizeThemePreference(preferences.data?.theme);
   const [selectedTheme, setSelectedTheme] = useState<ThemePreference>("purple");
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   const name = draftName ?? profile.data?.display_name ?? "";
 
@@ -94,6 +96,20 @@ export function SettingsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedTheme(savedTheme);
   }, [savedTheme]);
+
+  useEffect(() => {
+    const enabled = window.localStorage.getItem("flowy:reduce-motion") === "true";
+    setReduceMotion(enabled);
+    document.documentElement.classList.toggle("reduce-motion", enabled);
+  }, []);
+
+  function toggleReduceMotion() {
+    const next = !reduceMotion;
+    setReduceMotion(next);
+    window.localStorage.setItem("flowy:reduce-motion", String(next));
+    document.documentElement.classList.toggle("reduce-motion", next);
+    notify(next ? "Animações reduzidas" : "Animações ativadas");
+  }
 
   async function saveName(event: React.FormEvent) {
     event.preventDefault();
@@ -207,6 +223,19 @@ export function SettingsPage() {
       </header>
 
       <div className="space-y-10">
+        <section aria-labelledby="motion-heading">
+          <h2 id="motion-heading" className="text-base font-semibold">Movimento</h2>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={reduceMotion}
+            onClick={toggleReduceMotion}
+            className="mt-4 flex w-full items-center justify-between rounded-2xl border border-border/60 bg-card/50 p-4 text-left transition-all hover:border-primary/40 hover:bg-card"
+          >
+            <span className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Sparkles className="size-5" /></span><span><span className="block text-sm font-medium">Reduzir animações</span><span className="mt-0.5 block text-xs text-muted-foreground">Deixa transições e efeitos visuais mais simples.</span></span></span>
+            <span className={`relative h-7 w-12 rounded-full transition-colors ${reduceMotion ? "bg-primary" : "bg-muted"}`}><span className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition-transform ${reduceMotion ? "translate-x-6" : "translate-x-1"}`} /></span>
+          </button>
+        </section>
         <section aria-labelledby="profile-heading">
           <h2 id="profile-heading" className="text-base font-semibold">
             Perfil
