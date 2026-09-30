@@ -22,6 +22,7 @@ import { formatTaskDate, isOverdueDate } from "@/features/tasks/date-utils";
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
 import {
   useRestoreTask,
+  useRestoreCompletedTask,
   useSoftDeleteTask,
   useUpdateTask,
 } from "@/features/tasks/use-tasks";
@@ -276,6 +277,7 @@ export function TaskItem({
   const updateMutation = useUpdateTask();
   const deleteMutation = useSoftDeleteTask();
   const restoreMutation = useRestoreTask();
+  const restoreCompletedMutation = useRestoreCompletedTask();
   const { addNotification } = useNotifications();
   const [leaving, setLeaving] = useState(false);
   const completed = task.status === "completed";
@@ -284,8 +286,6 @@ export function TaskItem({
   const overdue = !completed && isOverdueDate(task.due_date);
 
   function toggleCompleted() {
-    const previousStatus = task.status;
-    const previousCompletedAt = task.completed_at;
     const nextCompleted = !completed;
 
     if (nextCompleted && !task.recurrence) {
@@ -315,15 +315,17 @@ export function TaskItem({
               }${updatedTask.due_time ? ` às ${updatedTask.due_time.slice(0, 5)}` : ""}` });
             return;
           }
-          addNotification({ title: "Tarefa concluída", description: task.title,
-            action: {
-              label: "Desfazer",
-              onClick: () =>
-                updateMutation.mutate({
-                  id: task.id,
-                  status: previousStatus,
-                  completed_at: previousCompletedAt,
-                }),
+          deleteMutation.mutate(task.id, {
+            onSuccess: () => {
+              addNotification({
+                title: "Tarefa concluída e movida para a lixeira",
+                description: task.title,
+                action: {
+                  label: "Desfazer",
+                  onClick: () => restoreCompletedMutation.mutate(task.id),
+                },
+              });
+              window.dispatchEvent(new Event("flowy:open-notifications"));
             },
           });
         },

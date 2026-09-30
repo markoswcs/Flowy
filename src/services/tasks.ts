@@ -296,6 +296,23 @@ export async function restoreTask(taskId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function restoreCompletedTask(taskId: string): Promise<void> {
+  const { supabase, userId } = await getAuthenticatedClient();
+  const { error } = await supabase
+    .from("tasks")
+    .update({
+      deleted_at: null,
+      status: "todo",
+      completed_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", taskId)
+    .eq("user_id", userId)
+    .not("deleted_at", "is", null);
+
+  if (error) throw error;
+}
+
 export async function permanentlyDeleteTask(taskId: string): Promise<void> {
   const { supabase, userId } = await getAuthenticatedClient();
   const { error } = await supabase

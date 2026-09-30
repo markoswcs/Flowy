@@ -16,6 +16,7 @@ import {
   createTask,
   getTask,
   listTasks,
+  restoreCompletedTask,
   restoreTask,
   softDeleteTask,
   updateTask,
@@ -207,6 +208,23 @@ export function useRestoreTask() {
     mutationFn: restoreTask,
     onError: (error) => {
       toast.error("Não foi possível desfazer a exclusão.", {
+        description: messageFromUnknownError(error),
+      });
+    },
+    onSuccess: () => notify("Tarefa restaurada"),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ["trash"] });
+    },
+  });
+}
+
+export function useRestoreCompletedTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: restoreCompletedTask,
+    onError: (error) => {
+      toast.error("Não foi possível restaurar a tarefa.", {
         description: messageFromUnknownError(error),
       });
     },
