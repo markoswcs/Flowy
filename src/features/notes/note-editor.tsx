@@ -29,6 +29,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import {
   useNote,
@@ -263,7 +264,7 @@ function LoadedNoteEditor({ note }: { note: Note }) {
     try {
       await trash.mutateAsync(note.id);
       router.push("/app/notes");
-      toast("Nota movida para a lixeira.", {
+      notify("Nota movida para a lixeira", {
         action: {
           label: "Desfazer",
           onClick: () => restore.mutate(note.id),

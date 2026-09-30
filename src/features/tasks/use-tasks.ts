@@ -8,6 +8,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { createClient } from "@/lib/supabase/client";
 import { messageFromUnknownError } from "@/services/authenticated-client";
@@ -209,7 +210,7 @@ export function useRestoreTask() {
         description: messageFromUnknownError(error),
       });
     },
-    onSuccess: () => toast.success("Tarefa restaurada."),
+    onSuccess: () => notify("Tarefa restaurada"),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.all });
       void queryClient.invalidateQueries({ queryKey: ["trash"] });

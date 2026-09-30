@@ -3,6 +3,7 @@
 import { WifiOff } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { useOnlineStatus } from "@/hooks/use-online-status";
 
@@ -12,7 +13,7 @@ export function NetworkStatus() {
 
   useEffect(() => {
     if (!previousOnline.current && online) {
-      toast.success("Conexão restaurada.");
+      notify("Conexão restaurada");
     }
     previousOnline.current = online;
   }, [online]);

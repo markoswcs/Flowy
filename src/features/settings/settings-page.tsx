@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import {
   useChangePassword,
@@ -109,7 +110,7 @@ export function SettingsPage() {
     try {
       await updateProfile.mutateAsync({ display_name: trimmed });
       setDraftName(null);
-      toast.success("Perfil salvo.");
+      notify("Perfil salvo");
     } catch {
       toast.error("Não foi possível salvar o perfil.");
     }
@@ -126,13 +127,13 @@ export function SettingsPage() {
       return;
     }
     
-    const loadingToast = toast.loading("Otimizando e enviando foto...");
+    notify("Otimizando e enviando foto...");
     try {
       const optimizedFile = await optimizeImage(file);
       await uploadAvatar.mutateAsync(optimizedFile);
-      toast.success("Foto atualizada com sucesso!", { id: loadingToast });
+      notify("Foto atualizada com sucesso!");
     } catch {
-      toast.error("Não foi possível enviar a foto.", { id: loadingToast });
+      toast.error("Não foi possível enviar a foto.");
     } finally {
       if (fileInput.current) fileInput.current.value = "";
     }
@@ -154,7 +155,7 @@ export function SettingsPage() {
       await passwordMutation.mutateAsync(newPassword);
       setNewPassword("");
       setConfirmPassword("");
-      toast.success("Senha alterada.");
+      notify("Senha alterada");
     } catch {
       toast.error("Não foi possível alterar a senha.");
     }
@@ -179,7 +180,7 @@ export function SettingsPage() {
 
     try {
       await updatePreferences.mutateAsync({ theme: nextTheme });
-      toast.success("Tema atualizado.");
+      notify("Tema atualizado");
     } catch {
       setSelectedTheme(previousTheme);
       setTheme(previousTheme);

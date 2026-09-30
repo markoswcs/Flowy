@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { categoryKeys } from "@/features/categories/use-categories";
 import { folderKeys } from "@/features/folders/use-folders";
@@ -65,7 +66,7 @@ export function useRestoreTrashItem() {
         description: messageFromUnknownError(error),
       });
     },
-    onSuccess: () => toast.success("Item restaurado."),
+    onSuccess: () => notify("Item restaurado"),
     onSettled: () => invalidateProductivity(queryClient),
   });
 }
@@ -91,7 +92,7 @@ export function usePermanentlyDeleteTrashItem() {
         description: messageFromUnknownError(error),
       });
     },
-    onSuccess: () => toast.success("Item excluído permanentemente."),
+    onSuccess: () => notify("Item excluído permanentemente"),
     onSettled: () => invalidateProductivity(queryClient),
   });
 }

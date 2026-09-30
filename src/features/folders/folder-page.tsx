@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText, Folder as FolderIcon, FolderX, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -54,7 +55,7 @@ export function FolderPage({ folderId }: { folderId: string }) {
     deleteMutation.mutate(folder.id, {
       onSuccess: () => {
         router.push("/app");
-        toast("Pasta movida para a lixeira.", {
+        notify("Pasta movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(folder.id),

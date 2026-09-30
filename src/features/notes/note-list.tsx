@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,12 +60,12 @@ export function NoteList() {
   async function handleTrash(noteId: string) {
     try {
       await trash.mutateAsync(noteId);
-      toast("Nota movida para a lixeira.", {
+      notify("Nota movida para a lixeira", {
         action: {
           label: "Desfazer",
           onClick: () => {
             restore.mutate(noteId, {
-              onSuccess: () => toast.success("Nota restaurada."),
+              onSuccess: () => notify("Nota restaurada"),
               onError: () => toast.error("Não foi possível restaurar a nota."),
             });
           },

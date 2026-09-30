@@ -120,6 +120,10 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
       break;
   }
 
+  if (filters.scope !== "completed" && filters.status !== "completed") {
+    query = query.neq("status", "completed");
+  }
+
   if (filters.status && filters.status !== "all") {
     query = query.eq("status", filters.status);
   }

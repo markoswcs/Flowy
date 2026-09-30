@@ -7,6 +7,7 @@ import { NetworkStatus } from "@/components/ui/network-status";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ToastProvider } from "@/providers/toast-provider";
+import { NotificationProvider } from "@/providers/notification-provider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -26,7 +27,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       storageKey="flowy:theme"
       themes={["purple", "black", "oled", "white"]}
     >
-      <QueryProvider>{children}</QueryProvider>
+      <QueryProvider><NotificationProvider>{children}</NotificationProvider></QueryProvider>
       <NetworkStatus />
       <ToastProvider />
     </ThemeProvider>

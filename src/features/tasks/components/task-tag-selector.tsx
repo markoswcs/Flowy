@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Plus, Tag, X } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,7 @@ export function TaskTagSelector({
           onChange([...new Set([...value, category.id])]);
           setName("");
           setCreating(false);
-          toast.success("Tag criada e adicionada à tarefa.");
+          notify("Tag criada e adicionada à tarefa");
         },
       },
     );

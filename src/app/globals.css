@@ -350,6 +350,17 @@
   100% { transform: translateX(180%); }
 }
 
+@keyframes flowy-task-complete {
+  0% { opacity: 1; transform: scale(1); }
+  45% { opacity: 1; transform: scale(1.015) translateX(8px); }
+  100% { opacity: 0; transform: scale(0.92) translateX(28px); max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+}
+
+@keyframes flowy-bell {
+  20%, 60% { transform: rotate(12deg); }
+  40%, 80% { transform: rotate(-12deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

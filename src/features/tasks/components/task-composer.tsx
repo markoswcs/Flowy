@@ -19,6 +19,7 @@ import { CustomSelect } from "@/components/ui/custom-select";
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
 import { useCreateTask } from "@/features/tasks/use-tasks";
 import { cn } from "@/lib/utils";
+import { useNotifications } from "@/providers/notification-provider";
 import type {
   Category,
   Folder,
@@ -44,6 +45,7 @@ export function TaskComposer({
   compact = false,
 }: TaskComposerProps) {
   const createMutation = useCreateTask();
+  const { addNotification } = useNotifications();
   const [title, setTitle] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [dueDate, setDueDate] = useState(defaultDueDate ?? "");
@@ -84,7 +86,7 @@ export function TaskComposer({
           setFolderId(defaultFolderId ?? "");
           setCategoryIds(defaultCategoryIds);
           if (compact) setDetailsOpen(false);
-          toast.success("Tarefa criada.");
+          addNotification({ title: "Tarefa criada", description: cleanTitle });
         },
       },
     );

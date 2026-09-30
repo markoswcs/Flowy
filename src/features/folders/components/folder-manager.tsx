@@ -11,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -200,7 +201,7 @@ export function FolderManager({
           setName("");
           setColor(DEFAULT_FOLDER_COLOR);
           setParentId("");
-          toast.success("Pasta criada.");
+          notify("Pasta criada");
         },
       },
     );
@@ -226,7 +227,7 @@ export function FolderManager({
       {
         onSuccess: () => {
           cancelEditing();
-          toast.success("Pasta atualizada.");
+          notify("Pasta atualizada");
         },
       },
     );
@@ -254,7 +255,7 @@ export function FolderManager({
     deleteMutation.mutate(folder.id, {
       onSuccess: () => {
         if (editingId === folder.id) cancelEditing();
-        toast("Pasta movida para a lixeira.", {
+        notify("Pasta movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(folder.id),

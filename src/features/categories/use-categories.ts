@@ -7,6 +7,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { taskKeys } from "@/features/tasks/query-keys";
 import { messageFromUnknownError } from "@/services/authenticated-client";
@@ -217,7 +218,7 @@ export function useRestoreCategory() {
         description: messageFromUnknownError(error),
       });
     },
-    onSuccess: () => toast.success("Tag restaurada."),
+    onSuccess: () => notify("Tag restaurada"),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: categoryKeys.all });
       void queryClient.invalidateQueries({ queryKey: taskKeys.all });

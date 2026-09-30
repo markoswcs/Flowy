@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { KanbanColumnView } from "@/features/kanban/kanban-column";
 import {
@@ -117,7 +118,7 @@ export function KanbanBoard() {
       selectBoard(created.id);
       setBoardName("");
       setCreatingBoard(false);
-      toast.success("Quadro criado.");
+      notify("Quadro criado");
     } catch {
       toast.error("Não foi possível criar o quadro.");
     }
@@ -129,7 +130,7 @@ export function KanbanBoard() {
     try {
       await updateBoardMutation.mutateAsync({ name: boardName.trim() });
       setRenamingBoard(false);
-      toast.success("Quadro renomeado.");
+      notify("Quadro renomeado");
     } catch {
       toast.error("Não foi possível renomear o quadro.");
     }
@@ -145,7 +146,7 @@ export function KanbanBoard() {
       selectBoard(
         boards.data?.find((item) => item.id !== previousBoard.id)?.id ?? null,
       );
-      toast("Quadro movido para a lixeira.", {
+      notify("Quadro movido para a lixeira", {
         action: {
           label: "Desfazer",
           onClick: () => updateBoardMutation.mutate({ deleted_at: null }),
@@ -180,7 +181,7 @@ export function KanbanBoard() {
       { columnId, changes: { deleted_at: new Date().toISOString() } },
       {
         onSuccess: () =>
-          toast("Coluna excluída.", {
+          notify("Coluna excluída", {
             action: {
               label: "Desfazer",
               onClick: () =>
@@ -200,7 +201,7 @@ export function KanbanBoard() {
       { cardId: card.id, changes: { deleted_at: new Date().toISOString() } },
       {
         onSuccess: () =>
-          toast("Card movido para a lixeira.", {
+          notify("Card movido para a lixeira", {
             action: {
               label: "Desfazer",
               onClick: () =>
@@ -277,7 +278,7 @@ export function KanbanBoard() {
     moveCardMutation.mutate(
       { cardId: active.cardId, columnId: targetColumn.id, position },
       {
-        onSuccess: () => toast.success("Card movido."),
+        onSuccess: () => notify("Card movido"),
         onError: () => toast.error("Não foi possível mover o card."),
       },
     );
@@ -472,7 +473,7 @@ export function KanbanBoard() {
                           cardId,
                           changes,
                         });
-                        toast.success("Card salvo.");
+                        notify("Card salvo");
                       } catch {
                         toast.error("Não foi possível salvar o card.");
                         throw new Error("card-update-failed");

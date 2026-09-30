@@ -7,6 +7,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { taskKeys } from "@/features/tasks/query-keys";
 import { messageFromUnknownError } from "@/services/authenticated-client";
@@ -207,7 +208,7 @@ export function useRestoreFolder() {
         description: messageFromUnknownError(error),
       });
     },
-    onSuccess: () => toast.success("Pasta restaurada."),
+    onSuccess: () => notify("Pasta restaurada"),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: folderKeys.all });
       void queryClient.invalidateQueries({ queryKey: taskKeys.all });

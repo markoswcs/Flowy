@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Tag, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -51,7 +52,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
         onSuccess: () => {
           setDraftName(null);
           setEditing(false);
-          toast.success("Tag renomeada.");
+          notify("Tag renomeada");
         },
       },
     );
@@ -62,7 +63,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
     deleteMutation.mutate(category.id, {
       onSuccess: () => {
         router.push("/app");
-        toast("Tag movida para a lixeira.", {
+        notify("Tag movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(category.id),

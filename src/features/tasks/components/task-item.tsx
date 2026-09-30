@@ -26,6 +26,7 @@ import {
   useUpdateTask,
 } from "@/features/tasks/use-tasks";
 import { cn } from "@/lib/utils";
+import { useNotifications } from "@/providers/notification-provider";
 import type {
   Category,
   Folder,
@@ -67,6 +68,7 @@ export function TaskEditor({
   onClose,
 }: Omit<TaskItemProps, "compact"> & { onClose: () => void }) {
   const updateMutation = useUpdateTask();
+  const { addNotification } = useNotifications();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
@@ -103,7 +105,7 @@ export function TaskEditor({
       },
       {
         onSuccess: () => {
-          toast.success("Tarefa salva.");
+          addNotification({ title: "Tarefa salva", description: title.trim() });
           onClose();
         },
       },
@@ -274,6 +276,8 @@ export function TaskItem({
   const updateMutation = useUpdateTask();
   const deleteMutation = useSoftDeleteTask();
   const restoreMutation = useRestoreTask();
+  const { addNotification } = useNotifications();
+  const [leaving, setLeaving] = useState(false);
   const completed = task.status === "completed";
   const optimistic = task.id.startsWith("optimistic-");
   const formattedDate = formatTaskDate(task.due_date);
@@ -284,6 +288,14 @@ export function TaskItem({
     const previousCompletedAt = task.completed_at;
     const nextCompleted = !completed;
 
+    if (nextCompleted && !task.recurrence) {
+      setLeaving(true);
+      window.setTimeout(() => saveTask(), 340);
+      return;
+    }
+    saveTask();
+
+    function saveTask() {
     updateMutation.mutate(
       {
         id: task.id,
@@ -293,19 +305,17 @@ export function TaskItem({
       {
         onSuccess: (updatedTask) => {
           if (!nextCompleted) {
-            toast.success("Tarefa reaberta.");
+            addNotification({ title: "Tarefa reaberta", description: task.title });
             return;
           }
           if (task.recurrence) {
             const nextDate = formatTaskDate(updatedTask.due_date);
-            toast.success("Próxima ocorrência agendada.", {
-              description: `${recurrenceLabels[task.recurrence]}${
+            addNotification({ title: "Próxima ocorrência agendada", description: `${recurrenceLabels[task.recurrence]}${
                 nextDate ? ` • ${nextDate}` : ""
-              }${updatedTask.due_time ? ` às ${updatedTask.due_time.slice(0, 5)}` : ""}`,
-            });
+              }${updatedTask.due_time ? ` às ${updatedTask.due_time.slice(0, 5)}` : ""}` });
             return;
           }
-          toast.success("Tarefa concluída.", {
+          addNotification({ title: "Tarefa concluída", description: task.title,
             action: {
               label: "Desfazer",
               onClick: () =>
@@ -317,14 +327,16 @@ export function TaskItem({
             },
           });
         },
+        onError: () => setLeaving(false),
       },
     );
+    }
   }
 
   function moveToTrash() {
     deleteMutation.mutate(task.id, {
       onSuccess: () => {
-        toast("Tarefa movida para a lixeira.", {
+        addNotification({ title: "Tarefa movida para a lixeira", description: task.title,
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(task.id),
@@ -335,7 +347,7 @@ export function TaskItem({
   }
 
   return (
-    <article className="mb-2 rounded-2xl border border-border/50 bg-card/40 p-3 shadow-sm backdrop-blur-2xl transition-all duration-300 hover:scale-[1.01] hover:bg-card/50 active:scale-[0.99] sm:p-4 animate-scale-in">
+    <article className={cn("mb-2 rounded-2xl border border-border/50 bg-card/40 p-3 shadow-sm backdrop-blur-2xl transition-all duration-300 hover:scale-[1.01] hover:bg-card/50 active:scale-[0.99] sm:p-4 animate-scale-in", leaving && "pointer-events-none animate-[flowy-task-complete_340ms_cubic-bezier(.4,0,.2,1)_forwards]")}>
       {!editing && (
         <div className="flex min-w-0 items-start gap-3">
           <button

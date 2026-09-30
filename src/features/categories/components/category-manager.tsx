@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/providers/notification-provider";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,7 +55,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
       {
         onSuccess: () => {
           setName("");
-          toast.success("Tag criada.");
+          notify("Tag criada");
         },
       },
     );
@@ -73,7 +74,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
       {
         onSuccess: () => {
           setEditingId(null);
-          toast.success("Tag salva.");
+          notify("Tag salva");
         },
       },
     );
@@ -98,7 +99,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
   function remove(category: Category) {
     deleteMutation.mutate(category.id, {
       onSuccess: () =>
-        toast("Tag movida para a lixeira.", {
+        notify("Tag movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(category.id),
