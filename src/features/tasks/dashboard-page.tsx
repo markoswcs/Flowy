@@ -15,6 +15,7 @@ import { TaskMatrix } from "@/features/tasks/components/task-matrix";
 import { TaskList } from "@/features/tasks/components/task-list";
 import { TaskViewSwitcher } from "@/features/tasks/components/task-view-switcher";
 import { useTasks, useTasksRealtime } from "@/features/tasks/use-tasks";
+import { useNotifications } from "@/providers/notification-provider";
 import type {
   TaskFilters as TaskFilterValues,
   TaskScope,
@@ -49,6 +50,7 @@ export function DashboardPage({
   initialScope = "all",
   initialLayout = "list",
 }: DashboardPageProps) {
+  const { openNotifications } = useNotifications();
   const [filters, setFilters] = useState<TaskFilterValues>({
     scope: initialScope,
   });
@@ -164,7 +166,7 @@ export function DashboardPage({
             type="button"
             variant="outline"
             size="icon"
-            onClick={() => window.dispatchEvent(new Event("flowy:toggle-notifications"))}
+            onClick={openNotifications}
             aria-label="Abrir notificações"
             className="rounded-full border-border/50 bg-card/60 text-muted-foreground shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:text-primary hover:shadow-primary/20"
           >

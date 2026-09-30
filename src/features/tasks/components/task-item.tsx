@@ -290,7 +290,7 @@ export function TaskItem({
 
     if (nextCompleted && !task.recurrence) {
       setLeaving(true);
-      window.setTimeout(() => saveTask(), 340);
+      window.setTimeout(() => saveTask(), 620);
       return;
     }
     saveTask();
@@ -349,7 +349,7 @@ export function TaskItem({
   }
 
   return (
-    <article className={cn("mb-2 rounded-2xl border border-border/50 bg-card/40 p-3 shadow-sm backdrop-blur-2xl transition-all duration-300 hover:scale-[1.01] hover:bg-card/50 active:scale-[0.99] sm:p-4 animate-scale-in", leaving && "pointer-events-none animate-[flowy-task-complete_340ms_cubic-bezier(.4,0,.2,1)_forwards]")}>
+    <article className={cn("mb-2 rounded-2xl border border-border/50 bg-card/40 p-3 shadow-sm backdrop-blur-2xl transition-all duration-300 hover:scale-[1.01] hover:bg-card/50 active:scale-[0.99] sm:p-4 animate-scale-in", leaving && "pointer-events-none animate-[flowy-task-complete_620ms_cubic-bezier(.22,1,.36,1)_forwards]")}>
       {!editing && (
         <div className="flex min-w-0 items-start gap-3">
           <button

@@ -351,9 +351,10 @@
 }
 
 @keyframes flowy-task-complete {
-  0% { opacity: 1; transform: scale(1); }
-  45% { opacity: 1; transform: scale(1.015) translateX(8px); }
-  100% { opacity: 0; transform: scale(0.92) translateX(28px); max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+  0% { opacity: 1; transform: scale(1); filter: saturate(1); }
+  30% { opacity: 1; transform: scale(1.025); filter: saturate(1.45) brightness(1.2); }
+  65% { opacity: 1; transform: scale(0.98) translateX(14px); filter: saturate(1.1); }
+  100% { opacity: 0; transform: scale(0.9) translateX(42px); max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
 }
 
 @keyframes flowy-bell {
