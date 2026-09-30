@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
-export function MobileNav({ onOpenMenu }: { onOpenMenu: () => void }) {
+export function MobileNav({ onOpenMenu, menuOpen }: { onOpenMenu: () => void; menuOpen: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -18,11 +18,11 @@ export function MobileNav({ onOpenMenu }: { onOpenMenu: () => void }) {
         <button
           type="button"
           onClick={onOpenMenu}
-          className="flex min-w-0 flex-col items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none"
+          className={cn("flex min-w-0 flex-col items-center justify-center gap-1.5 text-[11px] font-medium transition-colors hover:text-foreground focus-visible:outline-none", menuOpen ? "text-primary" : "text-muted-foreground")}
           aria-label="Abrir menu"
         >
-          <span className="grid size-10 place-items-center rounded-full bg-muted/70 transition-transform active:scale-90">
-            <PanelLeftOpen className="size-5" aria-hidden="true" />
+          <span className={cn("grid size-10 place-items-center rounded-full bg-muted/70 transition-all duration-300 active:scale-90", menuOpen && "bg-primary text-primary-foreground shadow-lg shadow-primary/30")}>
+            <PanelLeftOpen className={cn("size-5 transition-transform duration-500", menuOpen && "rotate-180 scale-110")} aria-hidden="true" />
           </span>
           <span>Menu</span>
         </button>

@@ -361,6 +361,12 @@
   40%, 80% { transform: rotate(-12deg); }
 }
 
+@keyframes flowy-menu-enter {
+  0% { opacity: 0; transform: translateX(-42px) scale(0.96); filter: blur(5px); }
+  65% { opacity: 1; transform: translateX(4px) scale(1.01); filter: blur(0); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
