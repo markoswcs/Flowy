@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Bell, Calendar, CheckCircle2, ChevronDown, Clock, List, Sun, Moon, MoonStar, Sunrise, Sparkles, Search } from "lucide-react";
+import { AlertCircle, Bell, Calendar, CheckCircle2, ChevronDown, Clock, Info, List, Sun, Moon, MoonStar, Sunrise, Sparkles, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -50,7 +50,13 @@ export function DashboardPage({
   initialScope = "all",
   initialLayout = "list",
 }: DashboardPageProps) {
-  const { openNotifications } = useNotifications();
+  const { items } = useNotifications();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  useEffect(() => {
+    const open = () => setNotificationsOpen(true);
+    window.addEventListener("flowy:open-notifications", open);
+    return () => window.removeEventListener("flowy:open-notifications", open);
+  }, []);
   const [filters, setFilters] = useState<TaskFilterValues>({
     scope: initialScope,
   });
@@ -115,7 +121,7 @@ export function DashboardPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
-      <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <header className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-6 flex-1">
           <div className="group flex flex-col gap-1.5 transition-all duration-300">
             <h1 className="flex items-center gap-3 text-3xl sm:text-4xl font-bold tracking-tight">
@@ -166,7 +172,7 @@ export function DashboardPage({
             type="button"
             variant="outline"
             size="icon"
-            onClick={openNotifications}
+            onClick={() => setNotificationsOpen((current) => !current)}
             aria-label="Abrir notificações"
             className="shrink-0 rounded-full border-border/50 bg-card/60 text-muted-foreground shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:text-primary hover:shadow-primary/20"
           >
@@ -184,6 +190,7 @@ export function DashboardPage({
           </Button>
           <TaskViewSwitcher activeView={initialLayout} />
         </div>
+        {notificationsOpen ? <section className="absolute right-0 top-full z-[80] mt-3 w-[380px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-border/60 bg-card/95 shadow-2xl backdrop-blur-2xl"><div className="border-b border-border/50 px-4 py-3"><p className="font-semibold">Notificações</p><p className="text-xs text-muted-foreground">Atualizações recentes</p></div><div className="max-h-[420px] overflow-y-auto p-2">{items.length ? items.map((item) => <div key={item.id} className="mb-1 flex gap-3 rounded-2xl bg-primary/10 p-3"><Info className="mt-0.5 size-4 shrink-0 text-primary" /><div><p className="text-sm font-medium">{item.title}</p>{item.description ? <p className="text-xs text-muted-foreground">{item.description}</p> : null}{item.action ? <button type="button" className="mt-2 text-xs font-semibold text-primary hover:underline" onClick={item.action.onClick}>{item.action.label}</button> : null}</div></div>) : <p className="px-4 py-8 text-center text-sm text-muted-foreground">Tudo em dia.</p>}</div></section> : null}
       </header>
 
       <div className="space-y-5">
