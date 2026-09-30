@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Calendar, CheckCircle2, ChevronDown, Clock, List, SlidersHorizontal, Sun, Moon, MoonStar, Sunrise, Sparkles, Search } from "lucide-react";
+import { AlertCircle, Bell, Calendar, CheckCircle2, ChevronDown, Clock, List, SlidersHorizontal, Sun, Moon, MoonStar, Sunrise, Sparkles, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -160,6 +160,16 @@ export function DashboardPage({
         </div>
 
         <div className="flex items-center gap-2 mt-2 lg:mt-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => window.dispatchEvent(new Event("flowy:toggle-notifications"))}
+            aria-label="Abrir notificações"
+            className="rounded-full border-border/50 bg-card/60 text-muted-foreground shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:text-primary hover:shadow-primary/20"
+          >
+            <Bell className="size-4" aria-hidden="true" />
+          </Button>
           <Button
             type="button"
             variant="ghost"
