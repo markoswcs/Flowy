@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Bell, Calendar, CheckCircle2, ChevronDown, Clock, List, SlidersHorizontal, Sun, Moon, MoonStar, Sunrise, Sparkles, Search } from "lucide-react";
+import { AlertCircle, Bell, Calendar, CheckCircle2, ChevronDown, Clock, List, Sun, Moon, MoonStar, Sunrise, Sparkles, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -183,15 +183,6 @@ export function DashboardPage({
             <ChevronDown className={`size-4 transition-transform ${statusBarOpen ? "rotate-180" : ""}`} aria-hidden="true" />
           </Button>
           <TaskViewSwitcher activeView={initialLayout} />
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full bg-card/60 backdrop-blur-md border-border/50"
-            onClick={() => window.dispatchEvent(new CustomEvent("flowy:open-organizer", { detail: "folders" }))}
-          >
-            <SlidersHorizontal className="size-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Organizar</span>
-          </Button>
         </div>
       </header>
 
