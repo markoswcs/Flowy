@@ -38,7 +38,7 @@ function parseScene(raw: string | null): ExcalidrawScene | null {
   }
 }
 
-export function ExcalidrawNoteEditor({ note }: { note: Note }) {
+export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   const router = useRouter();
   const isOnline = useOnlineStatus();
   const { mutateAsync: saveNote } = useSaveNote(note.id);

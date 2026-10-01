@@ -27,6 +27,7 @@ import {
   PencilLine,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { notify } from "@/providers/notification-provider";
@@ -45,7 +46,18 @@ import { replaceNoteCategories } from "@/services/notes";
 import type { Note } from "@/types/content";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DrawingDialog } from "@/components/notes/note-drawing";
-import { ExcalidrawNoteEditor } from "@/components/notes/excalidraw-note-editor";
+
+const ExcalidrawNoteEditor = dynamic(
+  () => import("@/components/notes/excalidraw-note-editor"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mx-auto max-w-4xl p-8 text-sm text-muted-foreground">
+        Carregando editor de fluxograma…
+      </div>
+    ),
+  },
+);
 
 const noteColors = ["#1f2937", "#312e81", "#4c1d3f", "#3f2a19", "#1f3d36", "#3b2f63"];
 
