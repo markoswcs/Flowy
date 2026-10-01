@@ -80,7 +80,7 @@ export async function createNote(
       title: input?.title?.trim() || "Sem título",
       content: EMPTY_DOCUMENT,
       plain_text: "",
-      kind: input?.kind ?? "text",
+      ...(input?.kind === "excalidraw" ? { kind: "excalidraw" } : {}),
     })
     .select("*, folder:folders(id,name)")
     .single();

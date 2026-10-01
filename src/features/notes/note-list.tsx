@@ -57,7 +57,12 @@ export function NoteList() {
       });
       setCreationOpen(false);
       router.push(`/app/notes/${note.id}`);
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (kind === "excalidraw" && /kind|excalidraw/i.test(message)) {
+        toast.error("O banco ainda precisa receber a atualização dos fluxogramas.");
+        return;
+      }
       toast.error("Não foi possível criar a nota.");
     }
   }
