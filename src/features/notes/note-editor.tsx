@@ -45,6 +45,7 @@ import { replaceNoteCategories } from "@/services/notes";
 import type { Note } from "@/types/content";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DrawingDialog } from "@/components/notes/note-drawing";
+import { ExcalidrawNoteEditor } from "@/components/notes/excalidraw-note-editor";
 
 const noteColors = ["#1f2937", "#312e81", "#4c1d3f", "#3f2a19", "#1f3d36", "#3b2f63"];
 
@@ -98,6 +99,11 @@ function ToolbarButton({
 }
 
 function LoadedNoteEditor({ note }: { note: Note }) {
+  if (note.kind === "excalidraw") return <ExcalidrawNoteEditor note={note} />;
+  return <TextNoteEditor note={note} />;
+}
+
+function TextNoteEditor({ note }: { note: Note }) {
   const router = useRouter();
   const isOnline = useOnlineStatus();
   const { mutateAsync: saveNote } = useSaveNote(note.id);

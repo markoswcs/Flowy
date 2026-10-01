@@ -44,7 +44,11 @@ export function useCreateNote() {
   const client = createClient();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input?: { title?: string; folderId?: string | null }) =>
+    mutationFn: (input?: {
+      title?: string;
+      folderId?: string | null;
+      kind?: "text" | "excalidraw";
+    }) =>
       createNote(client, input),
     onSuccess: (note) => {
       queryClient.setQueryData<Note[]>(noteKeys.all, (current = []) => [

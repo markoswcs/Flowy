@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Folder, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
+import { FileText, Folder, Pencil, Plus, Search, Star, Trash2, Workflow } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useMemo, useState } from "react";
@@ -35,6 +35,7 @@ export function NoteList() {
     id: string;
     title: string;
   } | null>(null);
+  const [creationOpen, setCreationOpen] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const filteredNotes = useMemo(() => {
@@ -48,9 +49,13 @@ export function NoteList() {
     );
   }, [deferredSearch, notes.data]);
 
-  async function handleCreate() {
+  async function handleCreate(kind: "text" | "excalidraw") {
     try {
-      const note = await create.mutateAsync();
+      const note = await create.mutateAsync({
+        kind,
+        title: kind === "excalidraw" ? "Fluxograma sem título" : undefined,
+      });
+      setCreationOpen(false);
       router.push(`/app/notes/${note.id}`);
     } catch {
       toast.error("Não foi possível criar a nota.");
@@ -96,7 +101,7 @@ export function NoteList() {
             Capture ideias, referências e planos em um lugar simples de consultar.
           </p>
         </div>
-        <Button type="button" onClick={handleCreate} loading={create.isPending}>
+        <Button type="button" onClick={() => setCreationOpen(true)} loading={create.isPending}>
           <Plus className="size-4" aria-hidden="true" />
           Nova nota
         </Button>
@@ -144,7 +149,7 @@ export function NoteList() {
               : "Crie uma nota para guardar o que importa e retome quando quiser."}
           </p>
           {!search ? (
-            <Button className="mt-5" type="button" onClick={handleCreate} loading={create.isPending}>
+            <Button className="mt-5" type="button" onClick={() => setCreationOpen(true)} loading={create.isPending}>
               <Plus className="size-4" aria-hidden="true" />
               Criar nota
             </Button>
@@ -165,10 +170,15 @@ export function NoteList() {
                 />
                 <div className="relative pointer-events-none min-w-0">
                   <h2 className="line-clamp-2 text-base font-semibold leading-5 sm:text-lg sm:leading-6">
+                    {note.kind === "excalidraw" ? (
+                      <Workflow className="mr-1 inline size-4 text-primary" aria-hidden="true" />
+                    ) : null}
                     {note.title || "Sem título"}
                   </h2>
                   <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground sm:mt-3 sm:text-sm sm:leading-6">
-                    {note.plain_text || "Nota vazia"}
+                    {note.kind === "excalidraw"
+                      ? "Fluxograma interativo"
+                      : note.plain_text || "Nota vazia"}
                   </p>
                 </div>
 
@@ -252,6 +262,42 @@ export function NoteList() {
               </Button>
             </div>
           </div>
+        </div>
+      ) : null}
+      {creationOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" role="presentation">
+          <section
+            className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-note-title"
+          >
+            <h2 id="create-note-title" className="text-lg font-semibold">Criar novo conteúdo</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Escolha entre uma nota de texto ou uma tela completa para desenhar.</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => handleCreate("text")}
+                className="rounded-xl border border-border p-4 text-left transition-colors hover:border-primary hover:bg-accent"
+              >
+                <FileText className="size-5 text-primary" aria-hidden="true" />
+                <strong className="mt-3 block">Nota</strong>
+                <span className="mt-1 block text-sm text-muted-foreground">Texto, checklist, links, imagens e desenho.</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCreate("excalidraw")}
+                className="rounded-xl border border-border p-4 text-left transition-colors hover:border-primary hover:bg-accent"
+              >
+                <Workflow className="size-5 text-primary" aria-hidden="true" />
+                <strong className="mt-3 block">Fluxograma</strong>
+                <span className="mt-1 block text-sm text-muted-foreground">Diagramas, setas, formas, texto, imagens e exportação.</span>
+              </button>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <Button type="button" variant="ghost" onClick={() => setCreationOpen(false)}>Cancelar</Button>
+            </div>
+          </section>
         </div>
       ) : null}
     </div>

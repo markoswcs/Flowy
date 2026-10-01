@@ -65,7 +65,11 @@ export async function getNote(
 
 export async function createNote(
   client: SupabaseClient,
-  input?: { folderId?: string | null; title?: string },
+  input?: {
+    folderId?: string | null;
+    title?: string;
+    kind?: "text" | "excalidraw";
+  },
 ): Promise<Note> {
   const userId = await authenticatedUserId(client);
   const { data, error } = await client
@@ -76,6 +80,7 @@ export async function createNote(
       title: input?.title?.trim() || "Sem título",
       content: EMPTY_DOCUMENT,
       plain_text: "",
+      kind: input?.kind ?? "text",
     })
     .select("*, folder:folders(id,name)")
     .single();
@@ -92,6 +97,7 @@ export interface NoteChanges {
   is_favorite?: boolean;
   color?: string | null;
   drawing_data?: string | null;
+  excalidraw_data?: string | null;
 }
 
 export async function updateNote(
