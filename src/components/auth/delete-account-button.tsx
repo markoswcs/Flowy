@@ -45,7 +45,7 @@ export function DeleteAccountButton({ showLabel = false }: { showLabel?: boolean
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-primary/10 p-4 backdrop-blur-[1px]"
+          className="fixed inset-0 z-50 grid place-items-center bg-primary/5 p-4"
           role="presentation"
           onMouseDown={() => setOpen(false)}
         >

@@ -33,7 +33,7 @@ export function DrawingDialog({ open, onClose, onSave }: { open: boolean; onClos
   }
 
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center bg-primary/10 p-4 backdrop-blur-[1px]" role="presentation">
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-primary/5 p-4" role="presentation">
       <section className="w-full max-w-2xl rounded-xl border border-border bg-card p-4" role="dialog" aria-modal="true" aria-labelledby="drawing-title">
         <div className="mb-3 flex items-center justify-between">
           <div>

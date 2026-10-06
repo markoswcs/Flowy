@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
+import { useProfile } from "@/features/settings/use-settings";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -67,6 +68,15 @@ export function AppShell({
   const mobileOpen = mobileMenu.open && mobileMenu.pathname === pathname;
   const foldersQuery = useFolders();
   const categoriesQuery = useCategories();
+  const profileQuery = useProfile();
+  const shellUser = useMemo(
+    () => ({
+      ...user,
+      name: profileQuery.data?.display_name || user.name,
+      avatarUrl: profileQuery.data?.avatar_url ?? user.avatarUrl,
+    }),
+    [profileQuery.data, user],
+  );
   const sidebarFolders = useMemo(() => {
     if (!foldersQuery.data) return folders;
     const taskCounts = new Map(
@@ -181,7 +191,7 @@ export function AppShell({
           collapsed={collapsed}
           folders={sidebarFolders}
           categories={sidebarCategories}
-          user={user}
+          user={shellUser}
           onToggle={toggleSidebar}
         />
       </aside>
@@ -239,7 +249,7 @@ export function AppShell({
               mobile
               folders={sidebarFolders}
               categories={sidebarCategories}
-              user={user}
+              user={shellUser}
               onNavigate={closeMobileMenu}
             />
           </aside>
