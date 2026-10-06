@@ -2,7 +2,7 @@
 
 import { FileText, Folder, Pencil, Plus, Search, Star, Trash2, Workflow } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { notify } from "@/providers/notification-provider";
@@ -25,6 +25,7 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 
 export function NoteList() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const notes = useNotes();
   const create = useCreateNote();
   const trash = useTrashNote();
@@ -37,17 +38,25 @@ export function NoteList() {
   } | null>(null);
   const [creationOpen, setCreationOpen] = useState(false);
   const deferredSearch = useDeferredValue(search);
+  const typeFilter = searchParams.get("tipo");
 
   const filteredNotes = useMemo(() => {
     const term = deferredSearch.trim().toLocaleLowerCase("pt-BR");
-    if (!term) return notes.data ?? [];
+    const notesByType = (notes.data ?? []).filter((note) =>
+      typeFilter === "fluxo"
+        ? note.kind === "excalidraw"
+        : typeFilter === "nota"
+          ? note.kind === "text"
+          : true,
+    );
+    if (!term) return notesByType;
 
-    return (notes.data ?? []).filter((note) =>
+    return notesByType.filter((note) =>
       `${note.title} ${note.plain_text}`
         .toLocaleLowerCase("pt-BR")
         .includes(term),
     );
-  }, [deferredSearch, notes.data]);
+  }, [deferredSearch, notes.data, typeFilter]);
 
   async function handleCreate(kind: "text" | "excalidraw") {
     try {

@@ -1,7 +1,5 @@
 "use client";
 
-import "@excalidraw/excalidraw/index.css";
-
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -19,7 +17,9 @@ function parseScene(raw: string | null): ExcalidrawScene | null {
   if (!raw) return null;
   try {
     const scene = JSON.parse(raw) as ExcalidrawScene;
-    return Array.isArray(scene.elements) ? scene : null;
+    return scene.version === 1 && Array.isArray(scene.nodes) && Array.isArray(scene.connections)
+      ? scene
+      : null;
   } catch {
     return null;
   }
@@ -117,7 +117,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           <Trash2 className="size-4" />
         </button>
       </header>
-      <div className="h-[calc(100dvh-9.5rem)] min-h-[520px] overflow-hidden rounded-xl border border-border bg-[#f8f9fa] shadow-sm sm:h-[calc(100dvh-8rem)]">
+      <div className="h-[calc(100dvh-9.5rem)] min-h-[520px] overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:h-[calc(100dvh-8rem)]">
         <ExcalidrawCanvas scene={scene} onChange={handleCanvasChange} />
       </div>
     </div>
