@@ -237,7 +237,7 @@ export function NoteList() {
       )}
       {notePendingDeletion ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-50 grid place-items-center bg-primary/10 p-4 backdrop-blur-[1px] animate-fade-in"
           role="presentation"
         >
           <div
@@ -270,7 +270,7 @@ export function NoteList() {
         </div>
       ) : null}
       {creationOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm" role="presentation">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-primary/10 p-4 backdrop-blur-[1px]" role="presentation">
           <section
             className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl"
             role="dialog"
