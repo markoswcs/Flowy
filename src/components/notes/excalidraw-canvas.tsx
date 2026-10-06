@@ -1,6 +1,8 @@
 "use client";
 
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+
 import type {
   AppState,
   BinaryFiles,
@@ -13,6 +15,8 @@ export interface ExcalidrawScene {
   files?: BinaryFiles;
 }
 
+type ExcalidrawComponent = typeof import("@excalidraw/excalidraw").Excalidraw;
+
 export function ExcalidrawCanvas({
   scene,
   onChange,
@@ -20,8 +24,56 @@ export function ExcalidrawCanvas({
   scene: ExcalidrawScene | null;
   onChange: (scene: ExcalidrawScene) => void;
 }) {
+  const [Editor, setEditor] = useState<ExcalidrawComponent | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    setLoadError(false);
+
+    import("@excalidraw/excalidraw")
+      .then(({ Excalidraw }) => {
+        if (active) setEditor(() => Excalidraw);
+      })
+      .catch(() => {
+        if (active) setLoadError(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [attempt]);
+
+  if (loadError) {
+    return (
+      <div className="grid h-full place-items-center p-6 text-center">
+        <div>
+          <AlertTriangle className="mx-auto size-6 text-destructive" aria-hidden="true" />
+          <p className="mt-3 text-sm font-medium">Não foi possível carregar o editor de fluxograma.</p>
+          <button
+            type="button"
+            onClick={() => setAttempt((current) => current + 1)}
+            className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+          >
+            <RefreshCw className="size-4" aria-hidden="true" />
+            Tentar carregar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!Editor) {
+    return (
+      <div className="grid h-full place-items-center text-sm text-muted-foreground">
+        <Loader2 className="mr-2 inline size-4 animate-spin" /> Carregando editor…
+      </div>
+    );
+  }
+
   return (
-    <Excalidraw
+    <Editor
       initialData={scene ?? undefined}
       onChange={(elements, appState, files) =>
         onChange({
