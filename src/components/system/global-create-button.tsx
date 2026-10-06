@@ -2,7 +2,7 @@
 
 import { CheckSquare, Folder, NotebookPen, Plus, Tag, X } from "lucide-react";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 
 export function GlobalCreateButton({ className }: { className?: string }) {
   const router = useRouter();
-  const pathname = usePathname();
   const createNote = useCreateNote();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,18 +43,14 @@ export function GlobalCreateButton({ className }: { className?: string }) {
   };
 
   const handleCreateNote = async () => {
-      setOpen(false);
-      try {
-        const note = await createNote.mutateAsync();
-        router.push(`/app/notes/${note.id}`);
-      } catch {
-        toast.error("Não foi possível criar a nota.");
-      }
+    setOpen(false);
+    try {
+      const note = await createNote.mutateAsync();
+      router.push(`/app/notes/${note.id}`);
+    } catch {
+      toast.error("Não foi possível criar a nota.");
+    }
   };
-
-  const isContentEditor = pathname.startsWith("/app/notes/");
-
-  if (isContentEditor) return null;
 
   return (
     <div
@@ -82,7 +77,9 @@ export function GlobalCreateButton({ className }: { className?: string }) {
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform group-active:scale-95">
               <CheckSquare className="size-4" />
             </div>
-            <span className="text-foreground transition-colors group-hover:text-primary">Criar Tarefa</span>
+            <span className="text-foreground transition-colors group-hover:text-primary">
+              Criar Tarefa
+            </span>
           </button>
           <div className="my-1 h-px mx-2 bg-border/50" />
           <button
@@ -92,7 +89,9 @@ export function GlobalCreateButton({ className }: { className?: string }) {
             <div className="flex size-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 transition-transform group-active:scale-95">
               <Folder className="size-4" />
             </div>
-            <span className="text-foreground transition-colors group-hover:text-blue-500">Pasta</span>
+            <span className="text-foreground transition-colors group-hover:text-blue-500">
+              Pasta
+            </span>
           </button>
           <button
             onClick={() => openOrganizer("categories")}
@@ -101,7 +100,9 @@ export function GlobalCreateButton({ className }: { className?: string }) {
             <div className="flex size-8 items-center justify-center rounded-lg bg-purple-500/15 text-purple-500 transition-transform group-active:scale-95">
               <Tag className="size-4" />
             </div>
-            <span className="text-foreground transition-colors group-hover:text-purple-500">Tag</span>
+            <span className="text-foreground transition-colors group-hover:text-purple-500">
+              Tag
+            </span>
           </button>
           <button
             onClick={handleCreateNote}
@@ -111,7 +112,9 @@ export function GlobalCreateButton({ className }: { className?: string }) {
             <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-500 transition-transform group-active:scale-95">
               <NotebookPen className="size-4" />
             </div>
-            <span className="text-foreground transition-colors group-hover:text-orange-500">Nota</span>
+            <span className="text-foreground transition-colors group-hover:text-orange-500">
+              Nota
+            </span>
           </button>
         </div>
       </div>
@@ -122,11 +125,16 @@ export function GlobalCreateButton({ className }: { className?: string }) {
         className={cn(
           "group relative flex size-12 items-center justify-center rounded-full border border-primary-foreground/15 transition-all active:scale-95 md:size-16 md:border-0 md:rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40",
           open ? "rotate-45" : "hover:-translate-y-0.5",
-          "bg-primary shadow-md shadow-primary/20"
+          "bg-primary shadow-md shadow-primary/20",
         )}
         aria-label={open ? "Fechar menu" : "Criar novo item"}
       >
-        <Plus className={cn("absolute size-5 text-primary-foreground transition-all duration-300 md:size-6", open ? "scale-50 opacity-0" : "scale-100 opacity-100")} />
+        <Plus
+          className={cn(
+            "absolute size-5 text-primary-foreground transition-all duration-300 md:size-6",
+            open ? "scale-50 opacity-0" : "scale-100 opacity-100",
+          )}
+        />
         <X
           className={cn(
             "absolute size-8 text-primary-foreground transition-all duration-300",

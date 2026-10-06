@@ -17,9 +17,7 @@ function parseScene(raw: string | null): ExcalidrawScene | null {
   if (!raw) return null;
   try {
     const scene = JSON.parse(raw) as ExcalidrawScene;
-    return scene.version === 1 && Array.isArray(scene.nodes) && Array.isArray(scene.connections)
-      ? scene
-      : null;
+    return Array.isArray(scene.elements) ? scene : null;
   } catch {
     return null;
   }
@@ -34,11 +32,14 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   const [scene, setScene] = useState<ExcalidrawScene | null>(() =>
     parseScene(note.excalidraw_data),
   );
-  const [status, setStatus] = useState<"saved" | "saving" | "offline" | "error">(
-    "saved",
-  );
+  const [status, setStatus] = useState<
+    "saved" | "saving" | "offline" | "error"
+  >("saved");
   const version = useRef(0);
-  const serializedScene = useMemo(() => (scene ? JSON.stringify(scene) : null), [scene]);
+  const serializedScene = useMemo(
+    () => (scene ? JSON.stringify(scene) : null),
+    [scene],
+  );
 
   useEffect(() => {
     if (version.current === 0) return;
@@ -102,7 +103,10 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           className="min-w-0 w-full rounded-lg bg-muted/25 px-2.5 py-2 text-sm font-semibold outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex-1 sm:bg-transparent sm:text-lg"
           aria-label="Título do fluxograma"
         />
-        <span className="hidden px-2 text-xs text-muted-foreground sm:block" aria-live="polite">
+        <span
+          className="hidden px-2 text-xs text-muted-foreground sm:block"
+          aria-live="polite"
+        >
           {status === "saving" && "Salvando…"}
           {status === "saved" && "Salvo"}
           {status === "offline" && "Sem conexão"}
