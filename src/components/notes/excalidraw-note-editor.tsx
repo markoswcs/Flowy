@@ -1,17 +1,23 @@
 "use client";
 
 import { ArrowLeft, Trash2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import {
-  ExcalidrawCanvas,
-  type ExcalidrawScene,
-} from "@/components/notes/excalidraw-canvas";
+import type { ExcalidrawScene } from "@/components/notes/excalidraw-canvas";
 import { useSaveNote, useTrashNote } from "@/features/notes/use-notes";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import type { Note } from "@/types/content";
+
+const ExcalidrawCanvas = dynamic(
+  () =>
+    import("@/components/notes/excalidraw-canvas").then(
+      (module) => module.ExcalidrawCanvas,
+    ),
+  { ssr: false },
+);
 
 function parseScene(raw: string | null): ExcalidrawScene | null {
   if (!raw) return null;
