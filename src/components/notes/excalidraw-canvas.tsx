@@ -40,6 +40,8 @@ const nodeLabels: Record<FlowNodeKind, string> = {
   end: "Fim",
 };
 
+const nodeWidth = 160;
+
 export function ExcalidrawCanvas({
   scene,
   onChange,
@@ -65,11 +67,18 @@ export function ExcalidrawCanvas({
   }, [connections, nodes, onChange]);
 
   function addNode(kind: FlowNodeKind) {
-    const offset = nodes.length * 28;
     const id = crypto.randomUUID();
+    const canvasWidth = canvasRef.current?.clientWidth ?? 720;
+    const columns = canvasWidth >= 700 ? 3 : canvasWidth >= 440 ? 2 : 1;
+    const column = nodes.length % columns;
+    const row = Math.floor(nodes.length / columns);
+    const x = Math.min(
+      Math.max(16, canvasWidth - nodeWidth - 16),
+      16 + column * (nodeWidth + 24),
+    );
     setNodes((current) => [
       ...current,
-      { id, kind, label: nodeLabels[kind], x: 120 + (offset % 600), y: 120 + ((offset * 2) % 360) },
+      { id, kind, label: nodeLabels[kind], x, y: 88 + row * 96 },
     ]);
     setSelectedId(id);
   }
@@ -100,44 +109,46 @@ export function ExcalidrawCanvas({
     const drag = dragRef.current;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!drag || !rect) return;
-    const x = Math.max(16, Math.min(1000, event.clientX - rect.left - drag.offsetX));
-    const y = Math.max(76, Math.min(620, event.clientY - rect.top - drag.offsetY));
+    const x = Math.max(16, Math.min(Math.max(16, rect.width - nodeWidth - 16), event.clientX - rect.left - drag.offsetX));
+    const y = Math.max(76, Math.min(Math.max(76, rect.height - 64), event.clientY - rect.top - drag.offsetY));
     setNodes((current) => current.map((node) => (node.id === drag.id ? { ...node, x, y } : node)));
   }
 
   return (
-    <div className="h-full overflow-auto bg-[radial-gradient(circle_at_1px_1px,hsl(var(--border)/.7)_1px,transparent_0)] bg-[size:24px_24px]">
+    <div className="h-full overflow-y-auto overflow-x-hidden bg-[radial-gradient(circle_at_1px_1px,hsl(var(--border)/.7)_1px,transparent_0)] bg-[size:24px_24px]">
       <div
         ref={canvasRef}
-        className="relative min-h-[720px] min-w-[1200px]"
+        className="relative min-h-[520px] w-full"
         onPointerMove={moveNode}
         onPointerUp={() => { dragRef.current = null; }}
       >
-        <div className="absolute inset-x-0 top-0 z-20 flex items-center gap-2 border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
-          {(Object.keys(nodeLabels) as FlowNodeKind[]).map((kind) => {
-            const Icon = nodeIcons[kind];
-            return (
-              <button key={kind} type="button" onClick={() => addNode(kind)} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:border-primary/50 hover:text-primary">
-                <Icon className="size-3.5" aria-hidden="true" /> {nodeLabels[kind]}
-              </button>
-            );
-          })}
-          <button type="button" disabled={!selectedId} onClick={() => setConnecting((current) => !current)} className="ml-2 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-40">
-            <GitBranch className="size-3.5" aria-hidden="true" /> {connecting ? "Escolha o destino" : "Conectar"}
-          </button>
+        <div className="absolute inset-x-0 top-0 z-20 overflow-x-auto border-b border-border bg-card/95">
+          <div className="flex w-max items-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
+            {(Object.keys(nodeLabels) as FlowNodeKind[]).map((kind) => {
+              const Icon = nodeIcons[kind];
+              return (
+                <button key={kind} type="button" onClick={() => addNode(kind)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:border-primary/50 hover:text-primary">
+                  <Icon className="size-3.5" aria-hidden="true" /> {nodeLabels[kind]}
+                </button>
+              );
+            })}
+            <button type="button" disabled={!selectedId} onClick={() => setConnecting((current) => !current)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-40">
+              <GitBranch className="size-3.5" aria-hidden="true" /> {connecting ? "Escolha o destino" : "Conectar"}
+            </button>
+          </div>
         </div>
-        <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1200 720" aria-hidden="true">
+        <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
           <defs><marker id="flow-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="currentColor" /></marker></defs>
           {connections.map((connection) => {
             const from = nodes.find((node) => node.id === connection.from);
             const to = nodes.find((node) => node.id === connection.to);
-            return from && to ? <line key={`${connection.from}-${connection.to}`} x1={from.x + 170} y1={from.y + 34} x2={to.x} y2={to.y + 34} className="text-primary/80" stroke="currentColor" strokeWidth="2" markerEnd="url(#flow-arrow)" /> : null;
+            return from && to ? <line key={`${connection.from}-${connection.to}`} x1={from.x + nodeWidth} y1={from.y + 34} x2={to.x} y2={to.y + 34} className="text-primary/80" stroke="currentColor" strokeWidth="2" markerEnd="url(#flow-arrow)" /> : null;
           })}
         </svg>
         {nodes.map((node) => {
           const Icon = nodeIcons[node.kind];
           return (
-            <div key={node.id} role="button" tabIndex={0} onClick={() => handleNodeClick(node.id)} onPointerDown={(event) => startDrag(event, node)} className={`absolute z-10 w-[170px] cursor-grab rounded-xl border p-3 shadow-lg active:cursor-grabbing ${nodeStyles[node.kind]} ${selectedId === node.id ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`} style={{ left: node.x, top: node.y }}>
+            <div key={node.id} role="button" tabIndex={0} onClick={() => handleNodeClick(node.id)} onPointerDown={(event) => startDrag(event, node)} className={`absolute z-10 w-40 cursor-grab rounded-xl border p-3 shadow-lg active:cursor-grabbing ${nodeStyles[node.kind]} ${selectedId === node.id ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`} style={{ left: node.x, top: node.y }}>
               <div className="flex items-center gap-2"><Icon className="size-4 shrink-0" aria-hidden="true" /><input value={node.label} onChange={(event) => setNodes((current) => current.map((item) => item.id === node.id ? { ...item, label: event.target.value } : item))} className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none" aria-label="Texto do bloco" /></div>
             </div>
           );

@@ -2,7 +2,7 @@
 
 import { CheckSquare, Folder, NotebookPen, Plus, Tag, X } from "lucide-react";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 export function GlobalCreateButton({ className }: { className?: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const createNote = useCreateNote();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -51,6 +52,10 @@ export function GlobalCreateButton({ className }: { className?: string }) {
         toast.error("Não foi possível criar a nota.");
       }
   };
+
+  const isContentEditor = pathname.startsWith("/app/notes/");
+
+  if (isContentEditor) return null;
 
   return (
     <div

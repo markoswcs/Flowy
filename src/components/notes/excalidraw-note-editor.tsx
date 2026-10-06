@@ -83,7 +83,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-[1500px] flex-col px-3 pb-4 pt-2 sm:px-6">
-      <header className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-2 shadow-sm">
+      <header className="mb-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-1 rounded-2xl border border-border bg-card p-2 shadow-sm sm:flex sm:gap-2">
         <button
           type="button"
           onClick={() => router.push("/app/notes")}
@@ -99,10 +99,10 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
             markChanged();
           }}
           placeholder="Fluxograma sem título"
-          className="min-w-0 flex-1 bg-transparent px-2 text-base font-semibold outline-none placeholder:text-muted-foreground sm:text-lg"
+          className="min-w-0 w-full rounded-lg bg-muted/25 px-2.5 py-2 text-sm font-semibold outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex-1 sm:bg-transparent sm:text-lg"
           aria-label="Título do fluxograma"
         />
-        <span className="px-2 text-xs text-muted-foreground" aria-live="polite">
+        <span className="hidden px-2 text-xs text-muted-foreground sm:block" aria-live="polite">
           {status === "saving" && "Salvando…"}
           {status === "saved" && "Salvo"}
           {status === "offline" && "Sem conexão"}
@@ -117,7 +117,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           <Trash2 className="size-4" />
         </button>
       </header>
-      <div className="h-[calc(100dvh-9.5rem)] min-h-[520px] overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:h-[calc(100dvh-8rem)]">
+      <div className="h-[calc(100dvh-8.5rem)] min-h-[460px] overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:h-[calc(100dvh-8rem)] sm:min-h-[520px]">
         <ExcalidrawCanvas scene={scene} onChange={handleCanvasChange} />
       </div>
     </div>
