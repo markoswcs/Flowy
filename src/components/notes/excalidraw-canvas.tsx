@@ -78,7 +78,7 @@ export function ExcalidrawCanvas({
     );
     setNodes((current) => [
       ...current,
-      { id, kind, label: nodeLabels[kind], x, y: 88 + row * 96 },
+      { id, kind, label: nodeLabels[kind], x, y: 116 + row * 96 },
     ]);
     setSelectedId(id);
   }
@@ -122,12 +122,12 @@ export function ExcalidrawCanvas({
         onPointerMove={moveNode}
         onPointerUp={() => { dragRef.current = null; }}
       >
-        <div className="absolute inset-x-0 top-0 z-20 overflow-x-auto border-b border-border bg-card/95">
-          <div className="flex w-max items-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="absolute inset-x-0 top-0 z-20 border-b border-border bg-card/95">
+          <div className="flex flex-wrap items-center gap-1.5 px-2.5 py-2.5 sm:gap-2 sm:px-4 sm:py-3">
             {(Object.keys(nodeLabels) as FlowNodeKind[]).map((kind) => {
               const Icon = nodeIcons[kind];
               return (
-                <button key={kind} type="button" onClick={() => addNode(kind)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:border-primary/50 hover:text-primary">
+                <button key={kind} type="button" onClick={() => addNode(kind)} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-2 text-xs font-medium hover:border-primary/50 hover:text-primary sm:px-3">
                   <Icon className="size-3.5" aria-hidden="true" /> {nodeLabels[kind]}
                 </button>
               );

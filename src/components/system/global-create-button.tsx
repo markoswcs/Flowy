@@ -61,7 +61,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
     <div
       ref={containerRef}
       className={cn(
-        "global-create-button fixed bottom-24 left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
+        "global-create-button fixed bottom-[3.2rem] left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
         className,
       )}
     >
@@ -120,13 +120,13 @@ export function GlobalCreateButton({ className }: { className?: string }) {
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "group relative flex size-11 items-center justify-center rounded-2xl transition-all active:scale-95 md:size-16 md:rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40",
+          "group relative flex size-12 items-center justify-center rounded-full border border-primary-foreground/15 transition-all active:scale-95 md:size-16 md:border-0 md:rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40",
           open ? "rotate-45" : "hover:-translate-y-0.5",
-          "bg-primary shadow-lg shadow-primary/25"
+          "bg-primary shadow-md shadow-primary/20"
         )}
         aria-label={open ? "Fechar menu" : "Criar novo item"}
       >
-        <Plus className={cn("absolute size-6 text-primary-foreground transition-all duration-300", open ? "scale-50 opacity-0" : "scale-100 opacity-100")} />
+        <Plus className={cn("absolute size-5 text-primary-foreground transition-all duration-300 md:size-6", open ? "scale-50 opacity-0" : "scale-100 opacity-100")} />
         <X
           className={cn(
             "absolute size-8 text-primary-foreground transition-all duration-300",
