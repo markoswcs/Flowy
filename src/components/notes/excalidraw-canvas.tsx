@@ -16,6 +16,7 @@ export interface ExcalidrawScene {
 }
 
 type ExcalidrawComponent = typeof import("@excalidraw/excalidraw").Excalidraw;
+const uiOptions = { canvasActions: { saveToActiveFile: false } } as const;
 
 export function ExcalidrawCanvas({
   scene,
@@ -27,6 +28,7 @@ export function ExcalidrawCanvas({
   const [Editor, setEditor] = useState<ExcalidrawComponent | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [initialScene] = useState(() => scene);
 
   useEffect(() => {
     let active = true;
@@ -74,7 +76,7 @@ export function ExcalidrawCanvas({
 
   return (
     <Editor
-      initialData={scene ?? undefined}
+      initialData={initialScene ?? undefined}
       onChange={(elements, appState, files) =>
         onChange({
           elements,
@@ -86,7 +88,7 @@ export function ExcalidrawCanvas({
           },
         })
       }
-      UIOptions={{ canvasActions: { saveToActiveFile: false } }}
+      UIOptions={uiOptions}
     />
   );
 }

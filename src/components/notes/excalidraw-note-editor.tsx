@@ -4,7 +4,7 @@ import "@excalidraw/excalidraw/index.css";
 
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -60,9 +60,17 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     return () => window.clearTimeout(timer);
   }, [isOnline, saveNote, serializedScene, title]);
 
-  function markChanged() {
+  const markChanged = useCallback(() => {
     version.current += 1;
-  }
+  }, []);
+
+  const handleCanvasChange = useCallback(
+    (nextScene: ExcalidrawScene) => {
+      setScene(nextScene);
+      markChanged();
+    },
+    [markChanged],
+  );
 
   async function handleTrash() {
     try {
@@ -110,13 +118,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         </button>
       </header>
       <div className="h-[calc(100dvh-9.5rem)] min-h-[520px] overflow-hidden rounded-xl border border-border bg-[#f8f9fa] shadow-sm sm:h-[calc(100dvh-8rem)]">
-        <ExcalidrawCanvas
-          scene={scene}
-          onChange={(nextScene) => {
-            setScene(nextScene);
-            markChanged();
-          }}
-        />
+        <ExcalidrawCanvas scene={scene} onChange={handleCanvasChange} />
       </div>
     </div>
   );
