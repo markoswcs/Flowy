@@ -81,7 +81,9 @@ export function ExcalidrawCanvas({
   useEffect(() => {
     if (!remoteScene || !excalidrawApi.current) return;
     isApplyingRemoteScene.current = true;
-    excalidrawApi.current.updateScene(remoteScene);
+    excalidrawApi.current.updateScene(
+      remoteScene as Parameters<ExcalidrawImperativeAPI["updateScene"]>[0],
+    );
     window.requestAnimationFrame(() => {
       isApplyingRemoteScene.current = false;
     });

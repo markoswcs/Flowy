@@ -17,7 +17,7 @@ export async function getExcalidrawLibrary(
 export async function saveExcalidrawLibrary(
   client: SupabaseClient,
   userId: string,
-  libraryItems: unknown[],
+  libraryItems: readonly unknown[],
 ): Promise<void> {
   const { error } = await client
     .from("excalidraw_libraries")

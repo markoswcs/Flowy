@@ -164,7 +164,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           table: "notes",
           filter: `id=eq.${note.id}`,
         },
-        (payload) => {
+        (payload: { new: unknown }) => {
           const next = payload.new as {
             excalidraw_data?: string | null;
             title?: string;
@@ -205,12 +205,16 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     const client = createClient();
     const channel = client
       .channel(`flowy-excalidraw:${note.id}`, { config: { private: true } })
-      .on("broadcast", { event: "scene" }, ({ payload }) => {
-        const nextScene = payload.scene as ExcalidrawScene | undefined;
-        if (!nextScene || version.current !== savedVersion.current) return;
-        setScene(nextScene);
-        setRemoteScene(nextScene);
-      })
+      .on(
+        "broadcast",
+        { event: "scene" },
+        ({ payload }: { payload: { scene?: ExcalidrawScene } }) => {
+          const nextScene = payload.scene as ExcalidrawScene | undefined;
+          if (!nextScene || version.current !== savedVersion.current) return;
+          setScene(nextScene);
+          setRemoteScene(nextScene);
+        },
+      )
       .subscribe();
 
     liveSend.current = (nextScene) => {
