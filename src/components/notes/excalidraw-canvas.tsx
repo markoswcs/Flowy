@@ -38,6 +38,24 @@ function normalizeLibraryItems(value: unknown): LibraryItems {
   }
 }
 
+function persistableAppState(
+  appState: ExcalidrawInitialDataState["appState"] | undefined,
+) {
+  if (!appState || typeof appState !== "object") return {};
+  const state = appState as Record<string, unknown>;
+  return {
+    ...(typeof state.theme === "string" ? { theme: state.theme } : {}),
+    ...(typeof state.viewBackgroundColor === "string"
+      ? { viewBackgroundColor: state.viewBackgroundColor }
+      : {}),
+    ...(typeof state.scrollX === "number" ? { scrollX: state.scrollX } : {}),
+    ...(typeof state.scrollY === "number" ? { scrollY: state.scrollY } : {}),
+    ...(state.zoom && typeof state.zoom === "object"
+      ? { zoom: state.zoom }
+      : {}),
+  } as ExcalidrawInitialDataState["appState"];
+}
+
 export function ExcalidrawCanvas({
   scene,
   onChange,
@@ -108,7 +126,7 @@ export function ExcalidrawCanvas({
     () => ({
       ...(scene ?? { elements: [] }),
       appState: {
-        ...(scene?.appState ?? {}),
+        ...persistableAppState(scene?.appState),
         theme: canvasTheme,
       },
       libraryItems: initialLibrary,
@@ -155,7 +173,7 @@ export function ExcalidrawCanvas({
       excalidrawApi.current.updateScene({
         ...remoteScene,
         appState: {
-          ...(remoteScene.appState ?? {}),
+          ...persistableAppState(remoteScene.appState),
           theme: canvasTheme,
         },
         captureUpdate: CaptureUpdateAction.NEVER,
@@ -234,8 +252,13 @@ export function ExcalidrawCanvas({
         onChange={(elements, appState, files) => {
           if (isApplyingRemoteScene.current) return;
           if (!isReady.current) return;
-          onChangeRef.current({ elements, appState, files });
-          onLiveChange({ elements, appState, files });
+          const nextScene = {
+            elements,
+            appState: persistableAppState(appState),
+            files,
+          };
+          onChangeRef.current(nextScene);
+          onLiveChange(nextScene);
         }}
       >
         <MainMenu>
