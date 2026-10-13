@@ -8,7 +8,7 @@ import {
   restoreElements,
 } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
@@ -140,6 +140,8 @@ export function ExcalidrawCanvas({
   onLiveChange: (scene: ExcalidrawScene) => void;
 }) {
   const onChangeRef = useRef(onChange);
+  const onSaveRef = useRef(onSave);
+  const onLiveChangeRef = useRef(onLiveChange);
   const isReady = useRef(false);
   const isApplyingRemoteScene = useRef(false);
   const excalidrawApi = useRef<ExcalidrawImperativeAPI | null>(null);
@@ -167,6 +169,14 @@ export function ExcalidrawCanvas({
     onChangeRef.current = onChange;
   }, [onChange]);
 
+  useEffect(() => {
+    onSaveRef.current = onSave;
+  }, [onSave]);
+
+  useEffect(() => {
+    onLiveChangeRef.current = onLiveChange;
+  }, [onLiveChange]);
+
   useEffect(
     () => () => {
       if (librarySaveTimer.current)
@@ -188,14 +198,39 @@ export function ExcalidrawCanvas({
     };
   }, []);
 
-  const initialData = useMemo(() => {
+  const [initialData] = useState(() => {
     const normalizedScene = normalizeScene(scene);
     return {
       ...normalizedScene,
       appState: { ...normalizedScene.appState, theme: canvasTheme },
       libraryItems: initialLibrary,
     };
-  }, [canvasTheme, initialLibrary, scene]);
+  });
+
+  const mainMenu = useMemo(
+    () => (
+      <MainMenu>
+        <MainMenu.Item onSelect={() => onSaveRef.current()}>
+          Salvar no Flowy
+        </MainMenu.Item>
+        <MainMenu.DefaultItems.LoadScene />
+        <MainMenu.DefaultItems.SaveToActiveFile />
+        <MainMenu.DefaultItems.Export />
+        <MainMenu.DefaultItems.SaveAsImage />
+        <MainMenu.DefaultItems.SearchMenu />
+        <MainMenu.DefaultItems.Help />
+        <MainMenu.DefaultItems.ClearCanvas />
+        <MainMenu.Separator />
+        <MainMenu.Group title="Links do Excalidraw">
+          <MainMenu.DefaultItems.Socials />
+        </MainMenu.Group>
+        <MainMenu.Separator />
+        <MainMenu.DefaultItems.ToggleTheme />
+        <MainMenu.DefaultItems.ChangeCanvasBackground />
+      </MainMenu>
+    ),
+    [],
+  );
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -268,6 +303,67 @@ export function ExcalidrawCanvas({
     });
   }, [apiReady, canvasTheme]);
 
+  const handleApiReady = useCallback((api: ExcalidrawImperativeAPI) => {
+    excalidrawApi.current = api;
+    setApiReady(true);
+  }, []);
+
+  const handleLibraryChange = useCallback(
+    (libraryItems: LibraryItems) => {
+      try {
+        localStorage.setItem(libraryKey, JSON.stringify(libraryItems));
+      } catch {
+        // A biblioteca continua disponível na sessão atual se o armazenamento falhar.
+      }
+      if (librarySaveTimer.current) {
+        window.clearTimeout(librarySaveTimer.current);
+      }
+      librarySaveTimer.current = window.setTimeout(() => {
+        void saveExcalidrawLibrary(createClient(), userId, libraryItems).catch(
+          () => {
+            // A cópia local já foi atualizada; a conta será sincronizada depois.
+          },
+        );
+      }, 700);
+    },
+    [libraryKey, userId],
+  );
+
+  const handleChange = useCallback(
+    (
+      elements: ExcalidrawInitialDataState["elements"],
+      appState: ExcalidrawInitialDataState["appState"],
+      files: ExcalidrawInitialDataState["files"],
+    ) => {
+      if (isApplyingRemoteScene.current) return;
+      if (!isReady.current) return;
+      const nextScene = {
+        elements,
+        appState: persistableAppState(appState),
+        files,
+      };
+      onChangeRef.current(nextScene);
+      onLiveChangeRef.current(nextScene);
+    },
+    [],
+  );
+
+  const uiOptions = useMemo(
+    () => ({
+      canvasActions: {
+        changeViewBackgroundColor: true,
+        clearCanvas: true,
+        export: { saveFileToDisk: true },
+        loadScene: true,
+        saveAsImage: true,
+        saveToActiveFile: false,
+        toggleTheme: true,
+      },
+      tools: { image: true },
+    }),
+    [],
+  );
+
   return (
     <div
       className="flowy-excalidraw h-full min-h-0 overflow-visible bg-background sm:overflow-hidden"
@@ -276,72 +372,14 @@ export function ExcalidrawCanvas({
     >
       <Excalidraw
         initialData={initialData}
-        excalidrawAPI={(api) => {
-          excalidrawApi.current = api;
-          setApiReady(true);
-        }}
+        excalidrawAPI={handleApiReady}
         langCode="pt-BR"
         name={name.trim() || "Fluxograma sem título"}
-        UIOptions={{
-          canvasActions: {
-            changeViewBackgroundColor: true,
-            clearCanvas: true,
-            export: { saveFileToDisk: true },
-            loadScene: true,
-            saveAsImage: true,
-            saveToActiveFile: false,
-            toggleTheme: true,
-          },
-          tools: { image: true },
-        }}
-        onLibraryChange={(libraryItems) => {
-          try {
-            localStorage.setItem(libraryKey, JSON.stringify(libraryItems));
-          } catch {
-            // A biblioteca continua disponível na sessão atual se o armazenamento falhar.
-          }
-          if (librarySaveTimer.current) {
-            window.clearTimeout(librarySaveTimer.current);
-          }
-          librarySaveTimer.current = window.setTimeout(() => {
-            void saveExcalidrawLibrary(
-              createClient(),
-              userId,
-              libraryItems,
-            ).catch(() => {
-              // A cópia local já foi atualizada; a conta será sincronizada depois.
-            });
-          }, 700);
-        }}
-        onChange={(elements, appState, files) => {
-          if (isApplyingRemoteScene.current) return;
-          if (!isReady.current) return;
-          const nextScene = {
-            elements,
-            appState: persistableAppState(appState),
-            files,
-          };
-          onChangeRef.current(nextScene);
-          onLiveChange(nextScene);
-        }}
+        UIOptions={uiOptions}
+        onLibraryChange={handleLibraryChange}
+        onChange={handleChange}
       >
-        <MainMenu>
-          <MainMenu.Item onSelect={onSave}>Salvar no Flowy</MainMenu.Item>
-          <MainMenu.DefaultItems.LoadScene />
-          <MainMenu.DefaultItems.SaveToActiveFile />
-          <MainMenu.DefaultItems.Export />
-          <MainMenu.DefaultItems.SaveAsImage />
-          <MainMenu.DefaultItems.SearchMenu />
-          <MainMenu.DefaultItems.Help />
-          <MainMenu.DefaultItems.ClearCanvas />
-          <MainMenu.Separator />
-          <MainMenu.Group title="Links do Excalidraw">
-            <MainMenu.DefaultItems.Socials />
-          </MainMenu.Group>
-          <MainMenu.Separator />
-          <MainMenu.DefaultItems.ToggleTheme />
-          <MainMenu.DefaultItems.ChangeCanvasBackground />
-        </MainMenu>
+        {mainMenu}
       </Excalidraw>
     </div>
   );
