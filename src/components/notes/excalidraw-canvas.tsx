@@ -1,8 +1,12 @@
 "use client";
 
-import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
+import {
+  CaptureUpdateAction,
+  Excalidraw,
+  MainMenu,
+} from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
@@ -43,8 +47,16 @@ export function ExcalidrawCanvas({
   const isApplyingRemoteScene = useRef(false);
   const excalidrawApi = useRef<ExcalidrawImperativeAPI | null>(null);
   const librarySaveTimer = useRef<number | null>(null);
+  const [apiReady, setApiReady] = useState(false);
+  const [canvasTheme, setCanvasTheme] = useState<"light" | "dark">(() =>
+    typeof document !== "undefined" &&
+    document.documentElement.classList.contains("white")
+      ? "light"
+      : "dark",
+  );
   const libraryKey = `flowy:excalidraw-library:${userId}`;
   const [initialLibrary] = useState<LibraryItems>(() => {
+    if (typeof window === "undefined") return [];
     try {
       const library = JSON.parse(localStorage.getItem(libraryKey) ?? "[]");
       return Array.isArray(library) ? library : [];
@@ -65,36 +77,102 @@ export function ExcalidrawCanvas({
     [],
   );
 
-  const initialData = useCallback(async () => {
-    let libraryItems = initialLibrary;
-    try {
-      const remoteLibrary = await getExcalidrawLibrary(createClient(), userId);
-      if (remoteLibrary) libraryItems = remoteLibrary as LibraryItems;
-    } catch {
-      // O armazenamento local mantém a biblioteca disponível sem conexão.
-    }
-    return scene
-      ? { ...scene, libraryItems }
-      : { appState: { theme: "dark" as const }, libraryItems };
-  }, [initialLibrary, scene, userId]);
+  useEffect(() => {
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        isReady.current = true;
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+    };
+  }, []);
+
+  const initialData = useMemo(
+    () => ({
+      ...(scene ?? { elements: [] }),
+      appState: {
+        ...(scene?.appState ?? {}),
+        theme: canvasTheme,
+      },
+      libraryItems: initialLibrary,
+    }),
+    [canvasTheme, initialLibrary, scene],
+  );
 
   useEffect(() => {
-    if (!remoteScene || !excalidrawApi.current) return;
+    const observer = new MutationObserver(() => {
+      setCanvasTheme(
+        document.documentElement.classList.contains("white") ? "light" : "dark",
+      );
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!apiReady) return;
+    let cancelled = false;
+    void getExcalidrawLibrary(createClient(), userId)
+      .then((remoteLibrary) => {
+        if (!cancelled && remoteLibrary && excalidrawApi.current) {
+          excalidrawApi.current.updateLibrary({
+            libraryItems: remoteLibrary as LibraryItems,
+          });
+        }
+      })
+      .catch(() => {
+        // A biblioteca local continua disponível quando a conta está offline.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiReady, userId]);
+
+  useEffect(() => {
+    if (!remoteScene || !excalidrawApi.current || !apiReady) return;
     isApplyingRemoteScene.current = true;
-    excalidrawApi.current.updateScene(
-      remoteScene as Parameters<ExcalidrawImperativeAPI["updateScene"]>[0],
-    );
+    excalidrawApi.current.updateScene({
+      ...remoteScene,
+      appState: {
+        ...(remoteScene.appState ?? {}),
+        theme: canvasTheme,
+      },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    } as Parameters<ExcalidrawImperativeAPI["updateScene"]>[0]);
     window.requestAnimationFrame(() => {
       isApplyingRemoteScene.current = false;
     });
-  }, [remoteScene]);
+  }, [apiReady, canvasTheme, remoteScene]);
+
+  useEffect(() => {
+    if (!apiReady || !excalidrawApi.current) return;
+    isApplyingRemoteScene.current = true;
+    excalidrawApi.current.updateScene({
+      appState: { theme: canvasTheme },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+    window.requestAnimationFrame(() => {
+      isApplyingRemoteScene.current = false;
+    });
+  }, [apiReady, canvasTheme]);
 
   return (
-    <div className="flowy-excalidraw h-full min-h-0 overflow-hidden bg-[#12101d]">
+    <div
+      className="flowy-excalidraw h-full min-h-0 overflow-hidden bg-[#12101d]"
+      role="region"
+      aria-label="Área de edição do fluxograma"
+    >
       <Excalidraw
         initialData={initialData}
         excalidrawAPI={(api) => {
           excalidrawApi.current = api;
+          setApiReady(true);
         }}
         langCode="pt-BR"
         name={name.trim() || "Fluxograma sem título"}
@@ -120,15 +198,18 @@ export function ExcalidrawCanvas({
             window.clearTimeout(librarySaveTimer.current);
           }
           librarySaveTimer.current = window.setTimeout(() => {
-            void saveExcalidrawLibrary(createClient(), userId, libraryItems);
+            void saveExcalidrawLibrary(
+              createClient(),
+              userId,
+              libraryItems,
+            ).catch(() => {
+              // A cópia local já foi atualizada; a conta será sincronizada depois.
+            });
           }, 700);
         }}
         onChange={(elements, appState, files) => {
           if (isApplyingRemoteScene.current) return;
-          if (!isReady.current) {
-            isReady.current = true;
-            return;
-          }
+          if (!isReady.current) return;
           onChangeRef.current({ elements, appState, files });
           onLiveChange({ elements, appState, files });
         }}

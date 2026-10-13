@@ -1,6 +1,15 @@
 "use client";
 
-import { FileText, Folder, Pencil, Plus, Search, Star, Trash2, Workflow } from "lucide-react";
+import {
+  FileText,
+  Folder,
+  Pencil,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+  Workflow,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDeferredValue, useMemo, useState } from "react";
@@ -69,7 +78,9 @@ export function NoteList() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (kind === "excalidraw" && /kind|excalidraw/i.test(message)) {
-        toast.error("O banco ainda precisa receber a atualização dos fluxogramas.");
+        toast.error(
+          "O banco ainda precisa receber a atualização dos fluxogramas.",
+        );
         return;
       }
       toast.error("Não foi possível criar a nota.");
@@ -112,10 +123,15 @@ export function NoteList() {
             Notas
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            Capture ideias, referências e planos em um lugar simples de consultar.
+            Capture ideias, referências e planos em um lugar simples de
+            consultar.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreationOpen(true)} loading={create.isPending}>
+        <Button
+          type="button"
+          onClick={() => setCreationOpen(true)}
+          loading={create.isPending}
+        >
           <Plus className="size-4" aria-hidden="true" />
           Nova nota
         </Button>
@@ -136,16 +152,30 @@ export function NoteList() {
       </label>
 
       {notes.isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Carregando notas">
+        <div
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          aria-label="Carregando notas"
+        >
           {Array.from({ length: 6 }, (_, index) => (
             <Skeleton key={index} className="h-52 w-full rounded-xl" />
           ))}
         </div>
       ) : notes.isError ? (
-        <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-6" aria-live="polite">
-          <h2 className="font-medium text-destructive">Não foi possível carregar as notas.</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Verifique sua conexão e tente novamente.</p>
-          <Button className="mt-4" variant="outline" onClick={() => notes.refetch()}>
+        <section
+          className="rounded-xl border border-destructive/30 bg-destructive/5 p-6"
+          aria-live="polite"
+        >
+          <h2 className="font-medium text-destructive">
+            Não foi possível carregar as notas.
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Verifique sua conexão e tente novamente.
+          </p>
+          <Button
+            className="mt-4"
+            variant="outline"
+            onClick={() => notes.refetch()}
+          >
             Tentar novamente
           </Button>
         </section>
@@ -155,7 +185,9 @@ export function NoteList() {
             <FileText className="size-5" aria-hidden="true" />
           </span>
           <h2 className="mt-4 text-lg font-semibold">
-            {search ? "Nenhuma nota encontrada" : "Sua primeira nota começa aqui"}
+            {search
+              ? "Nenhuma nota encontrada"
+              : "Sua primeira nota começa aqui"}
           </h2>
           <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
             {search
@@ -163,7 +195,12 @@ export function NoteList() {
               : "Crie uma nota para guardar o que importa e retome quando quiser."}
           </p>
           {!search ? (
-            <Button className="mt-5" type="button" onClick={() => setCreationOpen(true)} loading={create.isPending}>
+            <Button
+              className="mt-5"
+              type="button"
+              onClick={() => setCreationOpen(true)}
+              loading={create.isPending}
+            >
               <Plus className="size-4" aria-hidden="true" />
               Criar nota
             </Button>
@@ -185,7 +222,10 @@ export function NoteList() {
                 <div className="relative pointer-events-none min-w-0">
                   <h2 className="line-clamp-2 text-base font-semibold leading-5 sm:text-lg sm:leading-6">
                     {note.kind === "excalidraw" ? (
-                      <Workflow className="mr-1 inline size-4 text-primary" aria-hidden="true" />
+                      <Workflow
+                        className="mr-1 inline size-4 text-primary"
+                        aria-hidden="true"
+                      />
                     ) : null}
                     {note.title || "Sem título"}
                   </h2>
@@ -200,7 +240,10 @@ export function NoteList() {
                   <div className="pointer-events-none min-w-0 space-y-1 text-[11px] text-muted-foreground sm:space-y-2 sm:text-xs">
                     {note.folder ? (
                       <span className="flex min-w-0 items-center gap-1.5">
-                        <Folder className="size-3.5 shrink-0" aria-hidden="true" />
+                        <Folder
+                          className="size-3.5 shrink-0"
+                          aria-hidden="true"
+                        />
                         <span className="truncate">{note.folder.name}</span>
                       </span>
                     ) : null}
@@ -216,7 +259,10 @@ export function NoteList() {
                     className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-105 hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
                     aria-label={`${note.is_favorite ? "Remover" : "Adicionar"} ${note.title || "nota"} dos favoritos`}
                   >
-                    <Star className={`size-4 ${note.is_favorite ? "fill-primary text-primary" : ""}`} aria-hidden="true" />
+                    <Star
+                      className={`size-4 ${note.is_favorite ? "fill-primary text-primary" : ""}`}
+                      aria-hidden="true"
+                    />
                   </button>
                   <Link
                     href={`/app/notes/${note.id}`}
@@ -255,12 +301,19 @@ export function NoteList() {
             aria-modal="true"
             aria-labelledby="delete-note-title"
           >
-            <h2 id="delete-note-title" className="font-semibold">Mover nota para a lixeira?</h2>
+            <h2 id="delete-note-title" className="font-semibold">
+              Mover nota para a lixeira?
+            </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              “{notePendingDeletion.title}” será movida para a lixeira. Você poderá restaurá-la depois.
+              “{notePendingDeletion.title}” será movida para a lixeira. Você
+              poderá restaurá-la depois.
             </p>
             <div className="mt-5 flex justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setNotePendingDeletion(null)}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setNotePendingDeletion(null)}
+              >
                 Cancelar
               </Button>
               <Button
@@ -279,15 +332,23 @@ export function NoteList() {
         </div>
       ) : null}
       {creationOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-primary/5 p-4" role="presentation">
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-primary/5 p-4"
+          role="presentation"
+        >
           <section
             className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-note-title"
           >
-            <h2 id="create-note-title" className="text-lg font-semibold">Criar novo conteúdo</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Escolha entre uma nota de texto ou uma tela completa para desenhar.</p>
+            <h2 id="create-note-title" className="text-lg font-semibold">
+              Criar novo conteúdo
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Escolha entre uma nota de texto ou uma tela completa para
+              desenhar.
+            </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
@@ -296,7 +357,9 @@ export function NoteList() {
               >
                 <FileText className="size-5 text-primary" aria-hidden="true" />
                 <strong className="mt-3 block">Nota</strong>
-                <span className="mt-1 block text-sm text-muted-foreground">Texto, checklist, links, imagens e desenho.</span>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  Texto, checklist, links, imagens e desenho.
+                </span>
               </button>
               <button
                 type="button"
@@ -305,11 +368,19 @@ export function NoteList() {
               >
                 <Workflow className="size-5 text-primary" aria-hidden="true" />
                 <strong className="mt-3 block">Fluxograma</strong>
-                <span className="mt-1 block text-sm text-muted-foreground">Diagramas, setas, formas, texto, imagens e exportação.</span>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  Diagramas, setas, formas, texto, imagens e exportação.
+                </span>
               </button>
             </div>
             <div className="mt-5 flex justify-end">
-              <Button type="button" variant="ghost" onClick={() => setCreationOpen(false)}>Cancelar</Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setCreationOpen(false)}
+              >
+                Cancelar
+              </Button>
             </div>
           </section>
         </div>

@@ -78,10 +78,11 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     useState<RemoteChange | null>(null);
   const [status, setStatus] = useState<
     "saved" | "saving" | "offline" | "error"
-  >("saved");
+  >(restoredDraft ? "offline" : "saved");
   const version = useRef(0);
   const savedVersion = useRef(0);
   const savedScene = useRef(note.excalidraw_data);
+  const saveCurrentRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const liveSend = useRef<(scene: ExcalidrawScene) => void>(() => {});
   const liveTimer = useRef<number | null>(null);
   const pendingLiveScene = useRef<ExcalidrawScene | null>(null);
@@ -92,9 +93,13 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   );
 
   const saveCurrent = useCallback(async () => {
-    if (version.current === 0) return;
+    if (version.current === 0 || version.current === savedVersion.current)
+      return;
     const currentVersion = version.current;
-    if (serializedScene && serializedScene.length > 1_900_000) {
+    const serializedSize = serializedScene
+      ? new TextEncoder().encode(serializedScene).byteLength
+      : 0;
+    if (serializedSize > 1_900_000) {
       setStatus("error");
       toast.error(
         "O fluxograma excede o limite de 2 MB. Reduza as imagens para salvar.",
@@ -119,6 +124,25 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
       setStatus("error");
     }
   }, [isOnline, note.id, saveNote, serializedScene, title]);
+
+  useEffect(() => {
+    saveCurrentRef.current = saveCurrent;
+  }, [saveCurrent]);
+
+  useEffect(() => {
+    if (!isOnline || version.current === savedVersion.current) return;
+    void saveCurrentRef.current();
+  }, [isOnline]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (version.current === savedVersion.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   useEffect(() => {
     if (version.current === 0) return;
@@ -155,7 +179,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   useEffect(() => {
     const client = createClient();
     const channel = client
-      .channel(`flowy-excalidraw:${note.id}`)
+      .channel(`flowy-excalidraw:${note.id}:database`)
       .on(
         "postgres_changes",
         {
@@ -203,8 +227,11 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
 
   useEffect(() => {
     const client = createClient();
+    let liveReady = false;
     const channel = client
-      .channel(`flowy-excalidraw:${note.id}`, { config: { private: true } })
+      .channel(`flowy-excalidraw:${note.id}:live`, {
+        config: { private: true },
+      })
       .on(
         "broadcast",
         { event: "scene" },
@@ -215,19 +242,27 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           setRemoteScene(nextScene);
         },
       )
-      .subscribe();
+      .subscribe((status: string) => {
+        liveReady = status === "SUBSCRIBED";
+      });
 
     liveSend.current = (nextScene) => {
+      if (!liveReady) return;
       if (JSON.stringify(nextScene).length <= 240_000) {
-        void channel.send({
-          type: "broadcast",
-          event: "scene",
-          payload: { scene: nextScene },
-        });
+        void channel
+          .send({
+            type: "broadcast",
+            event: "scene",
+            payload: { scene: nextScene },
+          })
+          .catch(() => {
+            // O salvamento principal continua sendo feito pelo autosave.
+          });
       }
     };
 
     return () => {
+      liveReady = false;
       liveSend.current = () => {};
       if (liveTimer.current) window.clearTimeout(liveTimer.current);
       void client.removeChannel(channel);
@@ -237,6 +272,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   const markChanged = useCallback(() => {
     version.current += 1;
     setDirtyVersion(version.current);
+    setStatus("saving");
   }, []);
 
   const sendLiveChange = useCallback((nextScene: ExcalidrawScene) => {
@@ -261,6 +297,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     setScene(restoredDraft.scene);
     version.current += 1;
     setDirtyVersion(version.current);
+    setStatus("saving");
     setCanvasRevision((current) => current + 1);
     setDraftPromptOpen(false);
   }
@@ -268,6 +305,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   function discardDraft() {
     localStorage.removeItem(draftKey(note.id));
     setDraftPromptOpen(false);
+    setStatus("saved");
   }
 
   function useRemoteChange() {
