@@ -253,6 +253,24 @@
     scrollbar-width: none;
   }
 
+  .flowy-flow-editor-header {
+    background: hsl(var(--background) / 0.92);
+  }
+
+  .flowy-flow-canvas {
+    border-top: 1px solid hsl(var(--border) / 0.65);
+  }
+
+  .flowy-excalidraw .App-menu_top {
+    box-shadow: none;
+  }
+
+  .flowy-excalidraw .Island,
+  .flowy-excalidraw .layer-ui__wrapper__footer-left,
+  .flowy-excalidraw .layer-ui__wrapper__footer-right {
+    box-shadow: none;
+  }
+
   .flowy-excalidraw .App-toolbar--mobile::-webkit-scrollbar {
     display: none;
   }
@@ -273,6 +291,29 @@
   }
 
   @media (max-width: 640px) {
+    .flowy-flow-editor-header {
+      position: relative;
+      z-index: 30;
+    }
+
+    .flowy-flow-canvas {
+      border-top: 1px solid hsl(var(--border) / 0.5);
+    }
+
+    .flowy-excalidraw .App-menu_top {
+      margin-top: 0.5rem;
+    }
+
+    .flowy-excalidraw .Island {
+      border-radius: 1rem;
+    }
+
+    .flowy-excalidraw .App-toolbar--mobile button,
+    .flowy-excalidraw .mobile-misc-tools-container button {
+      min-width: 2.75rem;
+      min-height: 2.75rem;
+    }
+
     .flowy-excalidraw .App-toolbar--mobile [data-testid="toolbar-rectangle"],
     .flowy-excalidraw .App-toolbar--mobile [data-testid="toolbar-diamond"],
     .flowy-excalidraw .App-toolbar--mobile [data-testid="toolbar-ellipse"],

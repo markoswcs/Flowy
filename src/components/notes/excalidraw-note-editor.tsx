@@ -355,7 +355,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   }
 
   return (
-    <div className="-mx-4 flex min-h-full w-[calc(100%+2rem)] max-w-[1500px] flex-col px-3 pb-4 pt-2 sm:mx-auto sm:w-full sm:px-6">
+    <div className="flowy-flow-editor -mx-4 flex min-h-full w-[calc(100%+2rem)] max-w-none flex-col sm:mx-auto sm:w-full">
       {draftPromptOpen ? (
         <div className="mb-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 text-sm sm:flex sm:items-center sm:justify-between sm:gap-4">
           <div>
@@ -411,11 +411,11 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           </div>
         </div>
       ) : null}
-      <header className="mb-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem_2.5rem_2.5rem] items-center gap-1 rounded-2xl border border-border bg-card p-2 shadow-sm sm:flex sm:gap-2">
+      <header className="flowy-flow-editor-header grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem_2.75rem_2.75rem] items-center gap-1 px-3 py-2 sm:mx-auto sm:w-full sm:max-w-[1800px] sm:px-6 sm:py-3">
         <button
           type="button"
           onClick={() => router.push("/app/notes")}
-          className="grid size-10 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="grid size-11 place-items-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
           aria-label="Voltar para notas"
         >
           <ArrowLeft className="size-4" />
@@ -427,7 +427,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
             markChanged();
           }}
           placeholder="Fluxograma sem título"
-          className="min-w-0 w-full rounded-lg bg-muted/25 px-2.5 py-2 text-sm font-semibold outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex-1 sm:bg-transparent sm:text-lg"
+          className="min-w-0 w-full rounded-xl bg-muted/50 px-3 py-2.5 text-base font-semibold outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex-1 sm:bg-transparent sm:text-lg"
           aria-label="Título do fluxograma"
         />
         <span
@@ -442,7 +442,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         <button
           type="button"
           onClick={() => setPenOnly((current) => !current)}
-          className={`grid size-10 place-items-center rounded-md transition-colors hover:bg-accent hover:text-foreground ${
+          className={`grid size-11 place-items-center rounded-xl transition-colors hover:bg-accent hover:text-foreground ${
             penOnly ? "bg-primary/15 text-primary" : "text-muted-foreground"
           }`}
           aria-label={
@@ -458,7 +458,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         <button
           type="button"
           onClick={() => void saveCurrent()}
-          className="grid size-10 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="grid size-11 place-items-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
           aria-label="Salvar fluxograma"
           title="Salvar fluxograma"
         >
@@ -467,13 +467,13 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         <button
           type="button"
           onClick={handleTrash}
-          className="grid size-10 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          className="grid size-11 place-items-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           aria-label="Mover fluxograma para a lixeira"
         >
           <Trash2 className="size-4" />
         </button>
       </header>
-      <div className="h-[calc(100dvh-13.5rem)] min-h-[420px] overflow-visible rounded-2xl border border-border bg-card shadow-sm sm:h-[calc(100dvh-8rem)] sm:min-h-[520px] sm:overflow-hidden">
+      <div className="flowy-flow-canvas h-[calc(100dvh-11.75rem)] min-h-[420px] overflow-visible bg-card sm:mx-auto sm:h-[calc(100dvh-7.5rem)] sm:min-h-[520px] sm:w-[calc(100%-3rem)] sm:max-w-[1800px] sm:overflow-hidden sm:rounded-2xl">
         <ExcalidrawCanvas
           key={canvasRevision}
           scene={scene}
