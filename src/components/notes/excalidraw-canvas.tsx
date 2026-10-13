@@ -1,17 +1,33 @@
 "use client";
 
 import {
+  ArrowUpRight,
+  Circle,
+  Diamond,
+  Minus,
+  Shapes,
+  Square,
+} from "lucide-react";
+import {
   CaptureUpdateAction,
   Excalidraw,
   MainMenu,
   restoreLibraryItems,
 } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import type {
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
   LibraryItems,
+  UIAppState,
 } from "@excalidraw/excalidraw/types";
 
 import {
@@ -80,6 +96,100 @@ function normalizeScene(scene: ExcalidrawScene | null | undefined) {
     appState: persistableAppState(scene?.appState),
     files: scene?.files ?? {},
   } satisfies ExcalidrawScene;
+}
+
+const MOBILE_SHAPE_OPTIONS = [
+  { type: "rectangle", label: "Retângulo", icon: Square },
+  { type: "diamond", label: "Losango", icon: Diamond },
+  { type: "ellipse", label: "Círculo", icon: Circle },
+  { type: "arrow", label: "Seta", icon: ArrowUpRight },
+  { type: "line", label: "Linha", icon: Minus },
+] as const;
+
+function MobileShapePicker({
+  isMobile,
+  appState,
+  apiRef,
+}: {
+  isMobile: boolean;
+  appState: UIAppState;
+  apiRef: RefObject<ExcalidrawImperativeAPI | null>;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        rootRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
+  if (!isMobile) return null;
+
+  return (
+    <div ref={rootRef} className="flowy-mobile-shape-picker">
+      <button
+        type="button"
+        className="flowy-mobile-shape-trigger"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-controls="flowy-mobile-shape-menu"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <Shapes className="size-4" aria-hidden="true" />
+        <span>Formas</span>
+      </button>
+      {open ? (
+        <div
+          id="flowy-mobile-shape-menu"
+          className="flowy-mobile-shape-menu"
+          role="menu"
+          aria-label="Formas do fluxograma"
+        >
+          {MOBILE_SHAPE_OPTIONS.map((option) => {
+            const Icon = option.icon;
+            const selected = appState.activeTool.type === option.type;
+            return (
+              <button
+                key={option.type}
+                type="button"
+                role="menuitemradio"
+                aria-checked={selected}
+                className={`flowy-mobile-shape-option${
+                  selected ? " is-selected" : ""
+                }`}
+                onClick={() => {
+                  apiRef.current?.setActiveTool({ type: option.type });
+                  setOpen(false);
+                }}
+              >
+                <Icon className="size-5" aria-hidden="true" />
+                <span>{option.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export function ExcalidrawCanvas({
@@ -399,6 +509,17 @@ export function ExcalidrawCanvas({
     [],
   );
 
+  const renderTopRightUI = useCallback(
+    (isMobile: boolean, appState: UIAppState) => (
+      <MobileShapePicker
+        isMobile={isMobile}
+        appState={appState}
+        apiRef={excalidrawApi}
+      />
+    ),
+    [],
+  );
+
   return (
     <div
       ref={containerRef}
@@ -412,6 +533,7 @@ export function ExcalidrawCanvas({
         langCode="pt-BR"
         name={name.trim() || "Fluxograma sem título"}
         UIOptions={uiOptions}
+        renderTopRightUI={renderTopRightUI}
         onLibraryChange={handleLibraryChange}
         onChange={handleChange}
       >
