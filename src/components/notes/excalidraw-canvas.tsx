@@ -5,6 +5,7 @@ import {
   Excalidraw,
   MainMenu,
   restoreLibraryItems,
+  restoreElements,
 } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -43,17 +44,82 @@ function persistableAppState(
 ) {
   if (!appState || typeof appState !== "object") return {};
   const state = appState as Record<string, unknown>;
+  const zoom = state.zoom;
+  const normalizedZoom =
+    typeof zoom === "number" && Number.isFinite(zoom)
+      ? { value: zoom }
+      : zoom &&
+          typeof zoom === "object" &&
+          "value" in zoom &&
+          typeof zoom.value === "number" &&
+          Number.isFinite(zoom.value)
+        ? { value: zoom.value }
+        : undefined;
   return {
-    ...(typeof state.theme === "string" ? { theme: state.theme } : {}),
+    ...(state.theme === "light" || state.theme === "dark"
+      ? { theme: state.theme }
+      : {}),
     ...(typeof state.viewBackgroundColor === "string"
       ? { viewBackgroundColor: state.viewBackgroundColor }
       : {}),
-    ...(typeof state.scrollX === "number" ? { scrollX: state.scrollX } : {}),
-    ...(typeof state.scrollY === "number" ? { scrollY: state.scrollY } : {}),
-    ...(state.zoom && typeof state.zoom === "object"
-      ? { zoom: state.zoom }
+    ...(typeof state.scrollX === "number" && Number.isFinite(state.scrollX)
+      ? { scrollX: state.scrollX }
       : {}),
+    ...(typeof state.scrollY === "number" && Number.isFinite(state.scrollY)
+      ? { scrollY: state.scrollY }
+      : {}),
+    ...(normalizedZoom ? { zoom: normalizedZoom } : {}),
   } as ExcalidrawInitialDataState["appState"];
+}
+
+function normalizeElements(value: unknown): ExcalidrawScene["elements"] {
+  const elements = Array.isArray(value)
+    ? value.filter(
+        (element): element is Record<string, unknown> =>
+          Boolean(element) && typeof element === "object",
+      )
+    : [];
+
+  try {
+    return restoreElements(
+      elements as Parameters<typeof restoreElements>[0],
+      null,
+      { repairBindings: true },
+    );
+  } catch {
+    // Um elemento antigo inválido não pode impedir a abertura do fluxograma.
+    return elements.flatMap((element) => {
+      try {
+        return restoreElements(
+          [element] as Parameters<typeof restoreElements>[0],
+          null,
+        );
+      } catch {
+        return [];
+      }
+    });
+  }
+}
+
+function normalizeFiles(value: unknown): ExcalidrawInitialDataState["files"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      ([, file]) =>
+        file &&
+        typeof file === "object" &&
+        "dataURL" in file &&
+        typeof file.dataURL === "string",
+    ),
+  ) as ExcalidrawInitialDataState["files"];
+}
+
+function normalizeScene(scene: ExcalidrawScene | null | undefined) {
+  return {
+    elements: normalizeElements(scene?.elements),
+    appState: persistableAppState(scene?.appState),
+    files: normalizeFiles(scene?.files),
+  } satisfies ExcalidrawScene;
 }
 
 export function ExcalidrawCanvas({
@@ -122,17 +188,14 @@ export function ExcalidrawCanvas({
     };
   }, []);
 
-  const initialData = useMemo(
-    () => ({
-      ...(scene ?? { elements: [] }),
-      appState: {
-        ...persistableAppState(scene?.appState),
-        theme: canvasTheme,
-      },
+  const initialData = useMemo(() => {
+    const normalizedScene = normalizeScene(scene);
+    return {
+      ...normalizedScene,
+      appState: { ...normalizedScene.appState, theme: canvasTheme },
       libraryItems: initialLibrary,
-    }),
-    [canvasTheme, initialLibrary, scene],
-  );
+    };
+  }, [canvasTheme, initialLibrary, scene]);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -170,10 +233,11 @@ export function ExcalidrawCanvas({
     if (!remoteScene || !excalidrawApi.current || !apiReady) return;
     isApplyingRemoteScene.current = true;
     try {
+      const normalizedScene = normalizeScene(remoteScene);
       excalidrawApi.current.updateScene({
-        ...remoteScene,
+        ...normalizedScene,
         appState: {
-          ...persistableAppState(remoteScene.appState),
+          ...normalizedScene.appState,
           theme: canvasTheme,
         },
         captureUpdate: CaptureUpdateAction.NEVER,
