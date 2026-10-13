@@ -105,6 +105,11 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   );
 
   useEffect(() => {
+    document.body.classList.add("is-flow-editor");
+    return () => document.body.classList.remove("is-flow-editor");
+  }, []);
+
+  useEffect(() => {
     try {
       localStorage.setItem(penOnlyKey(note.id), String(penOnly));
     } catch {
@@ -355,7 +360,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   }
 
   return (
-    <div className="flowy-flow-editor -mx-4 flex min-h-full w-[calc(100%+2rem)] max-w-none flex-col sm:mx-auto sm:w-full">
+    <div className="flowy-flow-editor flex h-full min-h-0 w-full flex-col">
       {draftPromptOpen ? (
         <div className="mb-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 text-sm sm:flex sm:items-center sm:justify-between sm:gap-4">
           <div>
@@ -411,11 +416,11 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           </div>
         </div>
       ) : null}
-      <header className="flowy-flow-editor-header grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem_2.75rem_2.75rem] items-center gap-1 px-3 py-2 sm:mx-auto sm:w-full sm:max-w-[1800px] sm:px-6 sm:py-3">
+      <header className="flowy-flow-editor-header grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-1 px-2 py-2 sm:mx-auto sm:grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem_2.75rem_2.75rem] sm:w-full sm:max-w-[1800px] sm:px-6 sm:py-3">
         <button
           type="button"
           onClick={() => router.push("/app/notes")}
-          className="grid size-11 place-items-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="grid size-11 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
           aria-label="Voltar para notas"
         >
           <ArrowLeft className="size-4" />
@@ -427,7 +432,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
             markChanged();
           }}
           placeholder="Fluxograma sem título"
-          className="min-w-0 w-full rounded-xl bg-muted/50 px-3 py-2.5 text-base font-semibold outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex-1 sm:bg-transparent sm:text-lg"
+          className="min-w-0 w-full bg-transparent px-2 py-2 text-base font-semibold outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex-1 sm:text-lg"
           aria-label="Título do fluxograma"
         />
         <span
@@ -442,7 +447,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         <button
           type="button"
           onClick={() => setPenOnly((current) => !current)}
-          className={`grid size-11 place-items-center rounded-xl transition-colors hover:bg-accent hover:text-foreground ${
+          className={`hidden size-11 place-items-center rounded-full transition-colors hover:bg-accent hover:text-foreground sm:grid ${
             penOnly ? "bg-primary/15 text-primary" : "text-muted-foreground"
           }`}
           aria-label={
@@ -458,7 +463,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         <button
           type="button"
           onClick={() => void saveCurrent()}
-          className="grid size-11 place-items-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="hidden size-11 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground sm:grid"
           aria-label="Salvar fluxograma"
           title="Salvar fluxograma"
         >
@@ -467,13 +472,13 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         <button
           type="button"
           onClick={handleTrash}
-          className="grid size-11 place-items-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          className="grid size-11 place-items-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           aria-label="Mover fluxograma para a lixeira"
         >
           <Trash2 className="size-4" />
         </button>
       </header>
-      <div className="flowy-flow-canvas h-[calc(100dvh-11.75rem)] min-h-[420px] overflow-visible bg-card sm:mx-auto sm:h-[calc(100dvh-7.5rem)] sm:min-h-[520px] sm:w-[calc(100%-3rem)] sm:max-w-[1800px] sm:overflow-hidden sm:rounded-2xl">
+      <div className="flowy-flow-canvas min-h-0 flex-1 overflow-visible bg-card sm:mx-auto sm:w-[calc(100%-3rem)] sm:max-w-[1800px] sm:overflow-hidden sm:rounded-2xl">
         <ExcalidrawCanvas
           key={canvasRevision}
           scene={scene}

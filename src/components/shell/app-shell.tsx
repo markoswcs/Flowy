@@ -197,7 +197,7 @@ export function AppShell({
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="theme-shell-panel relative z-40 flex h-16 shrink-0 items-center justify-center border-b border-border/50 px-3 md:hidden">
+        <header className="flowy-mobile-header theme-shell-panel relative z-40 flex h-16 shrink-0 items-center justify-center border-b border-border/50 px-3 md:hidden">
           <Logo />
         </header>
 

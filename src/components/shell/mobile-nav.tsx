@@ -15,7 +15,7 @@ export function MobileNav({ onOpenMenu, menuOpen }: { onOpenMenu: () => void; me
   const iconClass = "grid size-11 place-items-center rounded-2xl transition-all duration-200 active:scale-90";
 
   return (
-    <nav aria-label="Navegação móvel" className="theme-shell-panel safe-bottom fixed inset-x-0 bottom-0 z-40 border-x-0 border-b-0 border-border/70 shadow-[0_-10px_30px_hsl(var(--background)/.28)] md:hidden">
+    <nav aria-label="Navegação móvel" className="flowy-mobile-nav theme-shell-panel safe-bottom fixed inset-x-0 bottom-0 z-40 border-x-0 border-b-0 border-border/70 shadow-[0_-10px_30px_hsl(var(--background)/.28)] md:hidden">
       <div className="grid h-[4.75rem] grid-cols-5 px-3">
         <button type="button" onClick={onOpenMenu} className={cn(itemClass, menuOpen && "text-primary")} aria-label="Abrir menu" title="Menu">
           <span className={cn(iconClass, menuOpen && "bg-primary/12 text-primary")}><PanelLeftOpen className={cn("size-5 transition-transform duration-500", menuOpen && "rotate-180 scale-110")} aria-hidden="true" /></span>

@@ -175,6 +175,22 @@
     transform: translateY(10px) scale(0.9);
   }
 
+  body.is-flow-editor .global-create-button,
+  body.is-flow-editor .flowy-mobile-header,
+  body.is-flow-editor .flowy-mobile-nav {
+    display: none;
+  }
+
+  body.is-flow-editor #main-content {
+    overflow: hidden;
+    padding: 0;
+  }
+
+  body.is-flow-editor #main-content > .app-page-transition {
+    height: 100%;
+    max-width: none;
+  }
+
   a,
   button {
     transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -254,11 +270,13 @@
   }
 
   .flowy-flow-editor-header {
-    background: hsl(var(--background) / 0.92);
+    min-height: 3.75rem;
+    border-bottom: 1px solid hsl(var(--border) / 0.6);
+    background: hsl(var(--background));
   }
 
   .flowy-flow-canvas {
-    border-top: 1px solid hsl(var(--border) / 0.65);
+    background: hsl(var(--background));
   }
 
   .flowy-excalidraw .App-menu_top {
@@ -294,10 +312,11 @@
     .flowy-flow-editor-header {
       position: relative;
       z-index: 30;
+      min-height: 3.75rem;
     }
 
     .flowy-flow-canvas {
-      border-top: 1px solid hsl(var(--border) / 0.5);
+      height: auto;
     }
 
     .flowy-excalidraw .App-menu_top {
@@ -312,6 +331,23 @@
     .flowy-excalidraw .mobile-misc-tools-container button {
       min-width: 2.75rem;
       min-height: 2.75rem;
+    }
+
+    .flowy-excalidraw.excalidraw {
+      --lg-button-size: 3.25rem;
+      --default-button-size: 3rem;
+      --lg-icon-size: 1.45rem;
+      --default-icon-size: 1.25rem;
+    }
+
+    .flowy-excalidraw .App-toolbar-container {
+      width: calc(100% - 1rem);
+      margin: 0.75rem 0.5rem;
+    }
+
+    .flowy-excalidraw .App-toolbar--mobile {
+      gap: 0.15rem;
+      padding: 0.25rem;
     }
 
     .flowy-excalidraw .App-toolbar--mobile [data-testid="toolbar-rectangle"],
