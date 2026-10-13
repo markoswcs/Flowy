@@ -76,20 +76,31 @@ interface EditorErrorBoundaryProps {
 interface EditorErrorBoundaryState {
   hasError: boolean;
   retryKey: number;
+  errorMessage: string | null;
 }
 
 class EditorErrorBoundary extends Component<
   EditorErrorBoundaryProps,
   EditorErrorBoundaryState
 > {
-  state: EditorErrorBoundaryState = { hasError: false, retryKey: 0 };
+  state: EditorErrorBoundaryState = {
+    hasError: false,
+    retryKey: 0,
+    errorMessage: null,
+  };
 
-  static getDerivedStateFromError(): Partial<EditorErrorBoundaryState> {
-    return { hasError: true };
+  static getDerivedStateFromError(
+    error: unknown,
+  ): Partial<EditorErrorBoundaryState> {
+    return {
+      hasError: true,
+      errorMessage:
+        error instanceof Error ? error.message : "Erro desconhecido no editor",
+    };
   }
 
-  componentDidCatch(_error: Error, _info: ErrorInfo) {
-    // Mantém a falha isolada ao editor e evita derrubar a rota inteira.
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[Flowy] Falha no editor de fluxograma", error, info);
   }
 
   render() {
@@ -111,6 +122,7 @@ class EditorErrorBoundary extends Component<
               this.setState((current) => ({
                 hasError: false,
                 retryKey: current.retryKey + 1,
+                errorMessage: null,
               }))
             }
             className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -118,6 +130,16 @@ class EditorErrorBoundary extends Component<
             <RefreshCw className="size-4" aria-hidden="true" />
             Recarregar editor
           </button>
+          {this.state.errorMessage ? (
+            <details className="mt-5 w-full text-left text-xs text-muted-foreground">
+              <summary className="cursor-pointer text-center hover:text-foreground">
+                Ver detalhe técnico
+              </summary>
+              <code className="mt-2 block max-h-24 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-muted/60 p-3">
+                {this.state.errorMessage}
+              </code>
+            </details>
+          ) : null}
         </section>
       );
     }
