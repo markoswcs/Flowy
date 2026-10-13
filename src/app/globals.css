@@ -268,11 +268,20 @@
 
   @media (max-width: 640px) {
     .flowy-excalidraw .App-toolbar-container {
+      width: calc(100% - 0.5rem);
       max-width: calc(100vw - 1rem);
+      margin-inline: 0.25rem;
+    }
+
+    .flowy-excalidraw .App-toolbar--mobile {
+      max-width: 100%;
+      padding-inline: 0.25rem;
     }
 
     .flowy-excalidraw .mobile-misc-tools-container {
       right: 0.25rem;
+      max-height: calc(100% - 7rem);
+      overflow-y: auto;
     }
   }
 

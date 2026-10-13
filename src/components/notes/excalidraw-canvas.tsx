@@ -68,6 +68,7 @@ function persistableAppState(
       ? { scrollY: state.scrollY }
       : {}),
     ...(normalizedZoom ? { zoom: normalizedZoom } : {}),
+    ...(typeof state.penMode === "boolean" ? { penMode: state.penMode } : {}),
   } as ExcalidrawInitialDataState["appState"];
 }
 
@@ -89,6 +90,7 @@ export function ExcalidrawCanvas({
   userId,
   remoteScene,
   onLiveChange,
+  penOnly,
 }: {
   scene: ExcalidrawScene | null;
   onChange: (scene: ExcalidrawScene) => void;
@@ -97,6 +99,7 @@ export function ExcalidrawCanvas({
   userId: string;
   remoteScene: ExcalidrawScene | null;
   onLiveChange: (scene: ExcalidrawScene) => void;
+  penOnly: boolean;
 }) {
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
@@ -105,6 +108,7 @@ export function ExcalidrawCanvas({
   const isApplyingRemoteScene = useRef(false);
   const excalidrawApi = useRef<ExcalidrawImperativeAPI | null>(null);
   const librarySaveTimer = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [apiReady, setApiReady] = useState(false);
   const [canvasTheme, setCanvasTheme] = useState<"light" | "dark">(() =>
     typeof document !== "undefined" &&
@@ -161,7 +165,12 @@ export function ExcalidrawCanvas({
     const normalizedScene = normalizeScene(scene);
     return {
       ...normalizedScene,
-      appState: { ...normalizedScene.appState, theme: canvasTheme },
+      appState: {
+        ...normalizedScene.appState,
+        theme: canvasTheme,
+        penMode: penOnly,
+        penDetected: true,
+      },
       libraryItems: initialLibrary,
     };
   });
@@ -179,10 +188,6 @@ export function ExcalidrawCanvas({
         <MainMenu.DefaultItems.SearchMenu />
         <MainMenu.DefaultItems.Help />
         <MainMenu.DefaultItems.ClearCanvas />
-        <MainMenu.Separator />
-        <MainMenu.Group title="Links do Excalidraw">
-          <MainMenu.DefaultItems.Socials />
-        </MainMenu.Group>
         <MainMenu.Separator />
         <MainMenu.DefaultItems.ToggleTheme />
         <MainMenu.DefaultItems.ChangeCanvasBackground />
@@ -233,6 +238,8 @@ export function ExcalidrawCanvas({
         appState: {
           ...normalizedScene.appState,
           theme: canvasTheme,
+          penMode: penOnly,
+          penDetected: true,
         },
         captureUpdate: CaptureUpdateAction.NEVER,
       } as Parameters<ExcalidrawImperativeAPI["updateScene"]>[0]);
@@ -243,7 +250,7 @@ export function ExcalidrawCanvas({
     window.requestAnimationFrame(() => {
       isApplyingRemoteScene.current = false;
     });
-  }, [apiReady, canvasTheme, remoteScene]);
+  }, [apiReady, canvasTheme, penOnly, remoteScene]);
 
   useEffect(() => {
     if (!apiReady || !excalidrawApi.current) return;
@@ -261,6 +268,42 @@ export function ExcalidrawCanvas({
       isApplyingRemoteScene.current = false;
     });
   }, [apiReady, canvasTheme]);
+
+  useEffect(() => {
+    if (!apiReady || !excalidrawApi.current) return;
+    isApplyingRemoteScene.current = true;
+    try {
+      excalidrawApi.current.updateScene({
+        appState: { penMode: penOnly, penDetected: true },
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
+    } catch {
+      isApplyingRemoteScene.current = false;
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      isApplyingRemoteScene.current = false;
+    });
+  }, [apiReady, penOnly]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const blockNonPenPointer = (event: PointerEvent) => {
+      if (!penOnly || event.pointerType === "pen") return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.closest("canvas.excalidraw__canvas")) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    container.addEventListener("pointerdown", blockNonPenPointer, true);
+    return () =>
+      container.removeEventListener("pointerdown", blockNonPenPointer, true);
+  }, [penOnly]);
 
   const handleApiReady = useCallback((api: ExcalidrawImperativeAPI) => {
     excalidrawApi.current = api;
@@ -325,6 +368,7 @@ export function ExcalidrawCanvas({
 
   return (
     <div
+      ref={containerRef}
       className="flowy-excalidraw h-full min-h-0 overflow-visible bg-background sm:overflow-hidden"
       role="region"
       aria-label="Área de edição do fluxograma"

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, PenTool, Save, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -45,6 +45,10 @@ function draftKey(noteId: string) {
   return `flowy:excalidraw-draft:${noteId}`;
 }
 
+function penOnlyKey(noteId: string) {
+  return `flowy:excalidraw-pen-only:${noteId}`;
+}
+
 function readDraft(note: Note): ExcalidrawDraft | null {
   if (typeof window === "undefined") return null;
   try {
@@ -69,6 +73,14 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   const [scene, setScene] = useState<ExcalidrawScene | null>(() =>
     parseScene(note.excalidraw_data),
   );
+  const [penOnly, setPenOnly] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem(penOnlyKey(note.id)) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [draftPromptOpen, setDraftPromptOpen] = useState(
     Boolean(restoredDraft),
   );
@@ -91,6 +103,14 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     () => (scene ? JSON.stringify(scene) : null),
     [scene],
   );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(penOnlyKey(note.id), String(penOnly));
+    } catch {
+      // O modo continua ativo durante a sessão quando o armazenamento local falha.
+    }
+  }, [note.id, penOnly]);
 
   const saveCurrent = useCallback(async () => {
     if (version.current === 0 || version.current === savedVersion.current)
@@ -391,7 +411,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           </div>
         </div>
       ) : null}
-      <header className="mb-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem_2.5rem] items-center gap-1 rounded-2xl border border-border bg-card p-2 shadow-sm sm:flex sm:gap-2">
+      <header className="mb-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem_2.5rem_2.5rem] items-center gap-1 rounded-2xl border border-border bg-card p-2 shadow-sm sm:flex sm:gap-2">
         <button
           type="button"
           onClick={() => router.push("/app/notes")}
@@ -421,6 +441,22 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         </span>
         <button
           type="button"
+          onClick={() => setPenOnly((current) => !current)}
+          className={`grid size-10 place-items-center rounded-md transition-colors hover:bg-accent hover:text-foreground ${
+            penOnly ? "bg-primary/15 text-primary" : "text-muted-foreground"
+          }`}
+          aria-label={
+            penOnly
+              ? "Desativar modo somente caneta"
+              : "Ativar modo somente caneta"
+          }
+          aria-pressed={penOnly}
+          title={penOnly ? "Somente caneta: ativo" : "Somente caneta: inativo"}
+        >
+          <PenTool className="size-4" />
+        </button>
+        <button
+          type="button"
           onClick={() => void saveCurrent()}
           className="grid size-10 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
           aria-label="Salvar fluxograma"
@@ -437,7 +473,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           <Trash2 className="size-4" />
         </button>
       </header>
-      <div className="h-[calc(100dvh-15.5rem)] min-h-[360px] overflow-visible rounded-2xl border border-border bg-card shadow-sm sm:h-[calc(100dvh-8rem)] sm:min-h-[520px] sm:overflow-hidden">
+      <div className="h-[calc(100dvh-13.5rem)] min-h-[420px] overflow-visible rounded-2xl border border-border bg-card shadow-sm sm:h-[calc(100dvh-8rem)] sm:min-h-[520px] sm:overflow-hidden">
         <ExcalidrawCanvas
           key={canvasRevision}
           scene={scene}
@@ -447,6 +483,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           userId={note.user_id}
           remoteScene={remoteScene}
           onLiveChange={sendLiveChange}
+          penOnly={penOnly}
         />
       </div>
     </div>
