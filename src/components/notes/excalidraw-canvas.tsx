@@ -4,6 +4,7 @@ import {
   CaptureUpdateAction,
   Excalidraw,
   MainMenu,
+  restoreLibraryItems,
 } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -23,6 +24,18 @@ export interface ExcalidrawScene {
   elements: ExcalidrawInitialDataState["elements"];
   appState?: ExcalidrawInitialDataState["appState"];
   files?: ExcalidrawInitialDataState["files"];
+}
+
+function normalizeLibraryItems(value: unknown): LibraryItems {
+  if (!Array.isArray(value)) return [];
+  try {
+    return restoreLibraryItems(
+      value as Parameters<typeof restoreLibraryItems>[0],
+      "unpublished",
+    );
+  } catch {
+    return [];
+  }
 }
 
 export function ExcalidrawCanvas({
@@ -58,8 +71,9 @@ export function ExcalidrawCanvas({
   const [initialLibrary] = useState<LibraryItems>(() => {
     if (typeof window === "undefined") return [];
     try {
-      const library = JSON.parse(localStorage.getItem(libraryKey) ?? "[]");
-      return Array.isArray(library) ? library : [];
+      return normalizeLibraryItems(
+        JSON.parse(localStorage.getItem(libraryKey) ?? "[]"),
+      );
     } catch {
       return [];
     }
@@ -122,7 +136,7 @@ export function ExcalidrawCanvas({
       .then((remoteLibrary) => {
         if (!cancelled && remoteLibrary && excalidrawApi.current) {
           excalidrawApi.current.updateLibrary({
-            libraryItems: remoteLibrary as LibraryItems,
+            libraryItems: normalizeLibraryItems(remoteLibrary),
           });
         }
       })
@@ -137,14 +151,19 @@ export function ExcalidrawCanvas({
   useEffect(() => {
     if (!remoteScene || !excalidrawApi.current || !apiReady) return;
     isApplyingRemoteScene.current = true;
-    excalidrawApi.current.updateScene({
-      ...remoteScene,
-      appState: {
-        ...(remoteScene.appState ?? {}),
-        theme: canvasTheme,
-      },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    } as Parameters<ExcalidrawImperativeAPI["updateScene"]>[0]);
+    try {
+      excalidrawApi.current.updateScene({
+        ...remoteScene,
+        appState: {
+          ...(remoteScene.appState ?? {}),
+          theme: canvasTheme,
+        },
+        captureUpdate: CaptureUpdateAction.NEVER,
+      } as Parameters<ExcalidrawImperativeAPI["updateScene"]>[0]);
+    } catch {
+      isApplyingRemoteScene.current = false;
+      return;
+    }
     window.requestAnimationFrame(() => {
       isApplyingRemoteScene.current = false;
     });
@@ -153,10 +172,15 @@ export function ExcalidrawCanvas({
   useEffect(() => {
     if (!apiReady || !excalidrawApi.current) return;
     isApplyingRemoteScene.current = true;
-    excalidrawApi.current.updateScene({
-      appState: { theme: canvasTheme },
-      captureUpdate: CaptureUpdateAction.NEVER,
-    });
+    try {
+      excalidrawApi.current.updateScene({
+        appState: { theme: canvasTheme },
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
+    } catch {
+      isApplyingRemoteScene.current = false;
+      return;
+    }
     window.requestAnimationFrame(() => {
       isApplyingRemoteScene.current = false;
     });
@@ -164,7 +188,7 @@ export function ExcalidrawCanvas({
 
   return (
     <div
-      className="flowy-excalidraw h-full min-h-0 overflow-hidden bg-[#12101d]"
+      className="flowy-excalidraw h-full min-h-0 overflow-visible bg-background sm:overflow-hidden"
       role="region"
       aria-label="Área de edição do fluxograma"
     >

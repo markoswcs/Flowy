@@ -335,7 +335,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-[1500px] flex-col px-3 pb-4 pt-2 sm:px-6">
+    <div className="-mx-4 flex min-h-full w-[calc(100%+2rem)] max-w-[1500px] flex-col px-3 pb-4 pt-2 sm:mx-auto sm:w-full sm:px-6">
       {draftPromptOpen ? (
         <div className="mb-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 text-sm sm:flex sm:items-center sm:justify-between sm:gap-4">
           <div>
@@ -437,7 +437,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           <Trash2 className="size-4" />
         </button>
       </header>
-      <div className="h-[calc(100dvh-8.5rem)] min-h-[460px] overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:h-[calc(100dvh-8rem)] sm:min-h-[520px]">
+      <div className="h-[calc(100dvh-15.5rem)] min-h-[360px] overflow-visible rounded-2xl border border-border bg-card shadow-sm sm:h-[calc(100dvh-8rem)] sm:min-h-[520px] sm:overflow-hidden">
         <ExcalidrawCanvas
           key={canvasRevision}
           scene={scene}

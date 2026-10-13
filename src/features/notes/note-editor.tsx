@@ -9,6 +9,7 @@ import type { JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
+  AlertTriangle,
   ArrowLeft,
   Bold,
   Check,
@@ -25,10 +26,19 @@ import {
   Folder as FolderIcon,
   Palette,
   PencilLine,
+  RefreshCw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Component,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
 import { toast } from "sonner";
 import { notify } from "@/providers/notification-provider";
 
@@ -59,7 +69,71 @@ const ExcalidrawNoteEditor = dynamic(
   },
 );
 
-const noteColors = ["#1f2937", "#312e81", "#4c1d3f", "#3f2a19", "#1f3d36", "#3b2f63"];
+interface EditorErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface EditorErrorBoundaryState {
+  hasError: boolean;
+  retryKey: number;
+}
+
+class EditorErrorBoundary extends Component<
+  EditorErrorBoundaryProps,
+  EditorErrorBoundaryState
+> {
+  state: EditorErrorBoundaryState = { hasError: false, retryKey: 0 };
+
+  static getDerivedStateFromError(): Partial<EditorErrorBoundaryState> {
+    return { hasError: true };
+  }
+
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // Mantém a falha isolada ao editor e evita derrubar a rota inteira.
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <section className="mx-auto flex min-h-[52dvh] w-full max-w-lg flex-col items-center justify-center rounded-2xl border border-destructive/20 bg-card px-6 py-12 text-center">
+          <span className="grid size-12 place-items-center rounded-2xl bg-destructive/10 text-destructive">
+            <AlertTriangle className="size-6" aria-hidden="true" />
+          </span>
+          <h2 className="mt-4 text-lg font-semibold">
+            O editor precisa ser recarregado
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            O fluxograma não foi apagado. Tente carregar o editor novamente.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              this.setState((current) => ({
+                hasError: false,
+                retryKey: current.retryKey + 1,
+              }))
+            }
+            className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <RefreshCw className="size-4" aria-hidden="true" />
+            Recarregar editor
+          </button>
+        </section>
+      );
+    }
+
+    return <div key={this.state.retryKey}>{this.props.children}</div>;
+  }
+}
+
+const noteColors = [
+  "#1f2937",
+  "#312e81",
+  "#4c1d3f",
+  "#3f2a19",
+  "#1f3d36",
+  "#3b2f63",
+];
 
 interface Draft {
   title: string;
@@ -111,7 +185,13 @@ function ToolbarButton({
 }
 
 function LoadedNoteEditor({ note }: { note: Note }) {
-  if (note.kind === "excalidraw") return <ExcalidrawNoteEditor note={note} />;
+  if (note.kind === "excalidraw") {
+    return (
+      <EditorErrorBoundary>
+        <ExcalidrawNoteEditor note={note} />
+      </EditorErrorBoundary>
+    );
+  }
   return <TextNoteEditor note={note} />;
 }
 
@@ -136,7 +216,9 @@ function TextNoteEditor({ note }: { note: Note }) {
   const [plainText, setPlainText] = useState(
     draft?.plainText ?? note.plain_text,
   );
-  const [noteColor, setNoteColor] = useState<string | null>(draft?.color ?? note.color);
+  const [noteColor, setNoteColor] = useState<string | null>(
+    draft?.color ?? note.color,
+  );
   const [drawingOpen, setDrawingOpen] = useState(false);
   const [status, setStatus] = useState<
     "saved" | "saving" | "offline" | "error"
@@ -324,51 +406,56 @@ function TextNoteEditor({ note }: { note: Note }) {
               ),
             })),
           ]}
-          triggerIcon={<FolderIcon className="size-3.5 text-muted-foreground" />}
+          triggerIcon={
+            <FolderIcon className="size-3.5 text-muted-foreground" />
+          }
           className="h-9 border-border bg-background shadow-none hover:bg-accent"
         />
         <div className="relative" ref={tagsRef}>
-          <button 
+          <button
             type="button"
-            onClick={() => setTagsOpen(!tagsOpen)} 
+            onClick={() => setTagsOpen(!tagsOpen)}
             className="flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            Tags <ChevronDown className={`size-3 transition-transform ${tagsOpen ? "rotate-180" : ""}`} />
+            Tags{" "}
+            <ChevronDown
+              className={`size-3 transition-transform ${tagsOpen ? "rotate-180" : ""}`}
+            />
           </button>
           {tagsOpen && (
             <div className="absolute left-0 top-11 z-[100] min-w-48 rounded-xl border border-border bg-popover p-2 shadow-lg animate-in fade-in zoom-in-95">
               {categories.data?.length ? (
-              categories.data.map((category) => (
-                <label
-                  key={category.id}
-                  className="flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-sm hover:bg-accent"
-                >
-                  <input
-                    type="checkbox"
-                    checked={categoryIds.includes(category.id)}
-                    onChange={() => {
-                      setCategoryIds((current) =>
-                        current.includes(category.id)
-                          ? current.filter((id) => id !== category.id)
-                          : [...current, category.id],
-                      );
-                      setCategoryDirty(true);
-                      markChanged();
-                    }}
-                    className="size-4 rounded-sm border-border bg-background text-primary focus:ring-primary focus:ring-offset-background"
-                  />
-                  <span
-                    className="size-2.5 rounded-full shadow-sm"
-                    style={{ backgroundColor: category.color }}
-                  />
-                  <span className="truncate">{category.name}</span>
-                </label>
-              ))
-            ) : (
-              <p className="px-2 py-1 text-xs text-muted-foreground">
-                Nenhuma tag
-              </p>
-            )}
+                categories.data.map((category) => (
+                  <label
+                    key={category.id}
+                    className="flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-sm hover:bg-accent"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={categoryIds.includes(category.id)}
+                      onChange={() => {
+                        setCategoryIds((current) =>
+                          current.includes(category.id)
+                            ? current.filter((id) => id !== category.id)
+                            : [...current, category.id],
+                        );
+                        setCategoryDirty(true);
+                        markChanged();
+                      }}
+                      className="size-4 rounded-sm border-border bg-background text-primary focus:ring-primary focus:ring-offset-background"
+                    />
+                    <span
+                      className="size-2.5 rounded-full shadow-sm"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <span className="truncate">{category.name}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="px-2 py-1 text-xs text-muted-foreground">
+                  Nenhuma tag
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -415,7 +502,9 @@ function TextNoteEditor({ note }: { note: Note }) {
 
       <div className="mb-5 flex items-center gap-2">
         <Palette className="size-4 text-muted-foreground" aria-hidden="true" />
-        <span className="text-xs font-medium text-muted-foreground">Cor da nota</span>
+        <span className="text-xs font-medium text-muted-foreground">
+          Cor da nota
+        </span>
         <button
           type="button"
           onClick={() => {
@@ -490,7 +579,10 @@ function TextNoteEditor({ note }: { note: Note }) {
             <CheckSquare className="size-4" />
           </ToolbarButton>
           <span className="mx-1 h-5 w-px bg-border" />
-          <ToolbarButton label="Inserir desenho" onClick={() => setDrawingOpen(true)}>
+          <ToolbarButton
+            label="Inserir desenho"
+            onClick={() => setDrawingOpen(true)}
+          >
             <PencilLine className="size-4" />
           </ToolbarButton>
           <span className="mx-1 h-5 w-px bg-border" />
@@ -546,13 +638,7 @@ function TextNoteEditor({ note }: { note: Note }) {
       <DrawingDialog
         open={drawingOpen}
         onClose={() => setDrawingOpen(false)}
-        onSave={(src) =>
-          editor
-            ?.chain()
-            .focus()
-            .setImage({ src })
-            .run()
-        }
+        onSave={(src) => editor?.chain().focus().setImage({ src }).run()}
       />
     </div>
   );
