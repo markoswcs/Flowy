@@ -287,6 +287,39 @@ export function ExcalidrawCanvas({
   }, [apiReady, penOnly]);
 
   useEffect(() => {
+    if (!apiReady || !excalidrawApi.current) return;
+
+    const refreshEditorGeometry = () => {
+      excalidrawApi.current?.refresh();
+    };
+    const transitionRoot = containerRef.current?.closest(
+      ".app-page-transition",
+    );
+    const firstFrame = window.requestAnimationFrame(refreshEditorGeometry);
+    const secondFrame = window.requestAnimationFrame(() => {
+      refreshEditorGeometry();
+    });
+    const settleTimer = window.setTimeout(refreshEditorGeometry, 700);
+    const viewport = window.visualViewport;
+
+    transitionRoot?.addEventListener("animationend", refreshEditorGeometry);
+    window.addEventListener("resize", refreshEditorGeometry);
+    viewport?.addEventListener("resize", refreshEditorGeometry);
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+      window.clearTimeout(settleTimer);
+      transitionRoot?.removeEventListener(
+        "animationend",
+        refreshEditorGeometry,
+      );
+      window.removeEventListener("resize", refreshEditorGeometry);
+      viewport?.removeEventListener("resize", refreshEditorGeometry);
+    };
+  }, [apiReady]);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
