@@ -5,7 +5,6 @@ import {
   Excalidraw,
   MainMenu,
   restoreLibraryItems,
-  restoreElements,
 } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -72,53 +71,13 @@ function persistableAppState(
   } as ExcalidrawInitialDataState["appState"];
 }
 
-function normalizeElements(value: unknown): ExcalidrawScene["elements"] {
-  const elements = Array.isArray(value)
-    ? value.filter(
-        (element): element is Record<string, unknown> =>
-          Boolean(element) && typeof element === "object",
-      )
-    : [];
-
-  try {
-    return restoreElements(
-      elements as Parameters<typeof restoreElements>[0],
-      null,
-      { repairBindings: true },
-    );
-  } catch {
-    // Um elemento antigo inválido não pode impedir a abertura do fluxograma.
-    return elements.flatMap((element) => {
-      try {
-        return restoreElements(
-          [element] as Parameters<typeof restoreElements>[0],
-          null,
-        );
-      } catch {
-        return [];
-      }
-    });
-  }
-}
-
-function normalizeFiles(value: unknown): ExcalidrawInitialDataState["files"] {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return Object.fromEntries(
-    Object.entries(value).filter(
-      ([, file]) =>
-        file &&
-        typeof file === "object" &&
-        "dataURL" in file &&
-        typeof file.dataURL === "string",
-    ),
-  ) as ExcalidrawInitialDataState["files"];
-}
-
 function normalizeScene(scene: ExcalidrawScene | null | undefined) {
   return {
-    elements: normalizeElements(scene?.elements),
+    elements: Array.isArray(scene?.elements)
+      ? scene.elements.filter(Boolean)
+      : [],
     appState: persistableAppState(scene?.appState),
-    files: normalizeFiles(scene?.files),
+    files: scene?.files ?? {},
   } satisfies ExcalidrawScene;
 }
 
