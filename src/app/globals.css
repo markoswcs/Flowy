@@ -395,8 +395,8 @@
     .flowy-excalidraw .mobile-misc-tools-container {
       top: auto !important;
       right: 50% !important;
-      bottom: calc(var(--sab, 0px) + 0.75rem) !important;
-      z-index: 12;
+      bottom: calc(var(--sab, 0px) + 5.5rem) !important;
+      z-index: 20;
       max-height: none;
       flex-direction: row !important;
       overflow: hidden;
