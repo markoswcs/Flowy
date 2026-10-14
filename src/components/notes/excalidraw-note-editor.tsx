@@ -36,11 +36,6 @@ interface ExcalidrawDraft {
   changedAt: number;
 }
 
-interface RemoteChange {
-  scene: ExcalidrawScene;
-  title: string | undefined;
-}
-
 function draftKey(noteId: string) {
   return `flowy:excalidraw-draft:${noteId}`;
 }
@@ -86,8 +81,6 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   );
   const [canvasRevision, setCanvasRevision] = useState(0);
   const [remoteScene, setRemoteScene] = useState<ExcalidrawScene | null>(null);
-  const [pendingRemoteChange, setPendingRemoteChange] =
-    useState<RemoteChange | null>(null);
   const [status, setStatus] = useState<
     "saved" | "saving" | "offline" | "error"
   >(restoredDraft ? "offline" : "saved");
@@ -134,6 +127,8 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     }
     setStatus(isOnline ? "saving" : "offline");
     if (!isOnline) return;
+    const previousSavedScene = savedScene.current;
+    savedScene.current = serializedScene;
     try {
       await saveNote({
         title: title.trim() || "Fluxograma sem título",
@@ -147,6 +142,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         setStatus("saved");
       }
     } catch {
+      savedScene.current = previousSavedScene;
       setStatus("error");
     }
   }, [isOnline, note.id, saveNote, serializedScene, title]);
@@ -225,16 +221,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           ) {
             return;
           }
-          if (version.current !== savedVersion.current) {
-            const nextScene = parseScene(next.excalidraw_data);
-            if (nextScene) {
-              setPendingRemoteChange({ scene: nextScene, title: next.title });
-            }
-            toast.warning(
-              "Há alterações em outro dispositivo. Salve ou recarregue antes de continuar.",
-            );
-            return;
-          }
+          if (version.current !== savedVersion.current) return;
           const nextScene = parseScene(next.excalidraw_data);
           if (!nextScene) return;
           savedScene.current = next.excalidraw_data;
@@ -334,23 +321,6 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     setStatus("saved");
   }
 
-  function useRemoteChange() {
-    if (!pendingRemoteChange) return;
-    setTitle(pendingRemoteChange.title ?? title);
-    setScene(pendingRemoteChange.scene);
-    setRemoteScene(pendingRemoteChange.scene);
-    savedScene.current = JSON.stringify(pendingRemoteChange.scene);
-    savedVersion.current = version.current;
-    localStorage.removeItem(draftKey(note.id));
-    setPendingRemoteChange(null);
-    setStatus("saved");
-  }
-
-  function keepLocalChange() {
-    setPendingRemoteChange(null);
-    void saveCurrent();
-  }
-
   async function handleTrash() {
     try {
       await trash.mutateAsync(note.id);
@@ -385,34 +355,6 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
               className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
             >
               Recuperar rascunho
-            </button>
-          </div>
-        </div>
-      ) : null}
-      {pendingRemoteChange ? (
-        <div className="mb-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm sm:flex sm:items-center sm:justify-between sm:gap-4">
-          <div>
-            <p className="font-semibold">
-              Este fluxograma foi alterado em outro dispositivo.
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Escolha qual versão deseja manter.
-            </p>
-          </div>
-          <div className="mt-3 flex gap-2 sm:mt-0">
-            <button
-              type="button"
-              onClick={useRemoteChange}
-              className="rounded-md px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent"
-            >
-              Usar outra versão
-            </button>
-            <button
-              type="button"
-              onClick={keepLocalChange}
-              className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-            >
-              Manter esta versão
             </button>
           </div>
         </div>
