@@ -144,7 +144,11 @@ class EditorErrorBoundary extends Component<
       );
     }
 
-    return <div key={this.state.retryKey}>{this.props.children}</div>;
+    return (
+      <div key={this.state.retryKey} className="h-full min-h-0">
+        {this.props.children}
+      </div>
+    );
   }
 }
 
