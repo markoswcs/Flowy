@@ -5,6 +5,11 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import type {
+  BinaryFileData,
+  BinaryFiles,
+  DataURL,
+} from "@excalidraw/excalidraw/types";
 
 import type { ExcalidrawScene } from "@/components/notes/excalidraw-canvas";
 import { useSaveNote, useTrashNote } from "@/features/notes/use-notes";
@@ -56,6 +61,77 @@ function readDraft(note: Note): ExcalidrawDraft | null {
   } catch {
     return null;
   }
+}
+
+const MAX_SCENE_SIZE = 1_900_000;
+
+function serializedSize(value: string | null) {
+  return value ? new TextEncoder().encode(value).byteLength : 0;
+}
+
+function loadImage(dataUrl: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    image.src = dataUrl;
+  });
+}
+
+async function optimizeImage(
+  file: BinaryFileData,
+  maxDimension: number,
+  quality: number,
+) {
+  if (
+    !file.dataURL.startsWith("data:image/") ||
+    file.mimeType === "image/gif" ||
+    file.mimeType === "image/svg+xml"
+  ) {
+    return file;
+  }
+
+  try {
+    const image = await loadImage(file.dataURL);
+    const scale = Math.min(
+      1,
+      maxDimension / Math.max(image.width, image.height),
+    );
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const dataURL = canvas.toDataURL("image/webp", quality) as DataURL;
+    if (dataURL.length >= file.dataURL.length) return file;
+    return {
+      ...file,
+      dataURL,
+      mimeType: "image/webp" as BinaryFileData["mimeType"],
+      version: (file.version ?? 0) + 1,
+    };
+  } catch {
+    return file;
+  }
+}
+
+async function optimizeSceneImages(
+  scene: ExcalidrawScene,
+  maxDimension = 1600,
+  quality = 0.78,
+) {
+  const files = (scene.files ?? {}) as BinaryFiles;
+  const optimizedEntries = await Promise.all(
+    Object.entries(files).map(async ([id, file]) => [
+      id,
+      await optimizeImage(file, maxDimension, quality),
+    ]),
+  );
+  return {
+    ...scene,
+    files: Object.fromEntries(optimizedEntries) as BinaryFiles,
+  };
 }
 
 export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
@@ -115,37 +191,52 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     if (version.current === 0 || version.current === savedVersion.current)
       return;
     const currentVersion = version.current;
-    const serializedSize = serializedScene
-      ? new TextEncoder().encode(serializedScene).byteLength
-      : 0;
-    if (serializedSize > 1_900_000) {
+    let sceneToSave = scene;
+    let sceneToSaveSerialized = serializedScene;
+
+    setStatus(isOnline ? "saving" : "offline");
+    if (!isOnline) return;
+
+    if (sceneToSave && serializedSize(sceneToSaveSerialized) > MAX_SCENE_SIZE) {
+      sceneToSave = await optimizeSceneImages(sceneToSave);
+      sceneToSaveSerialized = JSON.stringify(sceneToSave);
+
+      if (serializedSize(sceneToSaveSerialized) > MAX_SCENE_SIZE) {
+        sceneToSave = await optimizeSceneImages(sceneToSave, 960, 0.62);
+        sceneToSaveSerialized = JSON.stringify(sceneToSave);
+      }
+
+      if (currentVersion !== version.current) return;
+      setScene(sceneToSave);
+      setRemoteScene(sceneToSave);
+    }
+
+    if (serializedSize(sceneToSaveSerialized) > MAX_SCENE_SIZE) {
       setStatus("error");
       toast.error(
-        "O fluxograma excede o limite de 2 MB. Reduza as imagens para salvar.",
+        "Não foi possível reduzir as imagens o suficiente. Remova uma imagem muito grande e tente novamente.",
       );
       return;
     }
-    setStatus(isOnline ? "saving" : "offline");
-    if (!isOnline) return;
     const previousSavedScene = savedScene.current;
-    savedScene.current = serializedScene;
+    savedScene.current = sceneToSaveSerialized;
     try {
       await saveNote({
         title: title.trim() || "Fluxograma sem título",
         plain_text: "Fluxograma do Excalidraw",
-        excalidraw_data: serializedScene,
+        excalidraw_data: sceneToSaveSerialized,
       });
       if (currentVersion === version.current) {
         localStorage.removeItem(draftKey(note.id));
         savedVersion.current = currentVersion;
-        savedScene.current = serializedScene;
+        savedScene.current = sceneToSaveSerialized;
         setStatus("saved");
       }
     } catch {
       savedScene.current = previousSavedScene;
       setStatus("error");
     }
-  }, [isOnline, note.id, saveNote, serializedScene, title]);
+  }, [isOnline, note.id, saveNote, scene, serializedScene, title]);
 
   useEffect(() => {
     saveCurrentRef.current = saveCurrent;
