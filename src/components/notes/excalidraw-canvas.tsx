@@ -42,6 +42,37 @@ export interface ExcalidrawScene {
   files?: ExcalidrawInitialDataState["files"];
 }
 
+const EXAMPLE_FLOWCHART_TRANSLATIONS: Record<string, string> = {
+  Christmas: "Natal",
+  "Get money": "Conseguir dinheiro",
+  "Go shopping": "Ir às compras",
+  "Let me think": "Deixe-me pensar",
+  One: "Um",
+  Two: "Dois",
+  Three: "Três",
+  Laptop: "Notebook",
+  Car: "Carro",
+};
+
+function translateExampleFlowchartElements(
+  elements: ExcalidrawInitialDataState["elements"],
+) {
+  return elements?.map((element) => {
+    if (!element || element.type !== "text") return element;
+    const translation = EXAMPLE_FLOWCHART_TRANSLATIONS[element.text.trim()];
+    if (!translation) return element;
+
+    return {
+      ...element,
+      text: element.text.replace(element.text.trim(), translation),
+      originalText: element.originalText.replace(
+        element.originalText.trim(),
+        translation,
+      ),
+    };
+  });
+}
+
 function normalizeLibraryItems(value: unknown): LibraryItems {
   if (!Array.isArray(value)) return [];
   try {
@@ -91,7 +122,7 @@ function persistableAppState(
 function normalizeScene(scene: ExcalidrawScene | null | undefined) {
   return {
     elements: Array.isArray(scene?.elements)
-      ? scene.elements.filter(Boolean)
+      ? translateExampleFlowchartElements(scene.elements.filter(Boolean))
       : [],
     appState: persistableAppState(scene?.appState),
     files: scene?.files ?? {},
