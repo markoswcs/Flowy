@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, PenTool, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, MoreVertical, PenTool, Save, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -91,6 +91,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   const [status, setStatus] = useState<
     "saved" | "saving" | "offline" | "error"
   >(restoredDraft ? "offline" : "saved");
+  const [actionsOpen, setActionsOpen] = useState(false);
   const version = useRef(0);
   const savedVersion = useRef(0);
   const savedScene = useRef(note.excalidraw_data);
@@ -432,7 +433,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
             markChanged();
           }}
           placeholder="Fluxograma sem título"
-          className="min-w-0 w-full bg-transparent px-2 py-2 text-base font-semibold outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex-1 sm:text-lg"
+          className="min-w-0 w-full bg-transparent px-2 py-2 text-base font-semibold outline-none placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 sm:flex-1 sm:text-lg"
           aria-label="Título do fluxograma"
         />
         <span
@@ -469,10 +470,44 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         >
           <Save className="size-4" />
         </button>
+        <div className="relative sm:hidden">
+          <button
+            type="button"
+            onClick={() => setActionsOpen((open) => !open)}
+            className="grid size-11 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label="Mais ações"
+            aria-expanded={actionsOpen}
+          >
+            <MoreVertical className="size-5" />
+          </button>
+          {actionsOpen ? (
+            <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-52 rounded-2xl border border-border bg-popover p-1.5 shadow-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  setPenOnly((current) => !current);
+                  setActionsOpen(false);
+                }}
+                className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium hover:bg-accent"
+              >
+                <PenTool className="size-5" />
+                {penOnly ? "Desativar caneta" : "Somente caneta"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleTrash()}
+                className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="size-5" />
+                Mover para lixeira
+              </button>
+            </div>
+          ) : null}
+        </div>
         <button
           type="button"
           onClick={handleTrash}
-          className="grid size-11 place-items-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          className="hidden size-11 place-items-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:grid"
           aria-label="Mover fluxograma para a lixeira"
         >
           <Trash2 className="size-4" />

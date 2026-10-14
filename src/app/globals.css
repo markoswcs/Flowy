@@ -320,7 +320,7 @@
     }
 
     .flowy-excalidraw .App-menu_top {
-      margin-top: 0.5rem;
+      margin-top: 0;
     }
 
     .flowy-excalidraw .Island {
@@ -342,7 +342,7 @@
 
     .flowy-excalidraw .App-toolbar-container {
       width: calc(100% - 1rem);
-      margin: 0.75rem 0.5rem;
+      margin: 0 auto 0.5rem;
     }
 
     .flowy-excalidraw .App-toolbar--mobile {
@@ -350,19 +350,30 @@
       padding: 0.25rem;
     }
 
-    .flowy-excalidraw .App-toolbar--mobile [data-testid="toolbar-rectangle"],
-    .flowy-excalidraw .App-toolbar--mobile [data-testid="toolbar-diamond"],
-    .flowy-excalidraw .App-toolbar--mobile [data-testid="toolbar-ellipse"],
-    .flowy-excalidraw .App-toolbar--mobile [data-testid="toolbar-arrow"],
-    .flowy-excalidraw .App-toolbar--mobile [data-testid="toolbar-line"] {
+    .flowy-excalidraw .App-top-bar {
+      position: absolute;
+      inset: auto 0 4.75rem;
+      justify-content: flex-end;
+    }
+
+    .flowy-excalidraw .App-top-bar .HintViewer,
+    .flowy-excalidraw .mobile-misc-tools-container {
+      display: none;
+    }
+
+    .flowy-excalidraw .App-toolbar--mobile .ToolIcon:has([data-testid="toolbar-rectangle"]),
+    .flowy-excalidraw .App-toolbar--mobile .ToolIcon:has([data-testid="toolbar-diamond"]),
+    .flowy-excalidraw .App-toolbar--mobile .ToolIcon:has([data-testid="toolbar-ellipse"]),
+    .flowy-excalidraw .App-toolbar--mobile .ToolIcon:has([data-testid="toolbar-arrow"]),
+    .flowy-excalidraw .App-toolbar--mobile .ToolIcon:has([data-testid="toolbar-line"]) {
       display: none;
     }
 
     .flowy-excalidraw .App-toolbar-container {
       width: calc(100% - 0.5rem);
       max-width: calc(100vw - 1rem);
-      margin-inline: 0.25rem;
-      align-items: flex-start;
+      margin-inline: auto;
+      align-items: center;
     }
 
     .flowy-excalidraw .App-toolbar--mobile {
@@ -407,8 +418,9 @@
 
     .flowy-excalidraw .flowy-mobile-shape-menu {
       position: absolute;
-      top: calc(100% + 0.5rem);
+      top: auto;
       right: 0;
+      bottom: calc(100% + 0.5rem);
       z-index: 20;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
