@@ -168,6 +168,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   const liveSend = useRef<(scene: ExcalidrawScene) => void>(() => {});
   const liveTimer = useRef<number | null>(null);
   const pendingLiveScene = useRef<ExcalidrawScene | null>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
   const [dirtyVersion, setDirtyVersion] = useState(0);
   const serializedScene = useMemo(
     () => (scene ? JSON.stringify(scene) : null),
@@ -178,6 +179,28 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     document.body.classList.add("is-flow-editor");
     return () => document.body.classList.remove("is-flow-editor");
   }, []);
+
+  useEffect(() => {
+    if (!actionsOpen) return;
+    const closeActions = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        actionsRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      setActionsOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActionsOpen(false);
+    };
+    document.addEventListener("pointerdown", closeActions);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeActions);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [actionsOpen]);
 
   useEffect(() => {
     try {
@@ -503,7 +526,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         >
           <Save className="size-4" />
         </button>
-        <div className="relative sm:hidden">
+        <div ref={actionsRef} className="relative sm:hidden">
           <button
             type="button"
             onClick={() => setActionsOpen((open) => !open)}
