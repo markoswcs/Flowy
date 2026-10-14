@@ -358,13 +358,6 @@
       padding: 0.25rem;
     }
 
-    .flowy-excalidraw .App-top-bar {
-      position: absolute;
-      inset: auto 0 6.5rem;
-      z-index: 12;
-      justify-content: flex-end;
-    }
-
     .flowy-excalidraw .App-top-bar .HintViewer,
     .flowy-excalidraw .mobile-misc-tools-container {
       display: none;
@@ -427,9 +420,9 @@
 
     .flowy-excalidraw .flowy-mobile-shape-menu {
       position: absolute;
-      top: auto;
+      top: calc(100% + 0.5rem);
       right: 0;
-      bottom: calc(100% + 0.5rem);
+      bottom: auto;
       z-index: 20;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
