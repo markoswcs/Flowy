@@ -95,7 +95,7 @@ export function TaskFilters({
             onChange={(val) => onChange({ ...value, categoryId: val })}
             triggerIcon={<Tag className="size-3.5 transition-transform group-hover:scale-110 group-hover:text-primary" />}
             options={[
-              { value: "all", label: "Tags" },
+              { value: "all", label: "Etiquetas" },
               ...categories.map(c => ({ value: c.id, label: c.name, color: c.color }))
             ]}
             className="h-10 lg:h-9 w-full rounded-2xl lg:rounded-full border-white/5 bg-white/5 backdrop-blur-md transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] focus:ring-primary/30"

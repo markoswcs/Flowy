@@ -443,7 +443,7 @@ function TextNoteEditor({ note }: { note: Note }) {
             onClick={() => setTagsOpen(!tagsOpen)}
             className="flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            Tags{" "}
+            Etiquetas{" "}
             <ChevronDown
               className={`size-3 transition-transform ${tagsOpen ? "rotate-180" : ""}`}
             />
@@ -598,7 +598,7 @@ function TextNoteEditor({ note }: { note: Note }) {
             <ListOrdered className="size-4" />
           </ToolbarButton>
           <ToolbarButton
-            label="Checklist"
+            label="Lista de verificação"
             active={editor.isActive("taskList")}
             onClick={() => editor.chain().focus().toggleTaskList().run()}
           >

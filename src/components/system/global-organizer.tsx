@@ -88,7 +88,7 @@ export function GlobalOrganizer() {
                 target === "categories" ? "bg-background font-medium shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Tag className="size-4" /> Tags
+              <Tag className="size-4" /> Etiquetas
             </button>
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={() => setOpen(false)}>

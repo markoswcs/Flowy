@@ -267,7 +267,7 @@ export function Sidebar({
                   ) : (
                     <ChevronRight className="size-3.5" />
                   )}
-                  Tags
+                  Etiquetas
                 </button>
                 <button
                   type="button"

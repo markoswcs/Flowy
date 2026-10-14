@@ -242,7 +242,7 @@ export function TaskComposer({
 
           <div className="pt-2 sm:col-span-2 lg:col-span-4">
             <Label className="mb-2 block text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-              Tags
+              Etiquetas
             </Label>
             <TaskTagSelector
               categories={categories}

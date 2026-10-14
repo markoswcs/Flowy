@@ -115,7 +115,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
           Criar uma tag
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tags são etiquetas que você aplica às tarefas para agrupá-las.
+          Etiquetas ajudam a agrupar e organizar suas tarefas.
         </p>
       </div>
 
