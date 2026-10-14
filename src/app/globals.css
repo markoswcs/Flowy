@@ -358,8 +358,7 @@
       padding: 0.25rem;
     }
 
-    .flowy-excalidraw .App-top-bar .HintViewer,
-    .flowy-excalidraw .mobile-misc-tools-container {
+    .flowy-excalidraw .App-top-bar .HintViewer {
       display: none !important;
     }
 
@@ -425,25 +424,6 @@
 
     .flowy-excalidraw .flowy-mobile-shape-trigger:hover,
     .flowy-excalidraw .flowy-mobile-shape-trigger[aria-expanded="true"] {
-      border-color: var(--color-primary);
-      background: var(--color-primary-light);
-      color: var(--color-on-primary-container);
-    }
-
-    .flowy-excalidraw .flowy-mobile-background-trigger {
-      display: grid;
-      width: 2.75rem;
-      height: 2.75rem;
-      flex: 0 0 auto;
-      place-items: center;
-      border: 1px solid var(--default-border-color);
-      border-radius: 999px;
-      background: var(--island-bg-color);
-      color: var(--icon-fill-color);
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .flowy-excalidraw .flowy-mobile-background-trigger:hover {
       border-color: var(--color-primary);
       background: var(--color-primary-light);
       color: var(--color-on-primary-container);

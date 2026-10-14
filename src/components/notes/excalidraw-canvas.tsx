@@ -5,7 +5,6 @@ import {
   Circle,
   Diamond,
   Minus,
-  SunMoon,
   Shapes,
   Square,
 } from "lucide-react";
@@ -145,19 +144,6 @@ function MobileShapePicker({
 
   if (!isMobile) return null;
 
-  const lightBackground =
-    appState.viewBackgroundColor?.toLowerCase() === "#ffffff";
-
-  const toggleBackground = () => {
-    apiRef.current?.updateScene({
-      appState: {
-        ...appState,
-        viewBackgroundColor: lightBackground ? "#121212" : "#ffffff",
-      },
-      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
-    });
-  };
-
   return (
     <div ref={rootRef} className="flowy-mobile-shape-picker">
       <button
@@ -170,15 +156,6 @@ function MobileShapePicker({
       >
         <Shapes className="size-4" aria-hidden="true" />
         <span>Formas</span>
-      </button>
-      <button
-        type="button"
-        className="flowy-mobile-background-trigger"
-        aria-label={lightBackground ? "Usar fundo preto" : "Usar fundo branco"}
-        title={lightBackground ? "Fundo preto" : "Fundo branco"}
-        onClick={toggleBackground}
-      >
-        <SunMoon className="size-5" aria-hidden="true" />
       </button>
       {open ? (
         <div
