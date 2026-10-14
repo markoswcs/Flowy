@@ -275,6 +275,14 @@
     background: hsl(var(--background));
   }
 
+  .flowy-flow-editor-header input,
+  .flowy-flow-editor-header input:focus,
+  .flowy-flow-editor-header input:focus-visible {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+  }
+
   .flowy-flow-canvas {
     background: hsl(var(--background));
   }
@@ -308,7 +316,7 @@
     flex: 0 0 auto;
   }
 
-  @media (max-width: 640px) {
+  @media (max-width: 900px) {
     .flowy-flow-editor-header {
       position: relative;
       z-index: 30;
@@ -352,7 +360,8 @@
 
     .flowy-excalidraw .App-top-bar {
       position: absolute;
-      inset: auto 0 4.75rem;
+      inset: auto 0 6.5rem;
+      z-index: 12;
       justify-content: flex-end;
     }
 
