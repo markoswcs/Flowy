@@ -287,6 +287,14 @@
     background: hsl(var(--background));
   }
 
+  .flowy-flow-actions-menu {
+    isolation: isolate;
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--card-foreground));
+    backdrop-filter: none;
+    box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 38%);
+  }
+
   .flowy-excalidraw .App-menu_top {
     box-shadow: none;
   }
@@ -383,6 +391,12 @@
     }
 
     .flowy-excalidraw.flowy-mobile-tools-collapsed .App-top-bar {
+      display: none !important;
+    }
+
+    .flowy-excalidraw.flowy-mobile-tools-collapsed .App-bottom-bar,
+    .flowy-excalidraw.flowy-mobile-tools-collapsed
+      .mobile-misc-tools-container {
       display: none !important;
     }
 

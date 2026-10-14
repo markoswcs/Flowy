@@ -537,7 +537,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
             <MoreVertical className="size-5" />
           </button>
           {actionsOpen ? (
-            <div className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-52 rounded-2xl border border-border bg-popover p-1.5 shadow-lg">
+            <div className="flowy-flow-actions-menu absolute right-0 top-[calc(100%+0.5rem)] z-50 w-52 rounded-2xl border border-border bg-card p-1.5 shadow-xl">
               <button
                 type="button"
                 onClick={() => {
