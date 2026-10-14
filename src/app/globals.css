@@ -395,20 +395,23 @@
     .flowy-excalidraw .mobile-misc-tools-container {
       top: auto !important;
       right: 50% !important;
-      bottom: calc(var(--sab, 0px) + 5.5rem) !important;
+      bottom: calc(var(--sab, 0px) + 3.5rem) !important;
       z-index: 20;
       max-height: none;
+      gap: 0.125rem;
       flex-direction: row !important;
       overflow: hidden;
-      border: 1px solid var(--sidebar-border-color) !important;
-      border-radius: 0.875rem !important;
+      border: 0 !important;
+      border-radius: 1.25rem !important;
+      padding: 0.25rem;
+      background: var(--island-bg-color);
       transform: translateX(50%);
     }
 
     .flowy-excalidraw .mobile-misc-tools-container .ToolIcon__icon {
       width: 2.75rem !important;
       height: 2.75rem !important;
-      border-radius: 0;
+      border-radius: 0.875rem !important;
     }
 
     .flowy-excalidraw .flowy-mobile-shape-picker {
