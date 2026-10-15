@@ -31,6 +31,19 @@ O bucket público `avatars` aceita JPEG, PNG, WebP e AVIF até 2 MB. O cliente d
 
 Itens com `deleted_at` continuam no banco e podem ser restaurados atribuindo `NULL`. O job `flowy-purge-trash-daily` roda diariamente no backend e chama `purge_deleted_items()`. A função impõe retenção mínima de sete dias, mesmo se chamada com intervalo menor.
 
+## Lembretes por notificação push
+
+A migration `20261015130000_add_task_push_reminders.sql` cria `push_subscriptions` (um registro por navegador/dispositivo), a coluna `tasks.reminder_sent_for` e o job `flowy-task-reminders`, que roda a cada minuto via `pg_cron` + `pg_net` e chama `POST /api/cron/reminders` no app. A rota usa `claim_due_task_reminders()` para marcar de forma atômica as tarefas com horário vencido nos últimos 15 minutos e envia o Web Push. O horário é interpretado no fuso salvo em `user_preferences.timezone`, atualizado quando o usuário ativa as notificações.
+
+O job não faz nada enquanto os dois secrets abaixo não existirem no Vault. Depois de aplicar a migration, rode uma vez no SQL Editor do Supabase, usando a URL de produção e o mesmo valor de `CRON_SECRET` configurado na Vercel:
+
+```sql
+select vault.create_secret('https://SEU-DOMINIO/api/cron/reminders', 'flowy_reminders_url');
+select vault.create_secret('VALOR_DO_CRON_SECRET', 'flowy_cron_secret');
+```
+
+Variáveis de ambiente do servidor (Vercel): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET` e `SUPABASE_SERVICE_ROLE_KEY`. `VAPID_SUBJECT` é opcional (padrão: `NEXT_PUBLIC_SITE_URL`). Gere um novo par VAPID com `npx web-push generate-vapid-keys`; trocar o par invalida as inscrições existentes. No iPhone, o push só funciona com o Flowy instalado na tela de início (iOS 16.4+).
+
 ## Aplicação
 
 Vincule o CLI ao projeto informado e aplique as migrations:

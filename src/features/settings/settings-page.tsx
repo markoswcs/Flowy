@@ -25,6 +25,7 @@ import {
 } from "@/features/settings/use-settings";
 import { optimizeImage } from "@/lib/image-optimizer";
 import { DeleteAccountButton } from "@/components/auth/delete-account-button";
+import { PushNotificationsSection } from "@/features/settings/push-notifications-section";
 import { normalizeThemePreference } from "@/lib/theme";
 import { createClient } from "@/lib/supabase/client";
 import type { ThemePreference } from "@/types/content";
@@ -99,6 +100,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     const enabled = window.localStorage.getItem("flowy:reduce-motion") === "true";
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReduceMotion(enabled);
     document.documentElement.classList.toggle("reduce-motion", enabled);
   }, []);
@@ -223,6 +225,7 @@ export function SettingsPage() {
       </header>
 
       <div className="space-y-10">
+        <PushNotificationsSection />
         <section aria-labelledby="motion-heading">
           <h2 id="motion-heading" className="text-base font-semibold">Movimento</h2>
           <button
