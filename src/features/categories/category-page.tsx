@@ -4,7 +4,6 @@ import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Tag, Pencil, Trash2, X } from "lucide-react";
-import { toast } from "sonner";
 import { notify } from "@/providers/notification-provider";
 
 import { Button, buttonVariants } from "@/components/ui/button";

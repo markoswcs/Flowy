@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Check, Plus, Tag, X } from "lucide-react";
-import { toast } from "sonner";
 import { notify } from "@/providers/notification-provider";
 
 import { Button } from "@/components/ui/button";

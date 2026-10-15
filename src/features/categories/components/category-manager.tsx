@@ -11,7 +11,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 import { notify } from "@/providers/notification-provider";
 
 import { Button } from "@/components/ui/button";

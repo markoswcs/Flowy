@@ -2,7 +2,6 @@
 
 import { WifiOff } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { toast } from "sonner";
 import { notify } from "@/providers/notification-provider";
 
 import { useOnlineStatus } from "@/hooks/use-online-status";
