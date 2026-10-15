@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, MoreVertical, PenTool, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, PenTool, Save, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -160,7 +160,6 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   const [status, setStatus] = useState<
     "saved" | "saving" | "offline" | "error"
   >(restoredDraft ? "offline" : "saved");
-  const [actionsOpen, setActionsOpen] = useState(false);
   const version = useRef(0);
   const savedVersion = useRef(0);
   const savedScene = useRef(note.excalidraw_data);
@@ -168,7 +167,6 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   const liveSend = useRef<(scene: ExcalidrawScene) => void>(() => {});
   const liveTimer = useRef<number | null>(null);
   const pendingLiveScene = useRef<ExcalidrawScene | null>(null);
-  const actionsRef = useRef<HTMLDivElement>(null);
   const [dirtyVersion, setDirtyVersion] = useState(0);
   const serializedScene = useMemo(
     () => (scene ? JSON.stringify(scene) : null),
@@ -179,28 +177,6 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
     document.body.classList.add("is-flow-editor");
     return () => document.body.classList.remove("is-flow-editor");
   }, []);
-
-  useEffect(() => {
-    if (!actionsOpen) return;
-    const closeActions = (event: PointerEvent) => {
-      if (
-        event.target instanceof Node &&
-        actionsRef.current?.contains(event.target)
-      ) {
-        return;
-      }
-      setActionsOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActionsOpen(false);
-    };
-    document.addEventListener("pointerdown", closeActions);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeActions);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [actionsOpen]);
 
   useEffect(() => {
     try {
@@ -473,7 +449,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           </div>
         </div>
       ) : null}
-      <header className="flowy-flow-editor-header grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-1 px-2 py-2 sm:mx-auto sm:grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem_2.75rem_2.75rem] sm:w-full sm:max-w-[1800px] sm:px-6 sm:py-3">
+      <header className="flowy-flow-editor-header grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-1 px-2 py-2 sm:mx-auto sm:grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem_2.75rem_2.75rem] sm:w-full sm:max-w-[1800px] sm:px-6 sm:py-3">
         <button
           type="button"
           onClick={() => router.push("/app/notes")}
@@ -493,7 +469,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           aria-label="Título do fluxograma"
         />
         <span
-          className="hidden px-2 text-xs text-muted-foreground sm:block"
+          className="px-2 text-xs text-muted-foreground"
           aria-live="polite"
         >
           {status === "saving" && "Salvando…"}
@@ -526,40 +502,6 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
         >
           <Save className="size-4" />
         </button>
-        <div ref={actionsRef} className="relative sm:hidden">
-          <button
-            type="button"
-            onClick={() => setActionsOpen((open) => !open)}
-            className="grid size-11 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label="Mais ações"
-            aria-expanded={actionsOpen}
-          >
-            <MoreVertical className="size-5" />
-          </button>
-          {actionsOpen ? (
-            <div className="flowy-flow-actions-menu absolute right-0 top-[calc(100%+0.5rem)] z-50 w-52 rounded-2xl border border-border bg-card p-1.5 shadow-xl">
-              <button
-                type="button"
-                onClick={() => {
-                  setPenOnly((current) => !current);
-                  setActionsOpen(false);
-                }}
-                className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium hover:bg-accent"
-              >
-                <PenTool className="size-5" />
-                {penOnly ? "Desativar caneta" : "Somente caneta"}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleTrash()}
-                className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="size-5" />
-                Mover para lixeira
-              </button>
-            </div>
-          ) : null}
-        </div>
         <button
           type="button"
           onClick={handleTrash}
@@ -580,6 +522,8 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           remoteScene={remoteScene}
           onLiveChange={sendLiveChange}
           penOnly={penOnly}
+          onTogglePenOnly={() => setPenOnly((current) => !current)}
+          onTrash={() => void handleTrash()}
         />
       </div>
     </div>

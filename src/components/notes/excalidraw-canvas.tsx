@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, PenTool, Save, Trash2 } from "lucide-react";
 import {
   CaptureUpdateAction,
   Excalidraw,
@@ -57,6 +57,15 @@ function translateExampleFlowchartElements(
     };
   });
 }
+
+const PANEL_SHAPE_TOOLS = new Set([
+  "rectangle",
+  "diamond",
+  "ellipse",
+  "arrow",
+  "line",
+]);
+type PanelShapeTool = "rectangle" | "diamond" | "ellipse" | "arrow" | "line";
 
 function normalizeLibraryItems(value: unknown): LibraryItems {
   if (!Array.isArray(value)) return [];
@@ -123,6 +132,8 @@ export function ExcalidrawCanvas({
   remoteScene,
   onLiveChange,
   penOnly,
+  onTogglePenOnly,
+  onTrash,
 }: {
   scene: ExcalidrawScene | null;
   onChange: (scene: ExcalidrawScene) => void;
@@ -132,8 +143,12 @@ export function ExcalidrawCanvas({
   remoteScene: ExcalidrawScene | null;
   onLiveChange: (scene: ExcalidrawScene) => void;
   penOnly: boolean;
+  onTogglePenOnly: () => void;
+  onTrash: () => void;
 }) {
   const onChangeRef = useRef(onChange);
+  const onTogglePenOnlyRef = useRef(onTogglePenOnly);
+  const onTrashRef = useRef(onTrash);
   const onSaveRef = useRef(onSave);
   const onLiveChangeRef = useRef(onLiveChange);
   const isReady = useRef(false);
@@ -173,6 +188,11 @@ export function ExcalidrawCanvas({
     onLiveChangeRef.current = onLiveChange;
   }, [onLiveChange]);
 
+  useEffect(() => {
+    onTogglePenOnlyRef.current = onTogglePenOnly;
+    onTrashRef.current = onTrash;
+  }, [onTogglePenOnly, onTrash]);
+
   useEffect(
     () => () => {
       if (librarySaveTimer.current)
@@ -211,7 +231,7 @@ export function ExcalidrawCanvas({
   const mainMenu = useMemo(
     () => (
       <MainMenu>
-        <MainMenu.Item onSelect={() => onSaveRef.current()}>
+        <MainMenu.Item icon={<Save />} onSelect={() => onSaveRef.current()}>
           Salvar no Flowy
         </MainMenu.Item>
         <MainMenu.DefaultItems.LoadScene />
@@ -224,9 +244,26 @@ export function ExcalidrawCanvas({
         <MainMenu.Separator />
         <MainMenu.DefaultItems.ToggleTheme />
         <MainMenu.DefaultItems.ChangeCanvasBackground />
+        {/* On phones the header has no room for these, so they live here. */}
+        <MainMenu.Group title="Fluxograma" className="flowy-mobile-menu-group">
+          <MainMenu.Item
+            icon={<PenTool />}
+            selected={penOnly}
+            onSelect={() => onTogglePenOnlyRef.current()}
+          >
+            {penOnly ? "Desativar somente caneta" : "Somente caneta"}
+          </MainMenu.Item>
+          <MainMenu.Item
+            className="flowy-menu-item-danger"
+            icon={<Trash2 />}
+            onSelect={() => onTrashRef.current()}
+          >
+            Mover para lixeira
+          </MainMenu.Item>
+        </MainMenu.Group>
       </MainMenu>
     ),
-    [],
+    [penOnly],
   );
 
   useEffect(() => {
@@ -370,6 +407,33 @@ export function ExcalidrawCanvas({
     return () =>
       container.removeEventListener("pointerdown", blockNonPenPointer, true);
   }, [penOnly]);
+
+  // On phones the shape tools are shown inside the "more tools" panel (see globals.css),
+  // but they are not part of its DOM, so the panel closes on pointerdown before the
+  // click reaches them. Pick the tool on pointerdown instead.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const pickShapeFromPanel = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!container.querySelector(".App-toolbar__extra-tools-dropdown")) return;
+      const input = target
+        .closest(".App-toolbar--mobile .ToolIcon")
+        ?.querySelector<HTMLInputElement>("input[data-testid^='toolbar-']");
+      const type = input?.dataset.testid?.replace("toolbar-", "");
+      if (!type || !PANEL_SHAPE_TOOLS.has(type)) return;
+
+      excalidrawApi.current?.setActiveTool({
+        type: type as PanelShapeTool,
+      });
+    };
+
+    container.addEventListener("pointerdown", pickShapeFromPanel, true);
+    return () =>
+      container.removeEventListener("pointerdown", pickShapeFromPanel, true);
+  }, []);
 
   const handleApiReady = useCallback((api: ExcalidrawImperativeAPI) => {
     excalidrawApi.current = api;
