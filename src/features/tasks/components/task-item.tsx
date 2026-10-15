@@ -16,9 +16,9 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { formatTaskDate, isOverdueDate } from "@/features/tasks/date-utils";
+import { TaskScheduleFields } from "@/features/tasks/components/task-schedule-fields";
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
 import {
   useRestoreTask,
@@ -42,6 +42,18 @@ interface TaskItemProps {
   folders: Folder[];
   categories: Category[];
   compact?: boolean;
+}
+
+function autoResize(element: HTMLTextAreaElement | null) {
+  if (!element) return;
+  element.style.height = "auto";
+  element.style.height = `${element.scrollHeight}px`;
+}
+
+// On mount the editor is still animating in, so measure again once layout settles.
+function fitOnMount(element: HTMLTextAreaElement | null) {
+  autoResize(element);
+  if (element) requestAnimationFrame(() => autoResize(element));
 }
 
 const priorityLabels: Record<TaskPriority, string> = {
@@ -116,15 +128,27 @@ export function TaskEditor({
   return (
     <form
       onSubmit={submit}
-      className="flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-200"
+      className="flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200"
       aria-label={`Editar ${task.title}`}
     >
       <div className="flex flex-col gap-1 px-1">
-        <input
+        <textarea
+          ref={fitOnMount}
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            autoResize(event.target);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          rows={1}
           placeholder="Título da tarefa"
-          className="w-full border-0 bg-transparent p-0 text-base font-semibold text-foreground placeholder:text-muted-foreground shadow-none outline-none focus:border-transparent focus:outline-none focus:ring-0"
+          aria-label="Título da tarefa"
+          className="w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-base font-semibold leading-snug text-foreground placeholder:text-muted-foreground shadow-none outline-none focus:border-transparent focus:outline-none focus:ring-0"
           autoFocus
           required
         />
@@ -132,37 +156,46 @@ export function TaskEditor({
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           placeholder="Adicionar descrição..."
-          className="min-h-[60px] w-full resize-none border-0 bg-transparent p-0 py-1 text-sm text-muted-foreground placeholder:text-muted-foreground/60 shadow-none outline-none focus:border-transparent focus:outline-none focus:ring-0"
+          aria-label="Descrição"
+          className="min-h-[48px] w-full resize-none border-0 bg-transparent p-0 py-1 text-sm text-muted-foreground placeholder:text-muted-foreground/60 shadow-none outline-none focus:border-transparent focus:outline-none focus:ring-0"
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative group">
-          <CalendarDays className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
-          <Input
-            type="date"
-            value={dueDate}
-            onChange={(event) => {
-              setDueDate(event.target.value);
-              if (!event.target.value) setRecurrence("none");
-            }}
-            className="h-8 w-[130px] appearance-none rounded-xl border-border/50 bg-muted/30 pl-8 pr-2 text-xs shadow-none transition-all hover:bg-muted/50 focus:border-primary focus:bg-background"
-          />
+      <TaskScheduleFields
+        idPrefix={`task-${task.id}`}
+        dueDate={dueDate}
+        dueTime={dueTime}
+        onDueDateChange={(value) => {
+          setDueDate(value);
+          if (!value) setRecurrence("none");
+        }}
+        onDueTimeChange={setDueTime}
+      />
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="col-span-2 flex rounded-xl border border-border/50 bg-muted/20 p-1 backdrop-blur-lg sm:col-span-3">
+          {(["low", "normal", "high"] as TaskPriority[]).map((p) => {
+            const isSelected = priority === p;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPriority(p)}
+                aria-pressed={isSelected}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-all duration-200 ${
+                  isSelected
+                    ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Flag className={`size-3 ${isSelected && p === "high" ? "text-destructive" : isSelected && p === "low" ? "text-blue-500" : isSelected ? "text-primary" : ""}`} />
+                {priorityLabels[p]}
+              </button>
+            );
+          })}
         </div>
 
-        {dueDate && (
-          <div className="relative group">
-            <Clock3 className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
-            <Input
-              type="time"
-              value={dueTime}
-              onChange={(event) => setDueTime(event.target.value)}
-              className="h-8 w-[110px] appearance-none rounded-xl border-border/50 bg-muted/30 pl-8 pr-2 text-xs shadow-none transition-all hover:bg-muted/50 focus:border-primary focus:bg-background"
-            />
-          </div>
-        )}
-
-        <div className={cn(!dueDate && "pointer-events-none opacity-50")}>
+        <div className={cn("min-w-0", !dueDate && "pointer-events-none opacity-50")}>
           <CustomSelect
             value={recurrence}
             onChange={(value) =>
@@ -176,28 +209,8 @@ export function TaskEditor({
             ]}
             triggerIcon={<Repeat2 className="size-3.5" />}
             placeholder="Repetir"
+            className="h-10 min-w-0"
           />
-        </div>
-
-        <div className="flex rounded-xl border border-border/50 bg-muted/20 backdrop-blur-lg p-0.5">
-          {(["low", "normal", "high"] as TaskPriority[]).map((p) => {
-            const isSelected = priority === p;
-            return (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPriority(p)}
-                className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all duration-200 ${
-                  isSelected
-                    ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Flag className={`size-3 ${isSelected && p === "high" ? "text-destructive" : isSelected && p === "low" ? "text-blue-500" : isSelected ? "text-primary" : ""}`} />
-                <span className="hidden sm:inline">{priorityLabels[p]}</span>
-              </button>
-            );
-          })}
         </div>
 
         <CustomSelect
@@ -206,19 +219,21 @@ export function TaskEditor({
           options={Object.entries(statusLabels).map(([val, label]) => ({
             value: val,
             label,
-            icon: val === "completed" 
-              ? <Check className="size-3.5 text-primary" /> 
-              : val === "in_progress" 
-                ? <Clock3 className="size-3.5 text-amber-500" /> 
+            icon: val === "completed"
+              ? <Check className="size-3.5 text-primary" />
+              : val === "in_progress"
+                ? <Clock3 className="size-3.5 text-amber-500" />
                 : <CircleDashed className="size-3.5 text-muted-foreground" />
           }))}
           triggerIcon={
-             status === "completed" 
-              ? <Check className="size-3.5 text-primary" /> 
-              : status === "in_progress" 
-                ? <Clock3 className="size-3.5 text-amber-500" /> 
+             status === "completed"
+              ? <Check className="size-3.5 text-primary" />
+              : status === "in_progress"
+                ? <Clock3 className="size-3.5 text-amber-500" />
                 : <CircleDashed className="size-3.5 text-muted-foreground transition-colors group-focus-within:text-primary" />
           }
+          className="h-10 min-w-0"
+          containerClassName="min-w-0"
         />
 
         <CustomSelect
@@ -230,10 +245,12 @@ export function TaskEditor({
             ...folders.map(f => ({ value: f.id, label: f.name, icon: <FolderIcon className="size-3.5 text-blue-500" /> }))
           ]}
           triggerIcon={<FolderIcon className="size-3.5 text-muted-foreground transition-colors group-focus-within:text-primary" />}
+          className="h-10 min-w-0"
+          containerClassName="col-span-2 min-w-0 sm:col-span-1"
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+      <div className="flex flex-wrap items-center gap-1.5">
         <Tag className="mr-1 size-3.5 text-muted-foreground" />
         <TaskTagSelector
           categories={categories}
@@ -243,20 +260,18 @@ export function TaskEditor({
         />
       </div>
 
-      <div className="flex items-center justify-end gap-2 pt-1">
-        <Button 
-          type="button" 
-          variant="ghost" 
-          size="sm"
+      <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-3">
+        <Button
+          type="button"
+          variant="ghost"
           onClick={onClose}
-          className="h-8 rounded-xl text-xs hover:bg-muted/50"
+          className="h-10 rounded-xl px-4 text-sm hover:bg-muted/50"
         >
           Cancelar
         </Button>
         <Button
           type="submit"
-          size="sm"
-          className="h-8 rounded-xl px-5 text-xs font-medium shadow-sm transition-all active:scale-95"
+          className="h-10 rounded-xl px-6 text-sm font-medium shadow-sm transition-all active:scale-95"
           loading={updateMutation.isPending}
           disabled={!title.trim() || (recurrence !== "none" && !dueDate)}
         >

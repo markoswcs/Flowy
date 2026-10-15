@@ -2,9 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 import {
-  Calendar,
   ChevronDown,
-  Clock3,
   Flag,
   Folder as FolderIcon,
   Plus,
@@ -16,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { TaskScheduleFields } from "@/features/tasks/components/task-schedule-fields";
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
 import { useCreateTask } from "@/features/tasks/use-tasks";
 import { cn } from "@/lib/utils";
@@ -143,36 +142,20 @@ export function TaskComposer({
 
       {detailsOpen && (
         <div className="grid gap-5 animate-in slide-in-from-top-2 fade-in px-4 pb-4 pt-2 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-2">
-            <Label htmlFor="quick-task-date" className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-              Data e hora
-            </Label>
-            <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] gap-2">
-              <div className="relative group">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                <Input
-                  id="quick-task-date"
-                  type="date"
-                  value={dueDate}
-                  onChange={(event) => {
-                    setDueDate(event.target.value);
-                    if (!event.target.value) setRecurrence("none");
-                  }}
-                  className="h-10 w-full appearance-none rounded-xl border-border/60 bg-background/50 pl-10 text-sm shadow-sm transition-all hover:bg-background focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-              <div className="relative group">
-                <Clock3 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                <Input
-                  type="time"
-                  value={dueTime}
-                  onChange={(event) => setDueTime(event.target.value)}
-                  disabled={!dueDate}
-                  aria-label="Hora da tarefa"
-                  className="h-10 w-full appearance-none rounded-xl border-border/60 bg-background/50 pl-10 text-sm shadow-sm transition-all hover:bg-background focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-            </div>
+          <div className="space-y-2 sm:col-span-2">
+            <span className="block text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+              Quando
+            </span>
+            <TaskScheduleFields
+              idPrefix="quick-task"
+              dueDate={dueDate}
+              dueTime={dueTime}
+              onDueDateChange={(value) => {
+                setDueDate(value);
+                if (!value) setRecurrence("none");
+              }}
+              onDueTimeChange={setDueTime}
+            />
           </div>
 
           <div className="space-y-2">
