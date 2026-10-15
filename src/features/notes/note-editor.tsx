@@ -69,6 +69,18 @@ const ExcalidrawNoteEditor = dynamic(
   },
 );
 
+const MindmapNoteEditor = dynamic(
+  () => import("@/components/notes/mindmap-note-editor"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mx-auto max-w-4xl p-8 text-sm text-muted-foreground">
+        Carregando mapa mental…
+      </div>
+    ),
+  },
+);
+
 interface EditorErrorBoundaryProps {
   children: ReactNode;
 }
@@ -211,6 +223,14 @@ function ToolbarButton({
 }
 
 function LoadedNoteEditor({ note }: { note: Note }) {
+  if (note.kind === "mindmap") {
+    return (
+      <EditorErrorBoundary>
+        <MindmapNoteEditor note={note} />
+      </EditorErrorBoundary>
+    );
+  }
+
   if (note.kind === "excalidraw") {
     return (
       <EditorErrorBoundary>

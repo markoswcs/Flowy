@@ -1,8 +1,16 @@
 "use client";
 
-import { ChevronDown, ChevronUp, PenTool, Save, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  LayoutTemplate,
+  PenTool,
+  Save,
+  Trash2,
+} from "lucide-react";
 import {
   CaptureUpdateAction,
+  convertToExcalidrawElements,
   Excalidraw,
   MainMenu,
   restoreLibraryItems,
@@ -15,6 +23,7 @@ import type {
   LibraryItems,
 } from "@excalidraw/excalidraw/types";
 
+import { EXCALIDRAW_TEMPLATES } from "@/components/notes/excalidraw-templates";
 import {
   getExcalidrawLibrary,
   saveExcalidrawLibrary,
@@ -154,6 +163,38 @@ export function ExcalidrawCanvas({
   const isReady = useRef(false);
   const isApplyingRemoteScene = useRef(false);
   const excalidrawApi = useRef<ExcalidrawImperativeAPI | null>(null);
+  // Places a template in an empty spot of the canvas and scrolls to it.
+  const insertTemplate = useCallback(
+    (skeleton: Parameters<typeof convertToExcalidrawElements>[0]) => {
+      const api = excalidrawApi.current;
+      if (!api || !skeleton) return;
+      const existing = api.getSceneElements();
+      let centerX: number;
+      let centerY: number;
+      if (existing.length > 0) {
+        // Put the template to the right of what is already drawn, never on top of it.
+        centerX = Math.max(...existing.map((el) => el.x + el.width)) + 200;
+        centerY = Math.min(...existing.map((el) => el.y));
+      } else {
+        const { scrollX, scrollY, zoom, width, height } = api.getAppState();
+        centerX = -scrollX + width / 2 / zoom.value - 400;
+        centerY = -scrollY + height / 2 / zoom.value - 200;
+      }
+      const elements = convertToExcalidrawElements(
+        skeleton.map((element) => ({
+          ...element,
+          x: (element.x ?? 0) + centerX,
+          y: (element.y ?? 0) + centerY,
+        })),
+      );
+      api.updateScene({
+        elements: [...api.getSceneElements(), ...elements],
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      });
+      api.scrollToContent(elements, { fitToContent: true, animate: true });
+    },
+    [],
+  );
   const librarySaveTimer = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [apiReady, setApiReady] = useState(false);
@@ -244,6 +285,17 @@ export function ExcalidrawCanvas({
         <MainMenu.Separator />
         <MainMenu.DefaultItems.ToggleTheme />
         <MainMenu.DefaultItems.ChangeCanvasBackground />
+        <MainMenu.Group title="Modelos prontos">
+          {EXCALIDRAW_TEMPLATES.map((template) => (
+            <MainMenu.Item
+              key={template.id}
+              icon={<LayoutTemplate />}
+              onSelect={() => insertTemplate(template.build())}
+            >
+              {template.label}
+            </MainMenu.Item>
+          ))}
+        </MainMenu.Group>
         {/* On phones the header has no room for these, so they live here. */}
         <MainMenu.Group title="Fluxograma" className="flowy-mobile-menu-group">
           <MainMenu.Item
@@ -263,7 +315,7 @@ export function ExcalidrawCanvas({
         </MainMenu.Group>
       </MainMenu>
     ),
-    [penOnly],
+    [penOnly, insertTemplate],
   );
 
   useEffect(() => {

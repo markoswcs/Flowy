@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Bell, Calendar, CheckCircle2, ChevronDown, Clock, Info, List, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, Trash2 } from "lucide-react";
+import { AlertCircle, Bell, Calendar, CheckCircle2, Clock, CornerDownLeft, Info, List, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,9 @@ import { TaskKanban } from "@/features/tasks/components/task-kanban";
 import { TaskMatrix } from "@/features/tasks/components/task-matrix";
 import { TaskList } from "@/features/tasks/components/task-list";
 import { TaskViewSwitcher } from "@/features/tasks/components/task-view-switcher";
-import { useTasks, useTasksRealtime } from "@/features/tasks/use-tasks";
+import { formatTaskDate } from "@/features/tasks/date-utils";
+import { parseQuickTask } from "@/features/tasks/quick-task";
+import { useCreateTask, useTasks, useTasksRealtime } from "@/features/tasks/use-tasks";
 import { useNotifications } from "@/providers/notification-provider";
 import type {
   TaskFilters as TaskFilterValues,
@@ -50,7 +52,8 @@ export function DashboardPage({
   initialScope = "all",
   initialLayout = "list",
 }: DashboardPageProps) {
-  const { clearNotifications, items } = useNotifications();
+  const { addNotification, clearNotifications, items } = useNotifications();
+  const createTask = useCreateTask();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   useEffect(() => {
     const open = () => setNotificationsOpen(true);
@@ -72,6 +75,34 @@ export function DashboardPage({
   const folders = foldersQuery.data ?? [];
   const categories = categoriesQuery.data ?? [];
   const firstName = displayName.trim().split(/\s+/)[0] || "Usuário";
+
+  const searchText = filters.search ?? "";
+  const quickTask = searchText.trim() ? parseQuickTask(searchText) : null;
+  const quickTaskWhen = quickTask?.due_date
+    ? `${formatTaskDate(quickTask.due_date)}${quickTask.due_time ? ` às ${quickTask.due_time}` : ""}`
+    : null;
+
+  function createFromSearch() {
+    if (!quickTask || createTask.isPending) return;
+    createTask.mutate(
+      {
+        title: quickTask.title,
+        due_date: quickTask.due_date,
+        due_time: quickTask.due_time,
+      },
+      {
+        onSuccess: () => {
+          setFilters((current) => ({ ...current, search: "" }));
+          addNotification({
+            title: "Tarefa criada",
+            description: quickTaskWhen
+              ? `${quickTask.title} · ${quickTaskWhen}`
+              : quickTask.title,
+          });
+        },
+      },
+    );
+  }
 
   const [timeState, setTimeState] = useState({ hour: 12, ready: false });
 
@@ -142,8 +173,8 @@ export function DashboardPage({
             </p>
           </div>
           
-          {statusBarOpen ? <div className="pt-2">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Período">
+          <div className="pt-2">
+            <div className="scrollbar-none -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap" role="group" aria-label="Período">
               {scopes.map((scope) => {
                 const selected = (filters.scope ?? "all") === scope.value;
                 const Icon = scope.icon;
@@ -154,7 +185,7 @@ export function DashboardPage({
                     aria-pressed={selected}
                     onClick={() => setFilters({ ...filters, scope: scope.value })}
                     className={cn(
-                      "flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95",
+                      "flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95",
                       selected ? scope.activeClass : cn("text-muted-foreground", scope.bgClass)
                     )}
                   >
@@ -164,7 +195,7 @@ export function DashboardPage({
                 );
               })}
             </div>
-          </div> : null}
+          </div>
         </div>
 
         <div className="scrollbar-none -mx-1 flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto px-1 pb-2 lg:mx-0 lg:justify-end lg:pb-0">
@@ -181,12 +212,16 @@ export function DashboardPage({
           <Button
             type="button"
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={() => setStatusBarOpen(!statusBarOpen)}
-            aria-label={statusBarOpen ? "Ocultar visões rápidas" : "Mostrar visões rápidas"}
-            className="text-muted-foreground hover:text-foreground"
+            aria-expanded={statusBarOpen}
+            className={cn(
+              "shrink-0 rounded-full text-muted-foreground hover:text-foreground",
+              statusBarOpen && "bg-primary/10 text-primary",
+            )}
           >
-            <ChevronDown className={`size-4 transition-transform ${statusBarOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+            <SlidersHorizontal className="size-4" aria-hidden="true" />
+            Filtros
           </Button>
           <TaskViewSwitcher activeView={initialLayout} />
         </div>
@@ -199,17 +234,39 @@ export function DashboardPage({
         <div className="relative z-40 flex w-full flex-col gap-3 rounded-3xl border border-white/5 bg-black/20 p-2 backdrop-blur-2xl ring-1 ring-white/10 lg:flex-row lg:items-center lg:rounded-full lg:p-1.5 transition-all duration-500 hover:bg-black/30 hover:ring-white/20">
           <div className="absolute inset-0 -z-10 rounded-3xl lg:rounded-full bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-50" aria-hidden="true" />
           <div className="relative flex-1 w-full group">
-            <span className="sr-only">Pesquisar tarefas</span>
+            <span className="sr-only">Pesquisar ou criar tarefa</span>
             <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground transition-all duration-300 group-focus-within:text-primary group-hover:scale-110" aria-hidden="true" />
             <Input
               value={filters.search ?? ""}
               onChange={(event) => setFilters({ ...filters, search: event.target.value })}
-              placeholder="Pesquisar tarefas, notas, ideias..."
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  createFromSearch();
+                }
+              }}
+              aria-label="Pesquisar ou criar tarefa"
+              enterKeyHint="done"
+              placeholder="Pesquisar ou criar tarefa… ex.: Reunião amanhã 15h"
               className="h-11 lg:h-10 w-full appearance-none rounded-2xl lg:rounded-full border-none bg-transparent pl-11 text-sm text-foreground shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300"
             />
             {/* Animated glow line on focus */}
             <div className="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent scale-x-0 opacity-0 transition-all duration-500 group-focus-within:scale-x-100 group-focus-within:opacity-100" />
           </div>
+          {quickTask ? (
+            <button
+              type="button"
+              onClick={createFromSearch}
+              disabled={createTask.isPending}
+              className="flex min-h-10 min-w-0 shrink-0 items-center gap-2 rounded-2xl bg-primary px-4 text-left text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-70 lg:max-w-[50%] lg:rounded-full"
+            >
+              <CornerDownLeft className="size-4 shrink-0" aria-hidden="true" />
+              <span className="truncate">
+                Criar “{quickTask.title}”
+                {quickTaskWhen ? <span className="font-normal opacity-80"> · {quickTaskWhen}</span> : null}
+              </span>
+            </button>
+          ) : null}
         </div>
 
         {statusBarOpen && (
@@ -255,7 +312,7 @@ export function DashboardPage({
               }
               emptyDescription={
                 debouncedSearch
-                  ? "Tente buscar por outro termo."
+                  ? "Aperte Enter para criar essa tarefa."
                   : "Crie uma tarefa para começar."
               }
             />

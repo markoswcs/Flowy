@@ -20,15 +20,15 @@ export function MobileNav({ onOpenMenu, menuOpen }: { onOpenMenu: () => void; me
         <button type="button" onClick={onOpenMenu} className={cn(itemClass, menuOpen && "text-primary")} aria-label="Abrir menu" title="Menu">
           <span className={cn(iconClass, menuOpen && "bg-primary/12 text-primary")}><PanelLeftOpen className={cn("size-5 transition-transform duration-500", menuOpen && "rotate-180 scale-110")} aria-hidden="true" /></span>
         </button>
+        <Link href="/app" className={cn(itemClass, pathname === "/app" && "text-primary")} aria-label="Início" title="Início">
+          <span className={cn(iconClass, pathname === "/app" && "bg-primary/12 text-primary")}><Home className="size-5" aria-hidden="true" /></span>
+        </Link>
+        <span aria-hidden="true" />
         <Link href="/app/notes?tipo=nota" className={cn(itemClass, pathname === "/app/notes" && noteType !== "fluxo" && "text-primary")} aria-label="Notas" title="Notas">
           <span className={cn(iconClass, pathname === "/app/notes" && noteType !== "fluxo" && "bg-primary/12 text-primary")}><NotebookPen className="size-5" aria-hidden="true" /></span>
         </Link>
-        <span aria-hidden="true" />
         <Link href="/app/notes?tipo=fluxo" className={cn(itemClass, pathname === "/app/notes" && noteType === "fluxo" && "text-primary")} aria-label="Fluxos" title="Fluxos">
           <span className={cn(iconClass, pathname === "/app/notes" && noteType === "fluxo" && "bg-primary/12 text-primary")}><Workflow className="size-5" aria-hidden="true" /></span>
-        </Link>
-        <Link href="/app" className={cn(itemClass, pathname === "/app" && "text-primary")} aria-label="Início" title="Início">
-          <span className={cn(iconClass, pathname === "/app" && "bg-primary/12 text-primary")}><Home className="size-5" aria-hidden="true" /></span>
         </Link>
       </div>
     </nav>

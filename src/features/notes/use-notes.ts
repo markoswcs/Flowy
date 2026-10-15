@@ -12,7 +12,7 @@ import {
   updateNote,
   type NoteChanges,
 } from "@/services/notes";
-import type { Note } from "@/types/content";
+import type { Note, NoteKind } from "@/types/content";
 
 export const noteKeys = {
   all: ["notes"] as const,
@@ -47,7 +47,7 @@ export function useCreateNote() {
     mutationFn: (input?: {
       title?: string;
       folderId?: string | null;
-      kind?: "text" | "excalidraw";
+      kind?: NoteKind;
     }) =>
       createNote(client, input),
     onSuccess: (note) => {

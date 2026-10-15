@@ -1,7 +1,7 @@
 import type { JSONContent } from "@tiptap/core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Note } from "@/types/content";
+import type { Note, NoteKind } from "@/types/content";
 
 const EMPTY_DOCUMENT: JSONContent = {
   type: "doc",
@@ -68,7 +68,7 @@ export async function createNote(
   input?: {
     folderId?: string | null;
     title?: string;
-    kind?: "text" | "excalidraw";
+    kind?: NoteKind;
   },
 ): Promise<Note> {
   const userId = await authenticatedUserId(client);
@@ -80,7 +80,7 @@ export async function createNote(
       title: input?.title?.trim() || "Sem título",
       content: EMPTY_DOCUMENT,
       plain_text: "",
-      ...(input?.kind === "excalidraw" ? { kind: "excalidraw" } : {}),
+      ...(input?.kind && input.kind !== "text" ? { kind: input.kind } : {}),
     })
     .select("*, folder:folders(id,name)")
     .single();
@@ -98,6 +98,7 @@ export interface NoteChanges {
   color?: string | null;
   drawing_data?: string | null;
   excalidraw_data?: string | null;
+  mindmap_data?: string | null;
 }
 
 export async function updateNote(

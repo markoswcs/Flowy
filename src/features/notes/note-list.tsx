@@ -8,11 +8,12 @@ import {
   Search,
   Star,
   Trash2,
+  Network,
   Workflow,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { notify } from "@/providers/notification-provider";
 
@@ -25,6 +26,33 @@ import {
   useToggleNoteFavorite,
   useTrashNote,
 } from "@/features/notes/use-notes";
+import type { NoteKind } from "@/types/content";
+
+const creationOptions = [
+  {
+    kind: "text",
+    icon: FileText,
+    title: "Nota",
+    description: "Texto, checklist, links, imagens e desenho.",
+  },
+  {
+    kind: "excalidraw",
+    icon: Workflow,
+    title: "Fluxograma",
+    description: "Formas, setas, modelos prontos, imagens e exportação.",
+  },
+  {
+    kind: "mindmap",
+    icon: Network,
+    title: "Mapa mental",
+    description: "Ideias em ramos, com ligações entre tópicos.",
+  },
+] as const satisfies ReadonlyArray<{
+  kind: NoteKind;
+  icon: typeof FileText;
+  title: string;
+  description: string;
+}>;
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -48,12 +76,36 @@ export function NoteList() {
   const [creationOpen, setCreationOpen] = useState(false);
   const deferredSearch = useDeferredValue(search);
   const typeFilter = searchParams.get("tipo");
+  const isDiagramView = typeFilter === "fluxo";
+  const pageCopy = isDiagramView
+    ? {
+        eyebrow: "Espaço visual",
+        title: "Fluxogramas e mapas",
+        description:
+          "Desenhe processos, diagramas e mapas mentais com ideias interligadas.",
+        create: "Novo diagrama",
+        empty: "Seu primeiro diagrama começa aqui",
+        emptyHint:
+          "Crie um fluxograma ou um mapa mental para organizar suas ideias.",
+        search: "Pesquisar diagramas",
+      }
+    : {
+        eyebrow: "Espaço de escrita",
+        title: "Notas",
+        description:
+          "Capture ideias, referências e planos em um lugar simples de consultar.",
+        create: "Nova nota",
+        empty: "Sua primeira nota começa aqui",
+        emptyHint:
+          "Crie uma nota para guardar o que importa e retome quando quiser.",
+        search: "Pesquisar notas",
+      };
 
   const filteredNotes = useMemo(() => {
     const term = deferredSearch.trim().toLocaleLowerCase("pt-BR");
     const notesByType = (notes.data ?? []).filter((note) =>
-      typeFilter === "fluxo"
-        ? note.kind === "excalidraw"
+      isDiagramView
+        ? note.kind !== "text"
         : typeFilter === "nota"
           ? note.kind === "text"
           : true,
@@ -65,21 +117,42 @@ export function NoteList() {
         .toLocaleLowerCase("pt-BR")
         .includes(term),
     );
-  }, [deferredSearch, notes.data, typeFilter]);
+  }, [deferredSearch, notes.data, typeFilter, isDiagramView]);
 
-  async function handleCreate(kind: "text" | "excalidraw") {
+  const overlayOpen = creationOpen || Boolean(notePendingDeletion);
+  useEffect(() => {
+    if (!overlayOpen) return;
+    document.body.classList.add("has-overlay");
+    const close = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setCreationOpen(false);
+      setNotePendingDeletion(null);
+    };
+    window.addEventListener("keydown", close);
+    return () => {
+      document.body.classList.remove("has-overlay");
+      window.removeEventListener("keydown", close);
+    };
+  }, [overlayOpen]);
+
+  async function handleCreate(kind: NoteKind) {
     try {
       const note = await create.mutateAsync({
         kind,
-        title: kind === "excalidraw" ? "Fluxograma sem título" : undefined,
+        title:
+          kind === "excalidraw"
+            ? "Fluxograma sem título"
+            : kind === "mindmap"
+              ? "Mapa mental sem título"
+              : undefined,
       });
       setCreationOpen(false);
       router.push(`/app/notes/${note.id}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
-      if (kind === "excalidraw" && /kind|excalidraw/i.test(message)) {
+      if (kind !== "text" && /kind|excalidraw|mindmap/i.test(message)) {
         toast.error(
-          "O banco ainda precisa receber a atualização dos fluxogramas.",
+          "O banco ainda precisa receber a atualização dos diagramas.",
         );
         return;
       }
@@ -118,13 +191,12 @@ export function NoteList() {
     <div className="mx-auto w-full max-w-6xl space-y-8">
       <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-primary">Espaço de escrita</p>
+          <p className="text-sm font-medium text-primary">{pageCopy.eyebrow}</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Notas
+            {pageCopy.title}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            Capture ideias, referências e planos em um lugar simples de
-            consultar.
+            {pageCopy.description}
           </p>
         </div>
         <Button
@@ -133,12 +205,12 @@ export function NoteList() {
           loading={create.isPending}
         >
           <Plus className="size-4" aria-hidden="true" />
-          Nova nota
+          {pageCopy.create}
         </Button>
       </header>
 
       <label className="relative block">
-        <span className="sr-only">Pesquisar notas</span>
+        <span className="sr-only">{pageCopy.search}</span>
         <Search
           className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden="true"
@@ -187,12 +259,12 @@ export function NoteList() {
           <h2 className="mt-4 text-lg font-semibold">
             {search
               ? "Nenhuma nota encontrada"
-              : "Sua primeira nota começa aqui"}
+              : pageCopy.empty}
           </h2>
           <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
             {search
               ? "Tente outro termo ou limpe a pesquisa."
-              : "Crie uma nota para guardar o que importa e retome quando quiser."}
+              : pageCopy.emptyHint}
           </p>
           {!search ? (
             <Button
@@ -202,7 +274,7 @@ export function NoteList() {
               loading={create.isPending}
             >
               <Plus className="size-4" aria-hidden="true" />
-              Criar nota
+              {pageCopy.create}
             </Button>
           ) : null}
         </section>
@@ -226,13 +298,20 @@ export function NoteList() {
                         className="mr-1 inline size-4 text-primary"
                         aria-hidden="true"
                       />
+                    ) : note.kind === "mindmap" ? (
+                      <Network
+                        className="mr-1 inline size-4 text-primary"
+                        aria-hidden="true"
+                      />
                     ) : null}
                     {note.title || "Sem título"}
                   </h2>
                   <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground sm:mt-3 sm:text-sm sm:leading-6">
                     {note.kind === "excalidraw"
                       ? "Fluxograma interativo"
-                      : note.plain_text || "Nota vazia"}
+                      : note.kind === "mindmap"
+                        ? note.plain_text || "Mapa mental"
+                        : note.plain_text || "Nota vazia"}
                   </p>
                 </div>
 
@@ -292,11 +371,17 @@ export function NoteList() {
       )}
       {notePendingDeletion ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-primary/5 p-4 animate-fade-in"
+          className="fixed inset-0 z-[100] !mt-0 grid place-items-center p-4"
           role="presentation"
         >
+          <button
+            type="button"
+            className="absolute inset-0 animate-fade-in bg-background/80 backdrop-blur-md"
+            aria-label="Cancelar"
+            onClick={() => setNotePendingDeletion(null)}
+          />
           <div
-            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl animate-scale-in"
+            className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl animate-scale-in"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-note-title"
@@ -333,45 +418,55 @@ export function NoteList() {
       ) : null}
       {creationOpen ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-primary/5 p-4"
+          className="fixed inset-0 z-[100] !mt-0 flex items-end justify-center p-3 sm:items-center sm:p-4"
           role="presentation"
         >
+          <button
+            type="button"
+            className="absolute inset-0 animate-fade-in bg-background/80 backdrop-blur-md"
+            aria-label="Fechar"
+            onClick={() => setCreationOpen(false)}
+          />
           <section
-            className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl"
+            className="relative w-full max-w-2xl animate-scale-in rounded-3xl border border-border/70 bg-card p-5 shadow-2xl sm:p-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-note-title"
           >
             <h2 id="create-note-title" className="text-lg font-semibold">
-              Criar novo conteúdo
+              O que você quer criar?
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Escolha entre uma nota de texto ou uma tela completa para
-              desenhar.
+              Escolha o formato. Você pode mudar o título e a pasta depois.
             </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => handleCreate("text")}
-                className="rounded-xl border border-border p-4 text-left transition-colors hover:border-primary hover:bg-accent"
-              >
-                <FileText className="size-5 text-primary" aria-hidden="true" />
-                <strong className="mt-3 block">Nota</strong>
-                <span className="mt-1 block text-sm text-muted-foreground">
-                  Texto, checklist, links, imagens e desenho.
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleCreate("excalidraw")}
-                className="rounded-xl border border-border p-4 text-left transition-colors hover:border-primary hover:bg-accent"
-              >
-                <Workflow className="size-5 text-primary" aria-hidden="true" />
-                <strong className="mt-3 block">Fluxograma</strong>
-                <span className="mt-1 block text-sm text-muted-foreground">
-                  Diagramas, setas, formas, texto, imagens e exportação.
-                </span>
-              </button>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {creationOptions.map((option) => {
+                const Icon = option.icon;
+                const highlighted = isDiagramView
+                  ? option.kind !== "text"
+                  : option.kind === "text";
+                return (
+                  <button
+                    key={option.kind}
+                    type="button"
+                    disabled={create.isPending}
+                    onClick={() => handleCreate(option.kind)}
+                    className={`group flex items-start gap-3 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:flex-col ${
+                      highlighted ? "border-primary/40 bg-primary/5" : "border-border"
+                    }`}
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                      <Icon className="size-5" aria-hidden="true" />
+                    </span>
+                    <span>
+                      <strong className="block">{option.title}</strong>
+                      <span className="mt-1 block text-sm leading-5 text-muted-foreground">
+                        {option.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             <div className="mt-5 flex justify-end">
               <Button
