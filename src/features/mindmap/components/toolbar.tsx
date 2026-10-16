@@ -259,7 +259,7 @@ function BarButton({
         "flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-[10.5px] font-medium leading-none transition-[transform,background-color,color] duration-200 active:scale-90 disabled:opacity-35 motion-reduce:transform-none",
         active
           ? "bg-primary/15 text-primary"
-          : "text-foreground/80 hover:bg-accent hover:text-foreground",
+          : "text-foreground/80 [@media(hover:hover)]:hover:bg-accent [@media(hover:hover)]:hover:text-foreground",
       )}
     >
       {icon}
@@ -380,11 +380,11 @@ export function MobileToolbar({
       ) : null}
       <nav
         aria-label="Ferramentas do mapa"
-        className="flowy-glass flowy-glass-strong safe-bottom absolute inset-x-3 bottom-3 z-30 mx-auto flex max-w-md items-center gap-1 rounded-[1.75rem] border p-1.5 md:hidden"
+        className="flowy-glass flowy-glass-strong safe-bottom absolute inset-x-3 bottom-3 z-30 mx-auto grid max-w-md grid-cols-5 items-center gap-1 rounded-[1.75rem] border p-1.5 md:hidden"
       >
         <div
           key={state.hasTopic ? "topic" : "idle"}
-          className="flex min-w-0 flex-1 animate-in items-center gap-1 fade-in slide-in-from-bottom-1"
+          className="col-span-4 grid animate-in grid-cols-4 items-center gap-1 fade-in slide-in-from-bottom-1"
         >
           {(state.hasTopic ? MOBILE_BAR_TOPIC : MOBILE_BAR_IDLE).map((id) => {
             const tool = TOOLS[id];
@@ -401,8 +401,7 @@ export function MobileToolbar({
             );
           })}
         </div>
-        <span aria-hidden="true" className="h-8 w-px shrink-0 bg-border/70" />
-        <div className="w-16 shrink-0">
+        <div className="flex">
           <BarButton
             icon={sheetOpen ? <X className="size-5" /> : <LayoutGrid className="size-5" />}
             label={sheetOpen ? "Fechar" : "Mais"}
