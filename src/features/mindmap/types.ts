@@ -60,11 +60,21 @@ export type LayoutKind =
   | "timeline" // horizontal timeline, children of root along an axis
   | "flow"; // top-down flowchart; shapes + relations act as flow arrows
 
-export type ThemeId = "flowy" | "classic" | "ocean" | "sunset" | "forest" | "mono";
+export type ThemeId =
+  "flowy" | "classic" | "ocean" | "sunset" | "forest" | "mono";
 
-export type TopicShape = "rounded" | "rect" | "pill" | "ellipse" | "diamond" | "underline" | "none";
+export type TopicShape =
+  "rounded" | "rect" | "pill" | "ellipse" | "diamond" | "underline" | "none";
 
-export type TemplateId = "blank" | "brainstorm" | "project" | "meeting" | "study" | "swot" | "flowchart" | "org";
+export type TemplateId =
+  | "blank"
+  | "brainstorm"
+  | "project"
+  | "meeting"
+  | "study"
+  | "swot"
+  | "flowchart"
+  | "org";
 
 export interface TopicStyle {
   /** Hex background. Unset = theme colour for its depth/branch. */
@@ -93,6 +103,11 @@ export interface Topic {
   note?: string;
   /** http(s) URL; opened in a new tab. */
   link?: string;
+  /**
+   * Manual nudge from the automatic position (map units), set by dragging the
+   * topic onto empty canvas. Moves its whole subtree; cleared by "Reorganizar".
+   */
+  offset?: { x: number; y: number };
 }
 
 export interface Relation {

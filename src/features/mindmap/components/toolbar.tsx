@@ -181,7 +181,7 @@ export function DesktopToolbar({
       <Divider />
       {group(["child", "sibling", "parent", "delete"])}
       <Divider />
-      {group(["collapse-all", "expand-all", "link"])}
+      {group(["collapse-all", "expand-all", "auto-arrange", "link"])}
       <Divider />
       <LayoutMenu layout={layout} onLayout={onLayout} />
       <ThemeMenu theme={theme} onTheme={onTheme} />
@@ -275,7 +275,14 @@ const SHEET_GROUPS: { title: string; tools: ToolId[] }[] = [
   },
   {
     title: "Mapa",
-    tools: ["collapse-all", "expand-all", "template", "fit", "center"],
+    tools: [
+      "auto-arrange",
+      "collapse-all",
+      "expand-all",
+      "template",
+      "fit",
+      "center",
+    ],
   },
   { title: "Exportar", tools: [...EXPORT_TOOLS, "trash"] },
 ];

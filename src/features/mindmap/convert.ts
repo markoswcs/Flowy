@@ -166,6 +166,17 @@ function cleanTopic(raw: unknown, used: Set<string>, depth: number): Topic {
   if (typeof r.done === "boolean") topic.done = r.done;
   if (typeof r.note === "string" && r.note) topic.note = r.note;
   if (typeof r.link === "string" && r.link) topic.link = r.link;
+  const offset = r.offset as { x?: unknown; y?: unknown } | undefined;
+  if (
+    offset &&
+    typeof offset.x === "number" &&
+    typeof offset.y === "number" &&
+    Number.isFinite(offset.x) &&
+    Number.isFinite(offset.y) &&
+    (offset.x !== 0 || offset.y !== 0)
+  ) {
+    topic.offset = { x: offset.x, y: offset.y };
+  }
   return topic;
 }
 

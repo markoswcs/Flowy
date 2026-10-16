@@ -481,8 +481,26 @@ export function deleteRelation(doc: MapDoc, id: string): MapDoc {
   return { ...doc, relations: doc.relations.filter((r) => r.id !== id) };
 }
 
+/** Drops every manual position so the automatic layout takes over again. */
+export function clearOffsets(doc: MapDoc): MapDoc {
+  let changed = false;
+  const strip = (topic: Topic): Topic => {
+    const children = topic.children.map(strip);
+    if (!topic.offset && children.every((c, i) => c === topic.children[i])) {
+      return topic;
+    }
+    changed = true;
+    const next: Topic = { ...topic, children };
+    delete next.offset;
+    return next;
+  };
+  const root = strip(doc.root);
+  return changed ? { ...doc, root } : doc;
+}
+
 export function setLayout(doc: MapDoc, layout: LayoutKind): MapDoc {
-  return doc.layout === layout ? doc : { ...doc, layout };
+  // Manual nudges belong to one arrangement; a new layout starts clean.
+  return doc.layout === layout ? doc : { ...clearOffsets(doc), layout };
 }
 
 export function setTheme(doc: MapDoc, theme: ThemeId): MapDoc {

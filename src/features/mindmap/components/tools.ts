@@ -10,6 +10,7 @@ import {
   GitBranchPlus,
   GitFork,
   LayoutTemplate,
+  LayoutGrid,
   ListPlus,
   Maximize,
   PaintBucket,
@@ -36,6 +37,7 @@ export type ToolId =
   | "format"
   | "note"
   | "collapse-all"
+  | "auto-arrange"
   | "expand-all"
   | "link"
   | "template"
@@ -114,6 +116,11 @@ export const TOOLS: Record<ToolId, ToolDef> = {
     label: "Recolher tudo",
     short: "Recolher",
     icon: ChevronsDownUp,
+  },
+  "auto-arrange": {
+    label: "Reorganizar automaticamente",
+    short: "Reorganizar",
+    icon: LayoutGrid,
   },
   "expand-all": {
     label: "Expandir tudo",
