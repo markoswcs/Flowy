@@ -24,7 +24,6 @@ import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
 import { useProfile } from "@/features/settings/use-settings";
 import { cn, getInitials } from "@/lib/utils";
-import Link from "next/link";
 
 interface AppShellProps {
   children: ReactNode;
@@ -206,14 +205,17 @@ export function AppShell({
         {!isNoteEditor ? (
           <header className="flowy-mobile-header relative z-40 flex h-14 shrink-0 items-center justify-between border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl md:hidden">
             <Logo className="text-base" />
-            <Link
-              href="/app/settings"
-              aria-label="Configurações"
+            {/* Your photo opens the side menu: profile, folders and labels. */}
+            <button
+              type="button"
+              onClick={() => setMobileMenu({ open: true, pathname })}
+              aria-label="Abrir menu"
+              aria-expanded={mobileOpen}
               className="grid size-9 place-items-center rounded-full bg-accent bg-cover bg-center text-[11px] font-bold ring-2 ring-border/60 transition-transform active:scale-90"
               style={shellUser.avatarUrl ? { backgroundImage: `url(${shellUser.avatarUrl})` } : undefined}
             >
               {shellUser.avatarUrl ? null : getInitials(shellUser.name)}
-            </Link>
+            </button>
           </header>
         ) : null}
 
@@ -240,7 +242,7 @@ export function AppShell({
       </div>
 
       {!isNoteEditor ? (
-        <MobileNav onOpenMenu={() => setMobileMenu({ open: true, pathname })} menuOpen={mobileOpen} />
+        <MobileNav />
       ) : null}
       <RealtimeSync />
       <GlobalTaskComposer />

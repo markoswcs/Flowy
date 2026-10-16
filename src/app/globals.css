@@ -637,23 +637,25 @@
       z-index: 5 !important;
     }
 
+    /* Library, lock and hand tools: a small floating column on the right,
+       above the bottom bar, so they never collide with the selection actions
+       Excalidraw shows in that bar. */
     .flowy-excalidraw .mobile-misc-tools-container {
       top: auto !important;
-      right: auto !important;
-      left: 50% !important;
-      /* Sits inside the bottom bar, between the menu and undo/redo. */
-      bottom: calc(env(safe-area-inset-bottom) + 0.875rem) !important;
+      left: auto !important;
+      right: 0.75rem !important;
+      bottom: calc(env(safe-area-inset-bottom) + 5.25rem) !important;
       z-index: 40 !important;
       max-height: none;
       gap: 0.25rem;
-      flex-direction: row !important;
+      flex-direction: column !important;
       overflow: visible;
-      border: 0 !important;
-      border-radius: 0 !important;
-      padding: 0;
-      background: transparent;
-      box-shadow: none !important;
-      transform: translateX(calc(-50% - 1.5rem));
+      border: 1px solid var(--default-border-color) !important;
+      border-radius: 1.1rem !important;
+      padding: 0.25rem !important;
+      background: var(--island-bg-color) !important;
+      box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 28%) !important;
+      transform: none !important;
     }
 
     .flowy-excalidraw .mobile-misc-tools-container .ToolIcon__icon {
@@ -771,9 +773,11 @@
     opacity: 0;
     transform: translateY(14px) scale(0.985);
   }
+  /* "none" (not translateY(0)) so the finished page is no containing block
+     for position: fixed children such as floating toolbars. */
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
   }
 }
 
@@ -784,7 +788,7 @@
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 

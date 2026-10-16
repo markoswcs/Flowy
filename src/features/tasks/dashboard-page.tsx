@@ -215,13 +215,13 @@ function DashboardContent({
               >
                 <TimeIcon className="size-5 animate-in zoom-in duration-700 sm:size-7" />
               </span>
-              <span className="min-w-0 truncate bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text pb-[0.14em] leading-[1.2] text-transparent">
+              <span className="min-w-0 text-balance break-words bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text pb-[0.14em] leading-[1.15] text-transparent">
                 {greeting}, {firstName}
               </span>
             </h1>
-            <p className="flex min-w-0 items-center gap-2 pl-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-2 duration-700 sm:text-sm">
-              <Sparkles className="size-3.5 shrink-0 text-primary/60" />
-              <span className="truncate">{personalPhrase ?? phrase}</span>
+            <p className="flex min-w-0 items-start gap-2 pl-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-2 duration-700 sm:text-sm">
+              <Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary/60" />
+              <span className="line-clamp-2">{personalPhrase ?? phrase}</span>
             </p>
           </div>
           <div data-tour="views" className="shrink-0 pt-0.5 sm:pt-1.5">
