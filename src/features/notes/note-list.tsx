@@ -26,8 +26,16 @@ import {
   useToggleNoteFavorite,
   useTrashNote,
 } from "@/features/notes/use-notes";
+import { TEMPLATE_PARAM } from "@/features/mindmap/components/constants";
+import { TemplatePicker } from "@/features/mindmap/components/template-picker";
+import type { TemplateId } from "@/features/mindmap/types";
 import type { NoteKind } from "@/types/content";
 import { holdOverlay } from "@/lib/overlay";
+
+const MAP_TITLES: Partial<Record<TemplateId, string>> = {
+  flowchart: "Fluxograma sem título",
+  org: "Organograma sem título",
+};
 
 const creationOptions = [
   {
@@ -37,16 +45,10 @@ const creationOptions = [
     description: "Texto, checklist, links, imagens e desenho.",
   },
   {
-    kind: "excalidraw",
-    icon: Workflow,
-    title: "Fluxograma",
-    description: "Formas, setas, modelos prontos, imagens e exportação.",
-  },
-  {
     kind: "mindmap",
     icon: Network,
-    title: "Mapa mental",
-    description: "Ideias em ramos, com ligações entre tópicos.",
+    title: "Mapa ou fluxograma",
+    description: "Mapa mental, organograma, linha do tempo e fluxograma.",
   },
 ] as const satisfies ReadonlyArray<{
   kind: NoteKind;
@@ -75,6 +77,7 @@ export function NoteList() {
     title: string;
   } | null>(null);
   const [creationOpen, setCreationOpen] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const deferredSearch = useDeferredValue(search);
   const typeFilter = searchParams.get("tipo");
   const isDiagramView = typeFilter === "fluxo";
@@ -136,19 +139,25 @@ export function NoteList() {
     };
   }, [overlayOpen]);
 
-  async function handleCreate(kind: NoteKind) {
+  function chooseKind(kind: NoteKind) {
+    if (kind !== "mindmap") return void handleCreate(kind);
+    setCreationOpen(false);
+    setTemplatePickerOpen(true);
+  }
+
+  async function handleCreate(kind: NoteKind, template?: TemplateId) {
     try {
       const note = await create.mutateAsync({
         kind,
         title:
-          kind === "excalidraw"
-            ? "Fluxograma sem título"
-            : kind === "mindmap"
-              ? "Mapa mental sem título"
-              : undefined,
+          kind === "mindmap"
+            ? ((template && MAP_TITLES[template]) ?? "Mapa mental sem título")
+            : undefined,
       });
       setCreationOpen(false);
-      router.push(`/app/notes/${note.id}`);
+      setTemplatePickerOpen(false);
+      const query = template ? `?${TEMPLATE_PARAM}=${template}` : "";
+      router.push(`/app/notes/${note.id}${query}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (kind !== "text" && /kind|excalidraw|mindmap/i.test(message)) {
@@ -258,9 +267,7 @@ export function NoteList() {
             <FileText className="size-5" aria-hidden="true" />
           </span>
           <h2 className="mt-4 text-lg font-semibold">
-            {search
-              ? "Nenhuma nota encontrada"
-              : pageCopy.empty}
+            {search ? "Nenhuma nota encontrada" : pageCopy.empty}
           </h2>
           <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
             {search
@@ -440,7 +447,7 @@ export function NoteList() {
             <p className="mt-1 text-sm text-muted-foreground">
               Escolha o formato. Você pode mudar o título e a pasta depois.
             </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {creationOptions.map((option) => {
                 const Icon = option.icon;
                 const highlighted = isDiagramView
@@ -451,9 +458,11 @@ export function NoteList() {
                     key={option.kind}
                     type="button"
                     disabled={create.isPending}
-                    onClick={() => handleCreate(option.kind)}
+                    onClick={() => chooseKind(option.kind)}
                     className={`group flex items-start gap-3 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:flex-col ${
-                      highlighted ? "border-primary/40 bg-primary/5" : "border-border"
+                      highlighted
+                        ? "border-primary/40 bg-primary/5"
+                        : "border-border"
                     }`}
                   >
                     <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
@@ -480,6 +489,14 @@ export function NoteList() {
             </div>
           </section>
         </div>
+      ) : null}
+      {templatePickerOpen ? (
+        <TemplatePicker
+          title="Novo mapa ou fluxograma"
+          busy={create.isPending}
+          onPick={(template) => void handleCreate("mindmap", template)}
+          onClose={() => setTemplatePickerOpen(false)}
+        />
       ) : null}
     </div>
   );
