@@ -150,6 +150,7 @@ export function MapCanvas(props: MapCanvasProps) {
     onBackgroundTap: handlers.tapBackground,
     onRelationTap: handlers.tapRelation,
     onTopicLongPress: handlers.openActions,
+    canDrag: (id) => id !== doc.root.id,
     onDragMove: (id, x, y, dx, dy) =>
       setDrag({ id, dx, dy, target: findDropTarget(doc, layout, id, x, y) }),
     onDragEnd: (id, x, y, dx, dy) => {

@@ -20,7 +20,7 @@ export function GlobalInstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90vw] max-w-sm animate-in slide-in-from-bottom-5 fade-in duration-500">
+    <div className="fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+5.5rem)] md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90vw] max-w-sm animate-in slide-in-from-bottom-5 fade-in duration-500">
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/60 p-4 shadow-2xl backdrop-blur-xl ring-1 ring-white/5">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold text-white">Instalar Flowy</p>

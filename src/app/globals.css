@@ -191,6 +191,18 @@
     max-width: none;
   }
 
+  /* Pin full-screen editors to the visible viewport. 100dvh can be taller than
+     what is on screen on some phones (bottom address bar, edge-to-edge PWAs),
+     which pushed the bottom toolbar out of view. */
+  body.is-flow-editor .flowy-flow-editor {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    height: auto;
+    padding-top: env(safe-area-inset-top);
+    background: hsl(var(--background));
+  }
+
   a,
   button {
     transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);

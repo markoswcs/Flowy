@@ -96,7 +96,8 @@ export function useViewportControls(
 
   const afterLayout = useEffectEvent(() => {
     const phone = size().width < 640;
-    if (pendingFit.current && fit(1, phone ? 0.7 : 0)) pendingFit.current = false;
+    if (pendingFit.current && fit(1, phone ? 0.9 : 0))
+      pendingFit.current = false;
     if (pendingReveal.current) {
       reveal(pendingReveal.current);
       pendingReveal.current = null;

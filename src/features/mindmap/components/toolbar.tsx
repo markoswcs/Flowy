@@ -329,7 +329,7 @@ export function MobileToolbar({
     <>
       {sheetOpen ? (
         <div
-          className="flowy-glass flowy-glass-strong absolute inset-x-2 bottom-[5.5rem] z-30 mx-auto max-w-md max-h-[62%] animate-in fade-in slide-in-from-bottom-3 overflow-y-auto overscroll-contain rounded-3xl border p-3 md:hidden"
+          className="flowy-glass flowy-glass-strong absolute inset-x-2 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+4.75rem)] z-30 mx-auto max-w-md max-h-[62%] animate-in fade-in slide-in-from-bottom-3 overflow-y-auto overscroll-contain rounded-3xl border p-3 md:hidden"
           role="dialog"
           aria-label="Mais ferramentas"
         >
@@ -380,7 +380,7 @@ export function MobileToolbar({
       ) : null}
       <nav
         aria-label="Ferramentas do mapa"
-        className="flowy-glass flowy-glass-strong safe-bottom absolute inset-x-3 bottom-3 z-30 mx-auto grid max-w-md grid-cols-5 items-center gap-1 rounded-[1.75rem] border p-1.5 md:hidden"
+        className="flowy-glass flowy-glass-strong absolute inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 mx-auto grid max-w-md grid-cols-5 items-center gap-1 rounded-[1.75rem] border p-1.5 md:hidden"
       >
         <div
           key={state.hasTopic ? "topic" : "idle"}
@@ -403,7 +403,13 @@ export function MobileToolbar({
         </div>
         <div className="flex">
           <BarButton
-            icon={sheetOpen ? <X className="size-5" /> : <LayoutGrid className="size-5" />}
+            icon={
+              sheetOpen ? (
+                <X className="size-5" />
+              ) : (
+                <LayoutGrid className="size-5" />
+              )
+            }
             label={sheetOpen ? "Fechar" : "Mais"}
             active={sheetOpen}
             expanded={sheetOpen}
