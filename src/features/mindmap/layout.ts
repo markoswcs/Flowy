@@ -436,6 +436,19 @@ export function layoutMap(doc: MapDoc, measure: Measure): LayoutResult {
     }
   }
 
+  // Manual positions: each dragged topic carries its subtree along.
+  const nudge = (topic: Topic, ox: number, oy: number) => {
+    const nx = ox + (topic.offset?.x ?? 0);
+    const ny = oy + (topic.offset?.y ?? 0);
+    const p = ctx.placed.get(topic.id);
+    if (p && (nx !== 0 || ny !== 0)) {
+      p.x += nx;
+      p.y += ny;
+    }
+    if (!topic.collapsed) topic.children.forEach((c) => nudge(c, nx, ny));
+  };
+  doc.root.children.forEach((c) => nudge(c, 0, 0));
+
   const floatIds = new Set<string>();
   doc.floating.forEach((f, i) => {
     const color =

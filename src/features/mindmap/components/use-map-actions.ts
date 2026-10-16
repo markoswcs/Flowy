@@ -17,6 +17,7 @@ import {
   neighbor,
   reorder,
   setAllCollapsed,
+  clearOffsets,
   setLayout,
   setTheme,
   toggleCollapse,
@@ -270,11 +271,29 @@ export function useMapActions(deps: ActionDeps) {
     if (target) {
       const index =
         target.kind === "child" ? Number.POSITIVE_INFINITY : target.index;
-      commit(moveTopic(doc, id, target.parentId, index));
+      // A manual nudge made sense only under the old parent.
+      commit(
+        updateTopic(moveTopic(doc, id, target.parentId, index), id, {
+          offset: undefined,
+        }),
+      );
       return;
     }
     const floating = doc.floating.find((topic) => topic.id === id);
-    if (!floating) return;
+    if (!floating) {
+      // Dropped on empty canvas: the topic (and its subtree) stays there.
+      const topic = findTopic(doc, id);
+      if (!topic || id === doc.root.id || (dx === 0 && dy === 0)) return;
+      commit(
+        updateTopic(doc, id, {
+          offset: {
+            x: Math.round((topic.offset?.x ?? 0) + dx),
+            y: Math.round((topic.offset?.y ?? 0) + dy),
+          },
+        }),
+      );
+      return;
+    }
     commit({
       ...doc,
       floating: doc.floating.map((topic) =>
@@ -410,6 +429,8 @@ export function useMapActions(deps: ActionDeps) {
         return commit(setAllCollapsed(doc, true));
       case "expand-all":
         return commit(setAllCollapsed(doc, false));
+      case "auto-arrange":
+        return commit(clearOffsets(doc));
       case "link":
         return startLinking();
       case "fit":
