@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, PenTool, Redo2, Save, Trash2, Undo2 } from "lucide-react";
+import { ArrowLeft, PenTool, Save, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -47,16 +47,6 @@ function draftKey(noteId: string) {
 
 function penOnlyKey(noteId: string) {
   return `flowy:excalidraw-pen-only:${noteId}`;
-}
-
-// Excalidraw's phone footer is too cramped to rely on, so the header triggers
-// its own undo/redo buttons (they keep working even while the tools are hidden).
-function triggerHistory(action: "undo" | "redo") {
-  document
-    .querySelector<HTMLButtonElement>(
-      `.flowy-excalidraw [data-testid="button-${action}"]`,
-    )
-    ?.click();
 }
 
 function readDraft(note: Note): ExcalidrawDraft | null {
@@ -459,7 +449,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           </div>
         </div>
       ) : null}
-      <header className="flowy-flow-editor-header grid grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem_2.75rem] items-center gap-1 px-2 py-2 sm:mx-auto sm:grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem_2.75rem_2.75rem] sm:w-full sm:max-w-[1800px] sm:px-6 sm:py-3">
+      <header className="flowy-flow-editor-header grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-1 px-2 py-2 sm:mx-auto sm:grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem_2.75rem_2.75rem] sm:w-full sm:max-w-[1800px] sm:px-6 sm:py-3">
         <button
           type="button"
           onClick={() => router.push("/app/notes")}
@@ -487,24 +477,6 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           {status === "offline" && "Sem conexão"}
           {status === "error" && "Erro ao salvar"}
         </span>
-        <button
-          type="button"
-          onClick={() => triggerHistory("undo")}
-          className="grid size-11 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95 sm:hidden"
-          aria-label="Desfazer"
-          title="Desfazer"
-        >
-          <Undo2 className="size-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => triggerHistory("redo")}
-          className="grid size-11 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95 sm:hidden"
-          aria-label="Refazer"
-          title="Refazer"
-        >
-          <Redo2 className="size-4" />
-        </button>
         <button
           type="button"
           onClick={() => setPenOnly((current) => !current)}

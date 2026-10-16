@@ -24,7 +24,7 @@ import {
   Trash2,
   Unlink,
   Folder as FolderIcon,
-  Palette,
+  Tag,
   PencilLine,
   RefreshCw,
 } from "lucide-react";
@@ -211,9 +211,10 @@ function ToolbarButton({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`grid size-9 place-items-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+      title={label}
+      className={`grid size-10 shrink-0 place-items-center rounded-xl transition-all active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         active
-          ? "bg-accent text-accent-foreground"
+          ? "bg-primary/15 text-primary"
           : "text-muted-foreground hover:bg-accent hover:text-foreground"
       }`}
     >
@@ -274,6 +275,7 @@ function TextNoteEditor({ note }: { note: Note }) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkValue, setLinkValue] = useState("");
   const [tagsOpen, setTagsOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
   const tagsRef = useRef<HTMLDivElement>(null);
   const version = useRef(0);
 
@@ -421,17 +423,65 @@ function TextNoteEditor({ note }: { note: Note }) {
     }
   }
 
+  const saveState = dirty && !isOnline ? "offline" : status;
+  const selectedLabels = (categories.data ?? []).filter((category) =>
+    categoryIds.includes(category.id),
+  );
+
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-4 pb-24 pt-2 sm:px-8">
-      <div className="relative z-30 mb-5 flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card p-2 shadow-sm">
+    <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 pb-32 sm:px-8 md:pb-28">
+      <header className="sticky top-0 z-30 -mx-4 flex h-14 items-center gap-1 bg-background/85 px-2 backdrop-blur-xl sm:-mx-8 sm:px-6">
         <button
           type="button"
           onClick={() => router.push("/app/notes")}
-          className="grid size-10 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="grid size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Voltar para notas"
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-5" />
         </button>
+        <span
+          className={`ml-auto flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            saveState === "error"
+              ? "bg-destructive/10 text-destructive"
+              : "text-muted-foreground"
+          }`}
+          aria-live="polite"
+        >
+          {saveState === "saving" && (
+            <>
+              <Loader2 className="size-3 animate-spin" /> Salvando
+            </>
+          )}
+          {saveState === "saved" && (
+            <>
+              <Check className="size-3 text-success" /> Salvo
+            </>
+          )}
+          {saveState === "offline" && "Salvo no aparelho"}
+          {saveState === "error" && "Erro ao salvar"}
+        </span>
+        <button
+          type="button"
+          onClick={handleTrash}
+          className="grid size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Mover nota para a lixeira"
+        >
+          <Trash2 className="size-[18px]" />
+        </button>
+      </header>
+
+      <input
+        value={title}
+        onChange={(event) => {
+          setTitle(event.target.value);
+          markChanged();
+        }}
+        className="mt-2 w-full bg-transparent px-1 text-[1.75rem] font-bold leading-tight tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50 sm:mt-4 sm:text-4xl"
+        placeholder="Sem título"
+        aria-label="Título da nota"
+      />
+
+      <div className="relative z-20 mb-5 mt-3 flex flex-wrap items-center gap-2 px-1">
         <CustomSelect
           value={folderId ?? ""}
           onChange={(v) => {
@@ -452,29 +502,42 @@ function TextNoteEditor({ note }: { note: Note }) {
               ),
             })),
           ]}
-          triggerIcon={
-            <FolderIcon className="size-3.5 text-muted-foreground" />
-          }
-          className="h-9 border-border bg-background shadow-none hover:bg-accent"
+          triggerIcon={<FolderIcon className="size-3.5 text-muted-foreground" />}
+          className="h-8 rounded-full border-border/60 bg-card/60 px-3 text-xs shadow-none hover:bg-accent"
         />
+
         <div className="relative" ref={tagsRef}>
           <button
             type="button"
             onClick={() => setTagsOpen(!tagsOpen)}
-            className="flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-expanded={tagsOpen}
+            className="flex h-8 items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            Etiquetas{" "}
+            <Tag className="size-3.5" aria-hidden="true" />
+            {selectedLabels.length ? (
+              <span className="flex items-center gap-1.5 text-foreground">
+                {selectedLabels.slice(0, 2).map((label) => (
+                  <span key={label.id} className="flex items-center gap-1">
+                    <span className="size-2 rounded-full" style={{ backgroundColor: label.color }} />
+                    <span className="max-w-24 truncate">{label.name}</span>
+                  </span>
+                ))}
+                {selectedLabels.length > 2 ? <span>+{selectedLabels.length - 2}</span> : null}
+              </span>
+            ) : (
+              "Etiquetas"
+            )}
             <ChevronDown
               className={`size-3 transition-transform ${tagsOpen ? "rotate-180" : ""}`}
             />
           </button>
           {tagsOpen && (
-            <div className="absolute left-0 top-11 z-[100] min-w-48 rounded-xl border border-border bg-popover p-2 shadow-lg animate-in fade-in zoom-in-95">
+            <div className="absolute left-0 top-10 z-[100] min-w-52 rounded-2xl border border-border bg-popover p-1.5 shadow-xl animate-in fade-in zoom-in-95">
               {categories.data?.length ? (
                 categories.data.map((category) => (
                   <label
                     key={category.id}
-                    className="flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2 text-sm hover:bg-accent"
+                    className="flex min-h-10 cursor-pointer items-center gap-2.5 rounded-xl px-2.5 text-sm hover:bg-accent"
                   >
                     <input
                       type="checkbox"
@@ -491,196 +554,171 @@ function TextNoteEditor({ note }: { note: Note }) {
                       className="size-4 rounded-sm border-border bg-background text-primary focus:ring-primary focus:ring-offset-background"
                     />
                     <span
-                      className="size-2.5 rounded-full shadow-sm"
+                      className="size-2.5 rounded-full"
                       style={{ backgroundColor: category.color }}
                     />
                     <span className="truncate">{category.name}</span>
                   </label>
                 ))
               ) : (
-                <p className="px-2 py-1 text-xs text-muted-foreground">
-                  Nenhuma etiqueta
+                <p className="px-2 py-2 text-xs text-muted-foreground">
+                  Nenhuma etiqueta. Crie uma pelo menu lateral.
                 </p>
               )}
             </div>
           )}
         </div>
-        <span
-          className="ml-auto flex items-center gap-1 text-xs text-muted-foreground"
-          aria-live="polite"
-        >
-          {(dirty && !isOnline ? "offline" : status) === "saving" && (
-            <>
-              <Loader2 className="size-3 animate-spin" /> Salvando…
-            </>
-          )}
-          {(dirty && !isOnline ? "offline" : status) === "saved" && (
-            <>
-              <Check className="size-3" /> Salvo
-            </>
-          )}
-          {(dirty && !isOnline ? "offline" : status) === "offline" &&
-            "Salvo neste dispositivo"}
-          {(dirty && !isOnline ? "offline" : status) === "error" && (
-            <span className="text-destructive">Erro ao salvar</span>
-          )}
-        </span>
-        <button
-          type="button"
-          onClick={handleTrash}
-          className="grid size-10 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="Mover nota para a lixeira"
-        >
-          <Trash2 className="size-4" />
-        </button>
-      </div>
 
-      <input
-        value={title}
-        onChange={(event) => {
-          setTitle(event.target.value);
-          markChanged();
-        }}
-        className="mb-5 w-full border-b border-transparent bg-transparent px-1 py-2 text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 sm:text-4xl"
-        placeholder="Sem título"
-        aria-label="Título da nota"
-      />
-
-      <div className="mb-5 flex items-center gap-2">
-        <Palette className="size-4 text-muted-foreground" aria-hidden="true" />
-        <span className="text-xs font-medium text-muted-foreground">
-          Cor da nota
-        </span>
-        <button
-          type="button"
-          onClick={() => {
-            setNoteColor(null);
-            markChanged();
-          }}
-          className={`size-5 rounded-full border border-border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${!noteColor ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
-          aria-label="Sem cor"
-          aria-pressed={!noteColor}
-        />
-        {noteColors.map((color) => (
+        <div className="relative">
           <button
-            key={color}
             type="button"
-            onClick={() => {
-              setNoteColor(color);
-              markChanged();
-            }}
-            className={`size-5 rounded-full border border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${noteColor === color ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
-            style={{ backgroundColor: color }}
-            aria-label={`Usar cor ${color}`}
-            aria-pressed={noteColor === color}
-          />
-        ))}
-      </div>
-
-      {editor && (
-        <div className="sticky top-0 z-20 mb-5 flex flex-wrap items-center gap-1 rounded-xl border border-border bg-card px-2 py-2 shadow-sm">
-          <ToolbarButton
-            label="Título"
-            active={editor.isActive("heading", { level: 2 })}
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 2 }).run()
-            }
+            onClick={() => setColorOpen((open) => !open)}
+            aria-expanded={colorOpen}
+            className="flex h-8 items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Heading2 className="size-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Negrito"
-            active={editor.isActive("bold")}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-          >
-            <Bold className="size-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Itálico"
-            active={editor.isActive("italic")}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-          >
-            <Italic className="size-4" />
-          </ToolbarButton>
-          <span className="mx-1 h-5 w-px bg-border" />
-          <ToolbarButton
-            label="Lista"
-            active={editor.isActive("bulletList")}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-          >
-            <List className="size-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Lista numerada"
-            active={editor.isActive("orderedList")}
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          >
-            <ListOrdered className="size-4" />
-          </ToolbarButton>
-          <ToolbarButton
-            label="Lista de verificação"
-            active={editor.isActive("taskList")}
-            onClick={() => editor.chain().focus().toggleTaskList().run()}
-          >
-            <CheckSquare className="size-4" />
-          </ToolbarButton>
-          <span className="mx-1 h-5 w-px bg-border" />
-          <ToolbarButton
-            label="Inserir desenho"
-            onClick={() => setDrawingOpen(true)}
-          >
-            <PencilLine className="size-4" />
-          </ToolbarButton>
-          <span className="mx-1 h-5 w-px bg-border" />
-          <div className="relative">
-            <ToolbarButton
-              label="Adicionar link"
-              active={editor.isActive("link")}
-              onClick={() => setLinkOpen((open) => !open)}
-            >
-              <LinkIcon className="size-4" />
-            </ToolbarButton>
-            {linkOpen && (
-              <form
-                className="absolute left-0 top-11 z-30 flex w-72 gap-2 rounded-lg border border-border bg-popover p-2 shadow-lg"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  applyLink();
+            <span
+              className="size-3.5 rounded-full border border-white/15"
+              style={{ backgroundColor: noteColor ?? "hsl(var(--card))" }}
+              aria-hidden="true"
+            />
+            Cor
+          </button>
+          {colorOpen && (
+            <div className="absolute left-0 top-10 z-[100] flex gap-2 rounded-2xl border border-border bg-popover p-2.5 shadow-xl animate-in fade-in zoom-in-95">
+              <button
+                type="button"
+                onClick={() => {
+                  setNoteColor(null);
+                  setColorOpen(false);
+                  markChanged();
                 }}
-              >
-                <label className="sr-only" htmlFor="note-link">
-                  Endereço do link
-                </label>
-                <input
-                  id="note-link"
-                  autoFocus
-                  value={linkValue}
-                  onChange={(event) => setLinkValue(event.target.value)}
-                  placeholder="https://…"
-                  className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={`size-7 rounded-full border border-border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${!noteColor ? "ring-2 ring-primary ring-offset-2 ring-offset-popover" : ""}`}
+                aria-label="Sem cor"
+                aria-pressed={!noteColor}
+              />
+              {noteColors.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => {
+                    setNoteColor(color);
+                    setColorOpen(false);
+                    markChanged();
+                  }}
+                  className={`size-7 rounded-full border border-white/10 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${noteColor === color ? "ring-2 ring-primary ring-offset-2 ring-offset-popover" : ""}`}
+                  style={{ backgroundColor: color }}
+                  aria-label={`Usar cor ${color}`}
+                  aria-pressed={noteColor === color}
                 />
-                <button className="rounded-md bg-primary px-3 text-sm text-primary-foreground">
-                  Aplicar
-                </button>
-              </form>
-            )}
-          </div>
-          {editor.isActive("link") && (
-            <ToolbarButton
-              label="Remover link"
-              onClick={() => editor.chain().focus().unsetLink().run()}
-            >
-              <Unlink className="size-4" />
-            </ToolbarButton>
+              ))}
+            </div>
           )}
         </div>
-      )}
+      </div>
+
       <div
-        className="rounded-xl border border-border bg-card px-4 py-5 shadow-sm sm:px-8 sm:py-7 [&_.flowy-editor>h2]:mt-8 [&_.flowy-editor>h2]:text-2xl [&_.flowy-editor>h2]:font-semibold [&_.flowy-editor>p]:mb-4 [&_.flowy-editor_a]:text-primary [&_.flowy-editor_a]:underline [&_.flowy-editor_ul]:mb-4 [&_.flowy-editor_ul]:list-disc [&_.flowy-editor_ul]:pl-6 [&_.flowy-editor_ol]:mb-4 [&_.flowy-editor_ol]:list-decimal [&_.flowy-editor_ol]:pl-6"
-        style={noteColor ? { backgroundColor: noteColor } : undefined}
+        className="flex-1 rounded-[1.75rem] px-5 py-6 transition-colors duration-500 sm:px-9 sm:py-8 [&_.flowy-editor>h2]:mt-8 [&_.flowy-editor>h2]:text-2xl [&_.flowy-editor>h2]:font-semibold [&_.flowy-editor>p]:mb-3 [&_.flowy-editor_a]:text-primary [&_.flowy-editor_a]:underline [&_.flowy-editor_ul]:mb-4 [&_.flowy-editor_ul]:list-disc [&_.flowy-editor_ul]:pl-6 [&_.flowy-editor_ol]:mb-4 [&_.flowy-editor_ol]:list-decimal [&_.flowy-editor_ol]:pl-6"
+        style={{ backgroundColor: noteColor ?? "hsl(var(--card) / 0.45)" }}
       >
         <EditorContent editor={editor} />
       </div>
+
+      {editor && (
+        <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-lg">
+          {linkOpen && (
+            <form
+              className="mb-2 flex gap-2 rounded-2xl border border-border bg-popover p-2 shadow-xl animate-in fade-in slide-in-from-bottom-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                applyLink();
+              }}
+            >
+              <label className="sr-only" htmlFor="note-link">
+                Endereço do link
+              </label>
+              <input
+                id="note-link"
+                autoFocus
+                value={linkValue}
+                onChange={(event) => setLinkValue(event.target.value)}
+                placeholder="https://…"
+                className="h-10 min-w-0 flex-1 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button className="rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground">
+                Aplicar
+              </button>
+            </form>
+          )}
+          <div
+            className="flex items-center gap-0.5 overflow-x-auto rounded-[1.25rem] border border-border/70 bg-card/90 p-1.5 shadow-[0_18px_50px_-15px_rgb(0_0_0/0.6)] backdrop-blur-xl [scrollbar-width:none]"
+            role="toolbar"
+            aria-label="Formatação"
+          >
+            <ToolbarButton
+              label="Título"
+              active={editor.isActive("heading", { level: 2 })}
+              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            >
+              <Heading2 className="size-[18px]" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="Negrito"
+              active={editor.isActive("bold")}
+              onClick={() => editor.chain().focus().toggleBold().run()}
+            >
+              <Bold className="size-[18px]" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="Itálico"
+              active={editor.isActive("italic")}
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+            >
+              <Italic className="size-[18px]" />
+            </ToolbarButton>
+            <span className="mx-1 h-5 w-px shrink-0 bg-border" />
+            <ToolbarButton
+              label="Lista"
+              active={editor.isActive("bulletList")}
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+            >
+              <List className="size-[18px]" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="Lista numerada"
+              active={editor.isActive("orderedList")}
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            >
+              <ListOrdered className="size-[18px]" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="Lista de verificação"
+              active={editor.isActive("taskList")}
+              onClick={() => editor.chain().focus().toggleTaskList().run()}
+            >
+              <CheckSquare className="size-[18px]" />
+            </ToolbarButton>
+            <span className="mx-1 h-5 w-px shrink-0 bg-border" />
+            <ToolbarButton label="Inserir desenho" onClick={() => setDrawingOpen(true)}>
+              <PencilLine className="size-[18px]" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="Adicionar link"
+              active={editor.isActive("link") || linkOpen}
+              onClick={() => setLinkOpen((open) => !open)}
+            >
+              <LinkIcon className="size-[18px]" />
+            </ToolbarButton>
+            {editor.isActive("link") && (
+              <ToolbarButton
+                label="Remover link"
+                onClick={() => editor.chain().focus().unsetLink().run()}
+              >
+                <Unlink className="size-[18px]" />
+              </ToolbarButton>
+            )}
+          </div>
+        </div>
+      )}
       <DrawingDialog
         open={drawingOpen}
         onClose={() => setDrawingOpen(false)}

@@ -1,35 +1,87 @@
 "use client";
 
-import { Home, NotebookPen, PanelLeftOpen, Workflow } from "lucide-react";
+import { Home, Menu, NotebookPen, Workflow } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
+function NavItem({
+  label,
+  active,
+  icon,
+  href,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  icon: ReactNode;
+  href?: string;
+  onClick?: () => void;
+}) {
+  const content = (
+    <>
+      <span
+        className={cn(
+          "grid h-8 w-12 place-items-center rounded-full transition-all duration-300",
+          active ? "bg-primary/15 text-primary" : "text-muted-foreground",
+        )}
+      >
+        {icon}
+      </span>
+      <span
+        className={cn(
+          "text-[10px] font-medium leading-none transition-colors",
+          active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+      </span>
+    </>
+  );
+  const className =
+    "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl py-1 transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+  return href ? (
+    <Link href={href} className={className} aria-current={active ? "page" : undefined}>
+      {content}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} className={className} aria-expanded={active}>
+      {content}
+    </button>
+  );
+}
+
 export function MobileNav({ onOpenMenu, menuOpen }: { onOpenMenu: () => void; menuOpen: boolean }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const noteType = searchParams.get("tipo");
-
-  const itemClass = "relative grid min-w-0 place-items-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none";
-  const iconClass = "grid size-11 place-items-center rounded-2xl transition-all duration-200 active:scale-90";
+  const noteType = useSearchParams().get("tipo");
+  const onNotes = pathname === "/app/notes";
 
   return (
-    <nav data-tour="nav" aria-label="Navegação móvel" className="flowy-mobile-nav theme-shell-panel safe-bottom fixed inset-x-0 bottom-0 z-40 border-x-0 border-b-0 border-border/70 shadow-[0_-10px_30px_hsl(var(--background)/.28)] md:hidden">
-      <div className="grid h-[4.75rem] grid-cols-5 px-3">
-        <button type="button" onClick={onOpenMenu} className={cn(itemClass, menuOpen && "text-primary")} aria-label="Abrir menu" title="Menu">
-          <span className={cn(iconClass, menuOpen && "bg-primary/12 text-primary")}><PanelLeftOpen className={cn("size-5 transition-transform duration-500", menuOpen && "rotate-180 scale-110")} aria-hidden="true" /></span>
-        </button>
-        <Link href="/app" className={cn(itemClass, pathname === "/app" && "text-primary")} aria-label="Início" title="Início">
-          <span className={cn(iconClass, pathname === "/app" && "bg-primary/12 text-primary")}><Home className="size-5" aria-hidden="true" /></span>
-        </Link>
+    <nav
+      data-tour="nav"
+      aria-label="Navegação móvel"
+      className="flowy-mobile-nav fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden"
+    >
+      <div className="grid h-16 grid-cols-5 items-center rounded-[1.6rem] border border-border/60 bg-card/85 px-1 shadow-[0_18px_50px_-12px_rgb(0_0_0/0.65)] backdrop-blur-xl">
+        <NavItem label="Menu" active={menuOpen} onClick={onOpenMenu} icon={<Menu className="size-[18px]" />} />
+        <NavItem label="Início" href="/app" active={pathname === "/app"} icon={<Home className="size-[18px]" />} />
+        {/* The create button floats in this slot. */}
         <span aria-hidden="true" />
-        <Link href="/app/notes?tipo=nota" className={cn(itemClass, pathname === "/app/notes" && noteType !== "fluxo" && "text-primary")} aria-label="Notas" title="Notas">
-          <span className={cn(iconClass, pathname === "/app/notes" && noteType !== "fluxo" && "bg-primary/12 text-primary")}><NotebookPen className="size-5" aria-hidden="true" /></span>
-        </Link>
-        <Link href="/app/notes?tipo=fluxo" className={cn(itemClass, pathname === "/app/notes" && noteType === "fluxo" && "text-primary")} aria-label="Fluxos" title="Fluxos">
-          <span className={cn(iconClass, pathname === "/app/notes" && noteType === "fluxo" && "bg-primary/12 text-primary")}><Workflow className="size-5" aria-hidden="true" /></span>
-        </Link>
+        <NavItem
+          label="Notas"
+          href="/app/notes?tipo=nota"
+          active={onNotes && noteType !== "fluxo"}
+          icon={<NotebookPen className="size-[18px]" />}
+        />
+        <NavItem
+          label="Diagramas"
+          href="/app/notes?tipo=fluxo"
+          active={onNotes && noteType === "fluxo"}
+          icon={<Workflow className="size-[18px]" />}
+        />
       </div>
     </nav>
   );

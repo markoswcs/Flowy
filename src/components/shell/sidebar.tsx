@@ -146,7 +146,7 @@ export function Sidebar({
               {folder.name}
             </span>
             {count > 0 ? (
-              <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground/80 transition-colors group-hover:bg-white/10 group-hover:text-foreground">
+              <span className="shrink-0 rounded-full bg-white/5 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground transition-colors group-hover:bg-white/10 group-hover:text-foreground">
                 {count}
               </span>
             ) : null}
@@ -218,7 +218,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => setIsFoldersOpen(!isFoldersOpen)}
-                  className="flex flex-1 items-center gap-1.5 px-1 py-1 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70 hover:text-foreground focus-visible:outline-none rounded-sm transition-colors"
+                  className="flex flex-1 items-center gap-1.5 px-1 py-1 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground focus-visible:outline-none rounded-sm transition-colors"
                 >
                   {isFoldersOpen ? (
                     <ChevronDown className="size-3.5" />
@@ -260,7 +260,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-                  className="flex flex-1 items-center gap-1.5 px-1 py-1 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70 hover:text-foreground focus-visible:outline-none rounded-sm transition-colors"
+                  className="flex flex-1 items-center gap-1.5 px-1 py-1 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground focus-visible:outline-none rounded-sm transition-colors"
                 >
                   {isCategoriesOpen ? (
                     <ChevronDown className="size-3.5" />
@@ -317,7 +317,7 @@ export function Sidebar({
                           aria-hidden="true"
                         />
                         <span className="truncate flex-1 font-medium">{category.name}</span>
-                        <span className="shrink-0 ml-2 min-w-6 rounded-full bg-white/5 px-2 py-0.5 text-center text-xs font-semibold tabular-nums text-muted-foreground/80 transition-colors group-hover:bg-white/10 group-hover:text-foreground">
+                        <span className="shrink-0 ml-2 min-w-6 rounded-full bg-white/5 px-2 py-0.5 text-center text-xs font-semibold tabular-nums text-muted-foreground transition-colors group-hover:bg-white/10 group-hover:text-foreground">
                           {category.task_count ?? 0}
                         </span>
                       </Link>

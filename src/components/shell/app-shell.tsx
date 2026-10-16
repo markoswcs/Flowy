@@ -23,7 +23,8 @@ import { Logo } from "@/components/ui/logo";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
 import { useProfile } from "@/features/settings/use-settings";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
+import Link from "next/link";
 
 interface AppShellProps {
   children: ReactNode;
@@ -203,8 +204,16 @@ export function AppShell({
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         {!isNoteEditor ? (
-          <header className="flowy-mobile-header theme-shell-panel relative z-40 flex h-16 shrink-0 items-center justify-center border-b border-border/50 px-3 md:hidden">
-            <Logo />
+          <header className="flowy-mobile-header relative z-40 flex h-14 shrink-0 items-center justify-between border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl md:hidden">
+            <Logo className="text-base" />
+            <Link
+              href="/app/settings"
+              aria-label="Configurações"
+              className="grid size-9 place-items-center rounded-full bg-accent bg-cover bg-center text-[11px] font-bold ring-2 ring-border/60 transition-transform active:scale-90"
+              style={shellUser.avatarUrl ? { backgroundImage: `url(${shellUser.avatarUrl})` } : undefined}
+            >
+              {shellUser.avatarUrl ? null : getInitials(shellUser.name)}
+            </Link>
           </header>
         ) : null}
 
@@ -215,7 +224,7 @@ export function AppShell({
             "scrollbar-thin min-w-0 flex-1 overflow-x-hidden",
             isNoteEditor
               ? "overflow-hidden p-0"
-              : "overflow-y-auto px-4 py-5 pb-24 sm:px-6 md:px-8 md:py-12 md:pb-8",
+              : "overflow-y-auto px-4 py-5 pb-32 sm:px-6 md:px-8 md:py-12 md:pb-8",
           )}
         >
           <div

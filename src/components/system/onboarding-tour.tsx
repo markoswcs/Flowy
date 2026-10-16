@@ -14,7 +14,12 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 
+import { useTheme } from "next-themes";
+
 import { Button } from "@/components/ui/button";
+import { useUpdatePreferences } from "@/features/settings/use-settings";
+import { normalizeThemePreference } from "@/lib/theme";
+import type { ThemePreference } from "@/types/content";
 import { Input } from "@/components/ui/input";
 import { useCreateTask } from "@/features/tasks/use-tasks";
 import { createClient } from "@/lib/supabase/client";
@@ -62,7 +67,14 @@ const spotSteps: SpotStep[] = [
   },
 ];
 
-type Phase = "welcome" | "task" | "spot" | "done";
+type Phase = "welcome" | "theme" | "task" | "spot" | "done";
+
+const themes: { value: ThemePreference; label: string; bg: string; card: string; accent: string }[] = [
+  { value: "purple", label: "Roxo", bg: "#0d041e", card: "#1a1033", accent: "#8b5cf6" },
+  { value: "black", label: "Preto", bg: "#121212", card: "#1e1e1e", accent: "#f0f0f0" },
+  { value: "oled", label: "OLED", bg: "#000000", card: "#111111", accent: "#ffffff" },
+  { value: "white", label: "Claro", bg: "#f6f6f8", card: "#ffffff", accent: "#7c3aed" },
+];
 
 function findTarget(name: string) {
   const candidates = document.querySelectorAll<HTMLElement>(`[data-tour="${name}"]`);
@@ -94,6 +106,14 @@ export function OnboardingTour({ name }: { name: string }) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [title, setTitle] = useState("Minha primeira tarefa no Flowy");
   const createTask = useCreateTask();
+  const { theme: currentTheme, setTheme } = useTheme();
+  const updatePreferences = useUpdatePreferences();
+  const selectedTheme = normalizeThemePreference(currentTheme);
+
+  function chooseTheme(value: ThemePreference) {
+    setTheme(value);
+    updatePreferences.mutate({ theme: value });
+  }
 
   useEffect(() => {
     let done = false;
@@ -255,10 +275,10 @@ export function OnboardingTour({ name }: { name: string }) {
             Bem-vindo ao Flowy, {name}!
           </h2>
           <p className="mt-2 text-center text-sm leading-6 text-muted-foreground">
-            Em menos de um minuto você cria sua primeira tarefa e conhece as principais funções.
+            Em menos de um minuto você escolhe seu visual, cria sua primeira tarefa e conhece as principais funções.
           </p>
           <div className="mt-6 grid gap-2">
-            <Button type="button" onClick={() => setPhase("task")} className="h-11 gap-2">
+            <Button type="button" onClick={() => setPhase("theme")} className="h-11 gap-2">
               Começar tutorial
               <ArrowRight className="size-4" />
             </Button>
@@ -266,6 +286,62 @@ export function OnboardingTour({ name }: { name: string }) {
               Pular introdução
             </Button>
           </div>
+        </CenteredCard>
+      ) : null}
+
+      {phase === "theme" ? (
+        <CenteredCard>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+              Seu estilo
+            </span>
+            <SkipButton onClick={finish} />
+          </div>
+          <h2 className="mt-3 text-xl font-bold tracking-tight">Escolha o visual do Flowy</h2>
+          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+            Você pode trocar quando quiser em Configurações.
+          </p>
+          <div className="mt-5 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Tema">
+            {themes.map((option) => {
+              const selected = selectedTheme === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => chooseTheme(option.value)}
+                  className={cn(
+                    "group rounded-2xl border p-2 text-left transition-all duration-300 active:scale-95",
+                    selected
+                      ? "border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.25)]"
+                      : "border-border hover:border-primary/50",
+                  )}
+                >
+                  <span
+                    className="block h-20 overflow-hidden rounded-xl p-2"
+                    style={{ backgroundColor: option.bg }}
+                    aria-hidden="true"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className="size-2.5 rounded-full" style={{ backgroundColor: option.accent }} />
+                      <span className="h-1.5 w-10 rounded-full opacity-40" style={{ backgroundColor: option.accent }} />
+                    </span>
+                    <span className="mt-2 block h-4 rounded-md" style={{ backgroundColor: option.card }} />
+                    <span className="mt-1.5 block h-4 w-3/4 rounded-md" style={{ backgroundColor: option.card }} />
+                  </span>
+                  <span className="mt-2 flex items-center justify-between px-1 text-sm font-medium">
+                    {option.label}
+                    {selected ? <Check className="size-4 text-primary" /> : null}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <Button type="button" onClick={() => setPhase("task")} className="mt-5 h-11 w-full gap-2">
+            Continuar
+            <ArrowRight className="size-4" />
+          </Button>
         </CenteredCard>
       ) : null}
 

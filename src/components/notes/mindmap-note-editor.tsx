@@ -90,8 +90,39 @@ function flowyTheme(dark: boolean) {
       "--main-border": "1px solid hsl(var(--border))",
       "--color": "hsl(var(--foreground))",
       "--selected": "hsl(var(--primary))",
+      "--accent-color": "hsl(var(--primary))",
+      "--main-radius": "14px",
+      "--root-radius": "18px",
+      "--topic-padding": "6px 12px",
+      "--main-gap-x": "56px",
+      "--main-gap-y": "18px",
+      "--panel-bgcolor": "hsl(var(--card))",
+      "--panel-color": "hsl(var(--foreground))",
+      "--panel-border-color": "hsl(var(--border))",
     },
   };
+}
+
+// Centers the whole drawing (not just the root topic) inside the canvas.
+function centerContent(mind: MindElixirInstance, container: HTMLElement) {
+  const topics = container.querySelectorAll<HTMLElement>("me-tpc");
+  if (!topics.length) return;
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  topics.forEach((topic) => {
+    const rect = topic.getBoundingClientRect();
+    left = Math.min(left, rect.left);
+    top = Math.min(top, rect.top);
+    right = Math.max(right, rect.right);
+    bottom = Math.max(bottom, rect.bottom);
+  });
+  const box = container.getBoundingClientRect();
+  mind.move(
+    box.left + box.width / 2 - (left + right) / 2,
+    box.top + box.height / 2 - (top + bottom) / 2,
+  );
 }
 
 function isDarkTheme() {
@@ -101,6 +132,8 @@ function isDarkTheme() {
 interface Tool {
   id: string;
   label: string;
+  /** Shorter name for the phone sheet, where space is tight. */
+  short?: string;
   icon: ReactNode;
   needsNode?: boolean;
   active?: boolean;
@@ -130,7 +163,7 @@ function DockButton({
       aria-pressed={tool.active}
       data-tip={tool.label}
       className={cn(
-        "flowy-dock-button grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent hover:text-foreground active:scale-90 disabled:pointer-events-none disabled:opacity-35",
+        "flowy-dock-button grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent hover:text-foreground active:scale-90 disabled:pointer-events-none disabled:opacity-45",
         tool.active && "bg-primary/15 text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.35)]",
         tool.danger && "hover:bg-destructive/10 hover:text-destructive",
       )}
@@ -158,13 +191,13 @@ function SheetButton({
       }}
       aria-pressed={tool.active}
       className={cn(
-        "flex flex-col items-center gap-1.5 rounded-2xl px-1 py-2.5 text-[11px] font-medium text-muted-foreground transition-all active:scale-95 disabled:opacity-35",
+        "flex flex-col items-center gap-1.5 rounded-2xl px-1 py-2.5 text-[11px] font-medium text-muted-foreground transition-all active:scale-95 disabled:opacity-45",
         tool.active ? "bg-primary/15 text-primary" : "bg-muted/40 hover:bg-accent hover:text-foreground",
         tool.danger && "text-destructive",
       )}
     >
       <span className="grid size-8 place-items-center">{tool.icon}</span>
-      {tool.label}
+      <span className="w-full truncate px-0.5 leading-tight">{tool.short ?? tool.label}</span>
     </button>
   );
 }
@@ -245,6 +278,10 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
     const fitFrame = window.requestAnimationFrame(() => {
       mind.scaleFit();
       if (mind.scaleVal > 1) mind.scale(1);
+      else if (window.innerWidth < 640 && mind.scaleVal < 0.85) {
+        mind.scale(0.85);
+        centerContent(mind, el);
+      }
     });
 
     mind.bus.addListener("operation", (operation) => {
@@ -428,6 +465,7 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
   const editTools: Tool[] = [
     { id: "edit",
       label: "Editar texto",
+      short: "Editar",
       icon: <PencilLine className={iconClass} />,
       needsNode: true },
     { id: "color",
@@ -437,18 +475,22 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
       active: paletteOpen },
     { id: "up",
       label: "Mover para cima",
+      short: "Subir",
       icon: <ArrowUp className={iconClass} />,
       needsNode: true },
     { id: "down",
       label: "Mover para baixo",
+      short: "Descer",
       icon: <ArrowDown className={iconClass} />,
       needsNode: true },
     { id: "collapse",
       label: "Recolher/expandir",
+      short: "Recolher",
       icon: <ChevronsDownUp className={iconClass} />,
       needsNode: true },
     { id: "delete",
       label: "Excluir tópico",
+      short: "Excluir",
       icon: <Trash2 className={iconClass} />,
       needsNode: true,
       danger: true },
@@ -456,6 +498,7 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
   const connectTools: Tool[] = [
     { id: "link",
       label: "Ligar tópicos",
+      short: "Ligar",
       icon: <Spline className={iconClass} />,
       active: linking },
     { id: "summary",
@@ -466,12 +509,16 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
   const viewTools: Tool[] = [
     { id: "focus",
       label: focused ? "Sair do foco" : "Focar tópico",
+      short: focused ? "Sair foco" : "Focar",
       icon: <Crosshair className={iconClass} />,
       active: focused },
-    { id: "layout", label: "Trocar layout", icon: <Network className={iconClass} /> },
+    { id: "layout", label: "Trocar layout",
+      short: "Layout", icon: <Network className={iconClass} /> },
     { id: "fit", label: "Centralizar", icon: <Maximize2 className={iconClass} /> },
-    { id: "zoom-out", label: "Diminuir zoom", icon: <ZoomOut className={iconClass} /> },
-    { id: "zoom-in", label: "Aumentar zoom", icon: <ZoomIn className={iconClass} /> },
+    { id: "zoom-out", label: "Diminuir zoom",
+      short: "Zoom −", icon: <ZoomOut className={iconClass} /> },
+    { id: "zoom-in", label: "Aumentar zoom",
+      short: "Zoom +", icon: <ZoomIn className={iconClass} /> },
   ];
   function runTool(id: string) {
     switch (id) {
@@ -544,6 +591,12 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
       case "zoom-in":
         zoom(ZOOM_STEP);
         return;
+      case "export":
+        exportImage();
+        return;
+      case "trash":
+        void handleTrash();
+        return;
     }
   }
 
@@ -553,6 +606,16 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
     { title: "Editar", tools: editTools },
     { title: "Conectar", tools: connectTools },
     { title: "Visualizar", tools: viewTools },
+  ];
+  const sheetGroups: ToolGroup[] = [
+    ...toolGroups,
+    {
+      title: "Arquivo",
+      tools: [
+        { id: "export", label: "Exportar imagem", short: "Exportar", icon: <Download className={iconClass} /> },
+        { id: "trash", label: "Mover para a lixeira", short: "Lixeira", icon: <Trash2 className={iconClass} />, danger: true },
+      ],
+    },
   ];
   const mobileTools = [...historyTools, ...addTools.slice(0, 2), ...editTools.slice(0, 1)];
 
@@ -677,9 +740,14 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
             className="absolute inset-x-3 bottom-[5.5rem] z-20 max-h-[60%] overflow-y-auto rounded-3xl border border-border/70 bg-card/95 p-3 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 sm:hidden"
             aria-label="Mais ferramentas"
           >
-            {toolGroups.map((group) => (
+            {!hasSelection ? (
+              <p className="mb-3 rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+                Toque em um tópico do mapa para liberar as ferramentas de edição.
+              </p>
+            ) : null}
+            {sheetGroups.map((group) => (
               <div key={group.title} className="mb-3 last:mb-0">
-                <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {group.title}
                 </p>
                 <div className="grid grid-cols-4 gap-1.5">
@@ -724,7 +792,7 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
             aria-expanded={moreOpen}
             className={cn(
               "flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-all active:scale-95 sm:hidden",
-              moreOpen ? "bg-primary text-primary-foreground" : "bg-primary/15 text-primary",
+              moreOpen ? "bg-primary/25 text-primary ring-1 ring-primary/40" : "bg-primary/15 text-primary",
             )}
           >
             {moreOpen ? <X className="size-4" /> : <LayoutGrid className="size-4" />}

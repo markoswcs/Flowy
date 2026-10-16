@@ -81,7 +81,7 @@ function ScheduleTile({
         <span
           className={cn(
             "block truncate text-sm font-medium first-letter:uppercase",
-            empty ? "text-muted-foreground/80" : "text-foreground",
+            empty ? "text-muted-foreground" : "text-foreground",
           )}
         >
           {value}

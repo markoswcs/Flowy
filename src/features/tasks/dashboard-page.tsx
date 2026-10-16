@@ -20,6 +20,7 @@ import { TaskMatrix } from "@/features/tasks/components/task-matrix";
 import { TaskList } from "@/features/tasks/components/task-list";
 import { TaskViewSwitcher, type TaskView } from "@/features/tasks/components/task-view-switcher";
 import { formatTaskDate } from "@/features/tasks/date-utils";
+import { buildDailyPhrase } from "@/features/tasks/daily-phrase";
 import { parseQuickTask } from "@/features/tasks/quick-task";
 import { useCreateTask, useTasks, useTasksRealtime } from "@/features/tasks/use-tasks";
 import { useNotifications } from "@/providers/notification-provider";
@@ -85,6 +86,7 @@ function DashboardContent({
   const effectiveFilters = { ...filters, search: debouncedSearch };
   
   const tasksQuery = useTasks(effectiveFilters);
+  const allTasksQuery = useTasks({ scope: "all" });
   const foldersQuery = useFolders();
   const categoriesQuery = useCategories();
   useTasksRealtime();
@@ -173,6 +175,8 @@ function DashboardContent({
     }
   }
 
+  const personalPhrase =
+    ready && allTasksQuery.data ? buildDailyPhrase(allTasksQuery.data, new Date()) : null;
   const scopeIndex = Math.max(0, scopes.findIndex((scope) => scope.value === (filters.scope ?? "all")));
   const activeFilters = [
     filters.priority && filters.priority !== "all"
@@ -211,13 +215,13 @@ function DashboardContent({
               >
                 <TimeIcon className="size-5 animate-in zoom-in duration-700 sm:size-7" />
               </span>
-              <span className="min-w-0 truncate bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              <span className="min-w-0 truncate bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text pb-[0.14em] leading-[1.2] text-transparent">
                 {greeting}, {firstName}
               </span>
             </h1>
-            <p className="flex min-w-0 items-center gap-2 pl-1 text-xs text-muted-foreground/80 animate-in fade-in slide-in-from-left-2 duration-700 sm:text-sm">
+            <p className="flex min-w-0 items-center gap-2 pl-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-2 duration-700 sm:text-sm">
               <Sparkles className="size-3.5 shrink-0 text-primary/60" />
-              <span className="truncate">{phrase}</span>
+              <span className="truncate">{personalPhrase ?? phrase}</span>
             </p>
           </div>
           <div data-tour="views" className="shrink-0 pt-0.5 sm:pt-1.5">

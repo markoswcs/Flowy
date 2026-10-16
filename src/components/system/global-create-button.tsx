@@ -57,13 +57,13 @@ export function GlobalCreateButton({ className }: { className?: string }) {
       ref={containerRef}
       data-tour="create"
       className={cn(
-        "global-create-button fixed bottom-[3.2rem] left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
+        "global-create-button fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+0.25rem)] left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
         className,
       )}
     >
       <div
         className={cn(
-          "absolute bottom-full mb-4 flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/95 backdrop-blur-xl shadow-xl transition-all duration-300 origin-bottom",
+          "absolute bottom-full mb-5 flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/95 backdrop-blur-xl shadow-xl transition-all duration-300 origin-bottom",
           "left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0 w-[180px]",
           open
             ? "visible translate-y-0 opacity-100 scale-100"
@@ -124,21 +124,20 @@ export function GlobalCreateButton({ className }: { className?: string }) {
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "group relative flex size-12 items-center justify-center rounded-full border border-primary-foreground/15 transition-all active:scale-95 md:size-16 md:border-0 md:rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40",
-          open ? "rotate-45" : "hover:-translate-y-0.5",
-          "bg-primary shadow-md shadow-primary/20",
+          "group relative flex size-14 items-center justify-center rounded-[1.15rem] bg-gradient-to-br from-violet-500 to-indigo-600 shadow-[0_10px_30px_-6px_rgb(124_58_237/0.7)] ring-1 ring-white/20 transition-all duration-300 active:scale-90 md:size-16 md:rounded-[1.4rem] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/50",
+          open ? "rotate-45" : "hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-6px_rgb(124_58_237/0.85)]",
         )}
         aria-label={open ? "Fechar menu" : "Criar novo item"}
       >
         <Plus
           className={cn(
-            "absolute size-5 text-primary-foreground transition-all duration-300 md:size-6",
+            "absolute size-6 text-white transition-all duration-300",
             open ? "scale-50 opacity-0" : "scale-100 opacity-100",
           )}
         />
         <X
           className={cn(
-            "absolute size-8 text-primary-foreground transition-all duration-300",
+            "absolute size-7 text-white transition-all duration-300",
             open
               ? "rotate-0 scale-100 opacity-100"
               : "-rotate-90 scale-50 opacity-0",
