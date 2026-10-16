@@ -69,17 +69,14 @@ const ExcalidrawNoteEditor = dynamic(
   },
 );
 
-const MindmapNoteEditor = dynamic(
-  () => import("@/components/notes/mindmap-note-editor"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="mx-auto max-w-4xl p-8 text-sm text-muted-foreground">
-        Carregando mapa mental…
-      </div>
-    ),
-  },
-);
+const MapEditor = dynamic(() => import("@/features/mindmap/map-editor"), {
+  ssr: false,
+  loading: () => (
+    <div className="mx-auto max-w-4xl p-8 text-sm text-muted-foreground">
+      Carregando mapa…
+    </div>
+  ),
+});
 
 interface EditorErrorBoundaryProps {
   children: ReactNode;
@@ -227,7 +224,7 @@ function LoadedNoteEditor({ note }: { note: Note }) {
   if (note.kind === "mindmap") {
     return (
       <EditorErrorBoundary>
-        <MindmapNoteEditor note={note} />
+        <MapEditor note={note} />
       </EditorErrorBoundary>
     );
   }
@@ -502,7 +499,9 @@ function TextNoteEditor({ note }: { note: Note }) {
               ),
             })),
           ]}
-          triggerIcon={<FolderIcon className="size-3.5 text-muted-foreground" />}
+          triggerIcon={
+            <FolderIcon className="size-3.5 text-muted-foreground" />
+          }
           className="h-8 rounded-full border-border/60 bg-card/60 px-3 text-xs shadow-none hover:bg-accent"
         />
 
@@ -518,11 +517,16 @@ function TextNoteEditor({ note }: { note: Note }) {
               <span className="flex items-center gap-1.5 text-foreground">
                 {selectedLabels.slice(0, 2).map((label) => (
                   <span key={label.id} className="flex items-center gap-1">
-                    <span className="size-2 rounded-full" style={{ backgroundColor: label.color }} />
+                    <span
+                      className="size-2 rounded-full"
+                      style={{ backgroundColor: label.color }}
+                    />
                     <span className="max-w-24 truncate">{label.name}</span>
                   </span>
                 ))}
-                {selectedLabels.length > 2 ? <span>+{selectedLabels.length - 2}</span> : null}
+                {selectedLabels.length > 2 ? (
+                  <span>+{selectedLabels.length - 2}</span>
+                ) : null}
               </span>
             ) : (
               "Etiquetas"
@@ -657,7 +661,9 @@ function TextNoteEditor({ note }: { note: Note }) {
             <ToolbarButton
               label="Título"
               active={editor.isActive("heading", { level: 2 })}
-              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 2 }).run()
+              }
             >
               <Heading2 className="size-[18px]" />
             </ToolbarButton>
@@ -698,7 +704,10 @@ function TextNoteEditor({ note }: { note: Note }) {
               <CheckSquare className="size-[18px]" />
             </ToolbarButton>
             <span className="mx-1 h-5 w-px shrink-0 bg-border" />
-            <ToolbarButton label="Inserir desenho" onClick={() => setDrawingOpen(true)}>
+            <ToolbarButton
+              label="Inserir desenho"
+              onClick={() => setDrawingOpen(true)}
+            >
               <PencilLine className="size-[18px]" />
             </ToolbarButton>
             <ToolbarButton

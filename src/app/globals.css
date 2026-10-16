@@ -322,28 +322,6 @@
     display: none;
   }
 
-  /* Mind map nodes: readable type and a soft depth instead of flat pills. */
-  .flowy-mindmap me-tpc {
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.35;
-  }
-
-  .flowy-mindmap me-root me-tpc {
-    font-size: 18px;
-    font-weight: 700;
-    padding: 10px 20px;
-    box-shadow: 0 10px 30px -8px hsl(var(--primary) / 0.55);
-  }
-
-  .flowy-mindmap me-main > me-wrapper > me-parent > me-tpc {
-    box-shadow: 0 6px 18px -10px rgb(0 0 0 / 0.6);
-  }
-
-  .flowy-mindmap me-tpc.selected {
-    box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 24px hsl(var(--primary) / 0.35);
-  }
-
   /* Label bubble for icon-only dock buttons (pointer devices only). */
   .flowy-dock-button {
     position: relative;
