@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Check, CheckCircle2, Folder, NotebookPen, Plus, Tag, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useSyncExternalStore, type ReactNode } from "react";
 
@@ -9,6 +10,7 @@ import { useFolders } from "@/features/folders/use-folders";
 import { useNotes } from "@/features/notes/use-notes";
 import { usePushNotifications } from "@/features/settings/use-push-notifications";
 import { useTasks } from "@/features/tasks/use-tasks";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const dismissedKey = "flowy:getting-started-dismissed";
@@ -40,6 +42,16 @@ function dismiss() {
   window.dispatchEvent(new Event(changeEvent));
 }
 
+// Reminders count as set up once any of the person's devices is registered,
+// so the checklist shows the same progress on the phone and on the computer.
+async function countPushDevices() {
+  const { count, error } = await createClient()
+    .from("push_subscriptions")
+    .select("endpoint", { count: "exact", head: true });
+  if (error) throw error;
+  return count ?? 0;
+}
+
 interface Step {
   id: string;
   label: string;
@@ -59,6 +71,11 @@ export function GettingStarted() {
   const categories = useCategories().data;
   const notes = useNotes().data;
   const push = usePushNotifications();
+  const pushDevices = useQuery({
+    queryKey: ["push-devices"],
+    queryFn: countPushDevices,
+    staleTime: 60_000,
+  }).data;
 
   if (dismissed || !open || !completed || !folders || !categories || !notes) return null;
 
@@ -102,11 +119,12 @@ export function GettingStarted() {
       action: () => router.push("/app/notes?tipo=nota"),
     },
   ];
-  if (push.status !== "unsupported" && push.status !== "loading") {
+  const pushDone = push.status === "enabled" || (pushDevices ?? 0) > 0;
+  if (pushDone || (push.status !== "unsupported" && push.status !== "loading")) {
     steps.push({
       id: "push",
       label: "Ativar lembretes",
-      done: push.status === "enabled",
+      done: pushDone,
       icon: <Bell className="size-4" />,
       action: () => router.push("/app/settings"),
     });
