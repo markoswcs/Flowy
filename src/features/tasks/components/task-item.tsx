@@ -17,7 +17,8 @@ import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
-import { formatTaskDate, isOverdueDate } from "@/features/tasks/date-utils";
+import { formatTaskDate, relativeTaskDate } from "@/features/tasks/date-utils";
+import { TaskActionSheet } from "@/features/tasks/components/task-action-sheet";
 import { TaskScheduleFields } from "@/features/tasks/components/task-schedule-fields";
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
 import {
@@ -299,10 +300,9 @@ export function TaskItem({
   const selected = Boolean(selection?.isSelected(task.id));
   const pressTimer = useRef<number | null>(null);
   const pressStarted = useRef(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const completed = task.status === "completed";
   const optimistic = task.id.startsWith("optimistic-");
-  const formattedDate = formatTaskDate(task.due_date);
-  const overdue = !completed && isOverdueDate(task.due_date);
 
   function toggleCompleted() {
     const nextCompleted = !completed;
@@ -357,20 +357,31 @@ export function TaskItem({
     });
   }
 
-  // Holding a task for a moment starts multi-select (handy on phones).
+  // Holding a task opens its actions; while selecting, a tap toggles it.
   function startPress() {
-    if (!selection || selecting || optimistic || editing) return;
+    pressStarted.current = false;
+    if (selecting || optimistic || editing) return;
     pressTimer.current = window.setTimeout(() => {
       pressTimer.current = null;
       pressStarted.current = true;
-      selection.start(task.id);
+      setActionsOpen(true);
       navigator.vibrate?.(15);
-    }, 480);
+    }, 450);
   }
   function cancelPress() {
     if (pressTimer.current) window.clearTimeout(pressTimer.current);
     pressTimer.current = null;
   }
+
+  const when = relativeTaskDate(task.due_date);
+  const dateToneClass =
+    completed || !when
+      ? "text-muted-foreground"
+      : when.tone === "overdue"
+        ? "bg-destructive/15 text-destructive"
+        : when.tone === "today"
+          ? "bg-violet-500/15 text-violet-400"
+          : "text-muted-foreground";
 
   return (
     <article
@@ -381,44 +392,50 @@ export function TaskItem({
         if (Math.abs(event.movementX) + Math.abs(event.movementY) > 6) cancelPress();
       }}
       onContextMenu={(event) => {
-        if (selecting) event.preventDefault();
+        if (editing || optimistic) return;
+        event.preventDefault();
+        if (!selecting) setActionsOpen(true);
       }}
       onClickCapture={(event) => {
+        // The click that ends a long press must not also trigger the card.
+        if (pressStarted.current) {
+          pressStarted.current = false;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         if (!selecting || !selection) return;
         event.preventDefault();
         event.stopPropagation();
-        // The click that ends the long press must not undo its selection.
-        if (pressStarted.current) {
-          pressStarted.current = false;
-          return;
-        }
         selection.toggle(task.id);
       }}
       data-selected={selecting ? selected : undefined}
       className={cn(
-        "mb-2 rounded-2xl border border-border/50 bg-card/40 p-3 shadow-sm backdrop-blur-2xl transition-all duration-300 hover:bg-card/50 active:scale-[0.99] sm:p-4 animate-scale-in",
-        !selecting && "hover:scale-[1.01]",
+        "group relative mb-2 overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-sm transition-all duration-300 hover:border-border hover:bg-card/70 active:scale-[0.99] animate-scale-in",
         selecting && "cursor-pointer select-none",
-        selected && "border-primary/60 bg-primary/10 shadow-[0_0_0_1px_hsl(var(--primary)/0.4)]",
+        selected && "border-violet-400/60 bg-violet-500/10 shadow-[0_0_0_1px_rgb(167_139_250/0.4)]",
+        completed && !selecting && "opacity-70",
       )}
     >
+      {task.priority === "high" && !completed ? (
+        <span aria-hidden="true" className="absolute inset-y-3 left-0 w-1 rounded-r-full bg-destructive" />
+      ) : null}
+
       {!editing && (
-        <div className="flex min-w-0 items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3 p-3.5 sm:p-4">
           <button
             type="button"
             role="checkbox"
-            aria-checked={completed}
-            aria-label={
-              completed ? `Reabrir ${task.title}` : `Concluir ${task.title}`
-            }
+            aria-checked={selecting ? selected : completed}
+            aria-label={completed ? `Reabrir ${task.title}` : `Concluir ${task.title}`}
             onClick={toggleCompleted}
             disabled={optimistic || updateMutation.isPending}
             className={cn(
-              "mt-0.5 flex size-6 shrink-0 items-center justify-center border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+              "mt-px flex size-[1.4rem] shrink-0 items-center justify-center border-2 transition-all duration-200 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 disabled:opacity-50",
               selecting ? "rounded-md" : "rounded-full",
               (selecting ? selected : completed)
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-muted-foreground/50 hover:border-primary",
+                ? "border-violet-500 bg-violet-500 text-white"
+                : "border-muted-foreground/50 hover:border-violet-400",
             )}
           >
             {(selecting ? selected : completed) ? (
@@ -426,85 +443,76 @@ export function TaskItem({
             ) : null}
           </button>
 
-          <div className="min-w-0 flex-1">
-            <button
-              type="button"
-              onClick={() => !optimistic && setEditing(true)}
-              className={`block max-w-full text-left text-sm font-medium leading-6 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                completed
-                  ? "text-muted-foreground line-through"
-                  : "text-foreground"
-              }`}
+          <button
+            type="button"
+            onClick={() => !optimistic && setEditing(true)}
+            className="min-w-0 flex-1 text-left focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+            aria-label={`Abrir ${task.title}`}
+          >
+            <span
+              className={cn(
+                "line-clamp-2 break-words text-[15px] font-medium leading-snug",
+                completed ? "text-muted-foreground line-through" : "text-foreground",
+              )}
+              title={task.title}
             >
-              <span className="line-clamp-2 break-words" title={task.title}>{task.title}</span>
-            </button>
+              {task.title}
+            </span>
 
             {!compact ? (
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                {formattedDate ? (
-                  <span className={overdue ? "text-destructive" : undefined}>
-                    <CalendarDays
-                      className="mr-1 inline size-3.5"
-                      aria-hidden="true"
-                    />
-                    {formattedDate}
+              <span className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                {when ? (
+                  <span className={cn("inline-flex items-center gap-1 rounded-full py-0.5", dateToneClass, dateToneClass.includes("bg-") ? "px-2" : "")}>
+                    <CalendarDays className="size-3.5" aria-hidden="true" />
+                    {when.label}
+                    {task.due_time ? ` · ${task.due_time.slice(0, 5)}` : ""}
                   </span>
-                ) : null}
-                {task.due_time ? (
-                  <span>
-                    <Clock3 className="mr-1 inline size-3.5" aria-hidden="true" />
+                ) : task.due_time ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Clock3 className="size-3.5" aria-hidden="true" />
                     {task.due_time.slice(0, 5)}
                   </span>
                 ) : null}
                 {task.recurrence ? (
-                  <span>
-                    <Repeat2 className="mr-1 inline size-3.5" aria-hidden="true" />
+                  <span className="inline-flex items-center gap-1">
+                    <Repeat2 className="size-3.5" aria-hidden="true" />
                     {recurrenceLabels[task.recurrence]}
                   </span>
                 ) : null}
                 {task.folder ? (
-                  <span>
+                  <span className="inline-flex max-w-40 items-center gap-1">
                     <FolderIcon
-                      className="mr-1 inline size-3.5"
+                      className="size-3.5 shrink-0"
+                      style={{ color: task.folder.color ?? undefined }}
                       aria-hidden="true"
                     />
-                    {task.folder.name}
+                    <span className="truncate">{task.folder.name}</span>
                   </span>
                 ) : null}
-                {task.priority !== "normal" ? (
-                  <span
-                    className={
-                      task.priority === "high" ? "text-destructive" : undefined
-                    }
-                  >
-                    {priorityLabels[task.priority]}
-                  </span>
-                ) : null}
+                {task.priority === "low" ? <span>{priorityLabels.low}</span> : null}
                 {task.categories.map((category) => (
                   <span
                     key={category.id}
-                    className="inline-flex items-center gap-1"
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5"
+                    style={{ backgroundColor: `${category.color}1f`, color: category.color }}
                   >
-                    <span
-                      className="size-1.5 rounded-full"
-                      style={{ backgroundColor: category.color }}
-                      aria-hidden="true"
-                    />
                     {category.name}
                   </span>
                 ))}
-              </div>
+              </span>
             ) : null}
-          </div>
+          </button>
 
-          <div className="flex shrink-0 items-center">
+          {/* Pointer devices: quick actions on hover. Phones use the long-press sheet. */}
+          <div className="hidden shrink-0 items-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100 md:flex">
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={() => setEditing(true)}
-              disabled={optimistic}
+              disabled={optimistic || selecting}
               aria-label={`Editar ${task.title}`}
+              className="size-8"
             >
               <Pencil className="size-4" aria-hidden="true" />
             </Button>
@@ -513,15 +521,28 @@ export function TaskItem({
               variant="ghost"
               size="icon"
               onClick={moveToTrash}
-              disabled={optimistic || deleteMutation.isPending}
+              disabled={optimistic || selecting || deleteMutation.isPending}
               aria-label={`Mover ${task.title} para a lixeira`}
-              className="text-muted-foreground hover:text-destructive"
+              className="size-8 text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="size-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
       )}
+
+      {actionsOpen ? (
+        <TaskActionSheet
+          title={task.title}
+          completed={completed}
+          canSelect={Boolean(selection)}
+          onClose={() => setActionsOpen(false)}
+          onEdit={() => setEditing(true)}
+          onToggle={toggleCompleted}
+          onSelect={() => selection?.start(task.id)}
+          onTrash={moveToTrash}
+        />
+      ) : null}
 
       {editing ? (
         <TaskEditor

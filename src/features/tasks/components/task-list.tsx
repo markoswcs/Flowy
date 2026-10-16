@@ -3,6 +3,7 @@ import { CheckCircle2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { localDateKey } from "@/features/tasks/date-utils";
 import type { Category, Folder, Task } from "@/types/productivity";
 
 import { TaskItem } from "./task-item";
@@ -17,6 +18,35 @@ interface TaskListProps {
   emptyTitle?: string;
   emptyDescription?: string;
   compact?: boolean;
+  /** Split the list into Atrasadas / Hoje / Próximas / Sem data / Concluídas. */
+  grouped?: boolean;
+  emptyAction?: React.ReactNode;
+}
+
+type Section = { key: string; label: string; tone: string; tasks: Task[] };
+
+function sectionsFor(tasks: Task[]): Section[] {
+  const today = localDateKey();
+  const buckets: Section[] = [
+    { key: "overdue", label: "Atrasadas", tone: "text-destructive", tasks: [] },
+    { key: "today", label: "Hoje", tone: "text-violet-400", tasks: [] },
+    { key: "upcoming", label: "Próximas", tone: "text-muted-foreground", tasks: [] },
+    { key: "undated", label: "Sem data", tone: "text-muted-foreground", tasks: [] },
+    { key: "done", label: "Concluídas", tone: "text-emerald-400", tasks: [] },
+  ];
+  const [overdue, dueToday, upcoming, undated, done] = buckets as [Section, Section, Section, Section, Section];
+  tasks.forEach((task) => {
+    if (task.status === "completed") done.tasks.push(task);
+    else if (!task.due_date) undated.tasks.push(task);
+    else if (task.due_date < today) overdue.tasks.push(task);
+    else if (task.due_date === today) dueToday.tasks.push(task);
+    else upcoming.tasks.push(task);
+  });
+  // Within a section, timed tasks come first in chronological order.
+  const byWhen = (a: Task, b: Task) =>
+    `${a.due_date ?? "9"}${a.due_time ?? "99"}`.localeCompare(`${b.due_date ?? "9"}${b.due_time ?? "99"}`);
+  [overdue, dueToday, upcoming].forEach((section) => section.tasks.sort(byWhen));
+  return buckets.filter((section) => section.tasks.length);
 }
 
 export function TaskList({
@@ -29,6 +59,8 @@ export function TaskList({
   emptyTitle = "Você ainda não tem tarefas.",
   emptyDescription,
   compact = false,
+  grouped = false,
+  emptyAction,
 }: TaskListProps) {
   if (loading) {
     return (
@@ -69,7 +101,37 @@ export function TaskList({
         icon={<CheckCircle2 className="size-5" aria-hidden="true" />}
         title={emptyTitle}
         description={emptyDescription}
+        action={emptyAction}
       />
+    );
+  }
+
+  const renderTask = (task: Task, index: number) => (
+    <div
+      key={task.id}
+      className="flowy-list-item"
+      style={{ animationDelay: `${Math.min(index * 35, 210)}ms` }}
+    >
+      <TaskItem task={task} folders={folders} categories={categories} compact={compact} />
+    </div>
+  );
+
+  if (grouped) {
+    let index = 0;
+    return (
+      <div className="space-y-5">
+        {sectionsFor(tasks).map((section) => (
+          <section key={section.key} aria-label={section.label}>
+            <h3 className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-widest">
+              <span className={section.tone}>{section.label}</span>
+              <span className="rounded-full bg-muted px-1.5 py-px text-[10px] tabular-nums text-muted-foreground">
+                {section.tasks.length}
+              </span>
+            </h3>
+            {section.tasks.map((task) => renderTask(task, index++))}
+          </section>
+        ))}
+      </div>
     );
   }
 
@@ -78,20 +140,7 @@ export function TaskList({
       {/* Finished tasks sink to the bottom; open ones keep their order. */}
       {[...tasks]
         .sort((a, b) => Number(a.status === "completed") - Number(b.status === "completed"))
-        .map((task, index) => (
-        <div
-          key={task.id}
-          className="flowy-list-item"
-          style={{ animationDelay: `${Math.min(index * 35, 210)}ms` }}
-        >
-          <TaskItem
-            task={task}
-            folders={folders}
-            categories={categories}
-            compact={compact}
-          />
-        </div>
-      ))}
+        .map(renderTask)}
     </div>
   );
 }

@@ -280,7 +280,7 @@ function DashboardContent({
               aria-label="Pesquisar ou criar tarefa"
               maxLength={300}
               enterKeyHint="done"
-              placeholder="Pesquisar ou criar… ex.: Reunião amanhã 15h #urgente"
+              placeholder="Buscar ou criar tarefa…"
               className="h-10 min-w-0 flex-1 appearance-none border-none bg-transparent px-2 text-sm shadow-none placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <button
@@ -410,6 +410,18 @@ function DashboardContent({
               loading={tasksQuery.isLoading}
               error={tasksQuery.error}
               onRetry={() => tasksQuery.refetch()}
+              grouped={(filters.scope ?? "all") === "all" && !debouncedSearch}
+              emptyAction={
+                debouncedSearch ? null : (
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new Event("flowy:open-task-composer"))}
+                    className="inline-flex h-10 items-center gap-2 rounded-full bg-violet-500 px-5 text-sm font-semibold text-white shadow-[0_10px_30px_-10px_rgb(124_58_237/0.8)] transition-transform active:scale-95"
+                  >
+                    Criar uma tarefa
+                  </button>
+                )
+              }
               emptyTitle={
                 filters.scope === "completed"
                   ? "Nenhuma tarefa concluída."
