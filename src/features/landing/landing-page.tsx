@@ -22,6 +22,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
+import { GoogleOneTap } from "@/components/auth/google-one-tap";
 import { LandingMotion } from "@/features/landing/landing-motion";
 import { cn } from "@/lib/utils";
 
@@ -303,6 +304,7 @@ export function LandingPage() {
   return (
     <LandingMotion>
       <div className={cn(styles.page, display.variable, serif.variable)}>
+        <GoogleOneTap />
         <div className={styles.aurora} aria-hidden="true" />
 
         <header className={styles.nav}>

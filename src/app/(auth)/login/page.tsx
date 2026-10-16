@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { AuthCard, AuthMessage } from "@/components/auth/auth-card";
 import { GoogleButton } from "@/components/auth/google-button";
+import { GoogleOneTap } from "@/components/auth/google-one-tap";
 import { LoginForm } from "@/components/auth/login-form";
 import { safeNextPath } from "@/lib/utils";
 
@@ -69,6 +70,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         {message ? (
           <AuthMessage status={message.status}>{message.text}</AuthMessage>
         ) : null}
+        <GoogleOneTap next={next} />
         <GoogleButton next={next} />
         <LoginForm next={next} />
       </div>
