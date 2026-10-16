@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, LayoutGrid, Palette, X } from "lucide-react";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 
 import type { LayoutKind, ThemeId } from "@/features/mindmap/types";
 import { LAYOUT_OPTIONS } from "@/features/mindmap/components/constants";
@@ -229,7 +229,44 @@ export function ZoomControls({
   );
 }
 
-const MOBILE_BAR: ToolId[] = ["undo", "redo", "child", "sibling", "link"];
+// The phone bar changes with the selection, so every button is usable.
+const MOBILE_BAR_IDLE: ToolId[] = ["undo", "redo", "fit", "template"];
+const MOBILE_BAR_TOPIC: ToolId[] = ["child", "sibling", "edit", "format"];
+
+function BarButton({
+  icon,
+  label,
+  active,
+  disabled,
+  onClick,
+  expanded,
+}: {
+  icon: ReactNode;
+  label: string;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  expanded?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-expanded={expanded}
+      aria-label={label}
+      className={cn(
+        "flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-[10.5px] font-medium leading-none transition-[transform,background-color,color] duration-200 active:scale-90 disabled:opacity-35 motion-reduce:transform-none",
+        active
+          ? "bg-primary/15 text-primary"
+          : "text-foreground/80 hover:bg-accent hover:text-foreground",
+      )}
+    >
+      {icon}
+      <span className="max-w-full truncate px-0.5">{label}</span>
+    </button>
+  );
+}
 
 const SHEET_GROUPS: { title: string; tools: ToolId[] }[] = [
   {
@@ -292,7 +329,7 @@ export function MobileToolbar({
     <>
       {sheetOpen ? (
         <div
-          className="flowy-glass flowy-glass-strong absolute inset-x-2 bottom-[4.75rem] z-30 max-h-[62%] animate-in fade-in slide-in-from-bottom-3 overflow-y-auto overscroll-contain rounded-3xl border p-3 md:hidden"
+          className="flowy-glass flowy-glass-strong absolute inset-x-2 bottom-[5.5rem] z-30 mx-auto max-w-md max-h-[62%] animate-in fade-in slide-in-from-bottom-3 overflow-y-auto overscroll-contain rounded-3xl border p-3 md:hidden"
           role="dialog"
           aria-label="Mais ferramentas"
         >
@@ -343,30 +380,37 @@ export function MobileToolbar({
       ) : null}
       <nav
         aria-label="Ferramentas do mapa"
-        className="flowy-glass flowy-glass-strong safe-bottom absolute inset-x-2 bottom-2 z-30 flex items-center justify-between gap-0.5 rounded-[1.4rem] border p-1.5 md:hidden"
+        className="flowy-glass flowy-glass-strong safe-bottom absolute inset-x-3 bottom-3 z-30 mx-auto flex max-w-md items-center gap-1 rounded-[1.75rem] border p-1.5 md:hidden"
       >
-        {MOBILE_BAR.map((id) => (
-          <ToolButton key={id} id={id} state={state} onRun={onRun} large />
-        ))}
-        <button
-          type="button"
-          onClick={onToggleSheet}
-          aria-expanded={sheetOpen}
-          aria-label="Mais ferramentas"
-          className={cn(
-            "flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-transform active:scale-95",
-            sheetOpen
-              ? "bg-primary/25 text-primary ring-1 ring-primary/40"
-              : "bg-primary/15 text-primary",
-          )}
+        <div
+          key={state.hasTopic ? "topic" : "idle"}
+          className="flex min-w-0 flex-1 animate-in items-center gap-1 fade-in slide-in-from-bottom-1"
         >
-          {sheetOpen ? (
-            <X className="size-4" />
-          ) : (
-            <LayoutGrid className="size-4" />
-          )}
-          Mais
-        </button>
+          {(state.hasTopic ? MOBILE_BAR_TOPIC : MOBILE_BAR_IDLE).map((id) => {
+            const tool = TOOLS[id];
+            const Icon = tool.icon;
+            return (
+              <BarButton
+                key={id}
+                icon={<Icon className="size-5" />}
+                label={tool.short ?? tool.label}
+                active={isToolActive(id, state)}
+                disabled={isToolDisabled(id, state)}
+                onClick={() => onRun(id)}
+              />
+            );
+          })}
+        </div>
+        <span aria-hidden="true" className="h-8 w-px shrink-0 bg-border/70" />
+        <div className="w-16 shrink-0">
+          <BarButton
+            icon={sheetOpen ? <X className="size-5" /> : <LayoutGrid className="size-5" />}
+            label={sheetOpen ? "Fechar" : "Mais"}
+            active={sheetOpen}
+            expanded={sheetOpen}
+            onClick={onToggleSheet}
+          />
+        </div>
       </nav>
     </>
   );
