@@ -15,6 +15,7 @@ import type { ExcalidrawScene } from "@/components/notes/excalidraw-canvas";
 import { useSaveNote, useTrashNote } from "@/features/notes/use-notes";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { createClient } from "@/lib/supabase/client";
+import { trackVisualViewport } from "@/lib/visual-viewport";
 import type { Note } from "@/types/content";
 
 const ExcalidrawCanvas = dynamic(
@@ -175,7 +176,11 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
 
   useEffect(() => {
     document.body.classList.add("is-flow-editor");
-    return () => document.body.classList.remove("is-flow-editor");
+    const untrack = trackVisualViewport();
+    return () => {
+      untrack();
+      document.body.classList.remove("is-flow-editor");
+    };
   }, []);
 
   useEffect(() => {
