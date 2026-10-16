@@ -51,4 +51,30 @@ describe("parseQuickTask", () => {
       due_time: null,
     });
   });
+
+  it("moves a past 12-hour time to the evening when written at night", () => {
+    const night = new Date(2026, 9, 15, 23, 25);
+    expect(parseQuickTask("Teste de notificação 11:26", night)).toMatchObject({
+      due_date: "2026-10-15",
+      due_time: "23:26",
+    });
+  });
+
+  it("keeps morning times that are still ahead", () => {
+    expect(parseQuickTask("Reunião 11:26", now).due_time).toBe("11:26");
+  });
+
+  it("reads periods such as da noite and pm", () => {
+    expect(parseQuickTask("Ligar 8 da noite", now)).toMatchObject({ title: "Ligar", due_time: "20:00" });
+    expect(parseQuickTask("Ligar 3pm", now).due_time).toBe("15:00");
+    expect(parseQuickTask("Café 7h da manhã amanhã", now)).toMatchObject({
+      title: "Café",
+      due_date: "2026-10-16",
+      due_time: "07:00",
+    });
+  });
+
+  it("does not treat plain numbers as times", () => {
+    expect(parseQuickTask("Comprar 2 pães", now).due_time).toBeNull();
+  });
 });
