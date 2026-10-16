@@ -2,6 +2,7 @@
 
 import { AlertTriangle, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { TEMPLATES } from "@/features/mindmap/convert";
 import type { TemplateId } from "@/features/mindmap/types";
@@ -46,9 +47,11 @@ export function TemplatePicker({
     else onPick(template);
   }
 
-  return (
+  // Portal to <body>: inside the page, the app header, dock and the page's
+  // own stacking context would sit on top of the dialog.
+  return createPortal(
     <div
-      className="fixed inset-0 z-[110] flex items-end justify-center p-3 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[210] flex items-end justify-center sm:items-center sm:p-4"
       role="presentation"
     >
       <button
@@ -61,7 +64,7 @@ export function TemplatePicker({
         role="dialog"
         aria-modal="true"
         aria-labelledby="map-template-title"
-        className="flowy-glass flowy-glass-strong relative flex max-h-[88dvh] w-full max-w-3xl animate-scale-in flex-col rounded-3xl border p-5 sm:p-6"
+        className="flowy-glass flowy-glass-strong relative flex max-h-[92dvh] w-full max-w-3xl animate-in flex-col rounded-t-[1.75rem] border p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] fade-in slide-in-from-bottom-6 sm:max-h-[88dvh] sm:rounded-3xl sm:p-6 sm:zoom-in-95 sm:slide-in-from-bottom-0"
       >
         <header className="flex items-start justify-between gap-3">
           <div>
@@ -82,30 +85,34 @@ export function TemplatePicker({
             <X className="size-4" />
           </button>
         </header>
-        <div className="mt-5 grid min-h-0 grid-cols-2 gap-2.5 overflow-y-auto pb-1 sm:grid-cols-4">
-          {TEMPLATES.map((template) => (
-            <button
-              key={template.id}
-              type="button"
-              disabled={busy}
-              onClick={() => choose(template.id)}
-              aria-pressed={pending === template.id}
-              className={cn(
-                "group flex min-h-32 flex-col items-start gap-2 rounded-2xl border p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-                pending === template.id
-                  ? "border-primary bg-primary/10"
-                  : "border-border",
-              )}
-            >
-              <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                <LayoutIcon layout={template.layout} className="size-5" />
-              </span>
-              <strong className="text-sm">{template.label}</strong>
-              <span className="text-xs leading-5 text-muted-foreground">
-                {template.description}
-              </span>
-            </button>
-          ))}
+        <div className="-mx-1 mt-4 min-h-0 overflow-y-auto overscroll-contain px-1 pb-1">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-2.5 lg:grid-cols-4">
+            {TEMPLATES.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                disabled={busy}
+                onClick={() => choose(template.id)}
+                aria-pressed={pending === template.id}
+                className={cn(
+                  "group flex items-center gap-3 rounded-2xl border p-3 text-left sm:min-h-32 sm:flex-col sm:items-start sm:gap-2 sm:p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                  pending === template.id
+                    ? "border-primary bg-primary/10"
+                    : "border-border",
+                )}
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <LayoutIcon layout={template.layout} className="size-5" />
+                </span>
+                <span className="min-w-0">
+                  <strong className="block text-sm">{template.label}</strong>
+                  <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                    {template.description}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
         {pending ? (
           <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-destructive/40 bg-destructive/10 p-3 sm:flex-row sm:items-center">
@@ -136,6 +143,7 @@ export function TemplatePicker({
           </div>
         ) : null}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

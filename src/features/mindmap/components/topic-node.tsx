@@ -92,8 +92,11 @@ function ShapeBackground({
       )}
       style={{
         backgroundColor: look.fill,
-        borderColor: underline ? undefined : look.border,
-        borderBottom: underline ? `2.5px solid ${look.border}` : undefined,
+        // Longhand only: mixing borderColor with borderBottom breaks rerenders.
+        borderColor: underline ? "transparent" : look.border,
+        borderBottomColor: look.border,
+        borderBottomWidth: underline ? 2.5 : undefined,
+        borderBottomStyle: underline ? "solid" : undefined,
         boxShadow:
           look.fill === "transparent"
             ? undefined

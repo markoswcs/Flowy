@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "@/lib/toast";
 import { notify } from "@/providers/notification-provider";
 
@@ -377,119 +378,125 @@ export function NoteList() {
           ))}
         </ul>
       )}
-      {notePendingDeletion ? (
-        <div
-          className="fixed inset-0 z-[100] !mt-0 grid place-items-center p-4"
-          role="presentation"
-        >
-          <button
-            type="button"
-            className="flowy-glass-scrim absolute inset-0 animate-fade-in"
-            aria-label="Cancelar"
-            onClick={() => setNotePendingDeletion(null)}
-          />
-          <div
-            className="relative w-full max-w-sm flowy-glass flowy-glass-strong rounded-2xl border p-5 animate-scale-in"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-note-title"
-          >
-            <h2 id="delete-note-title" className="font-semibold">
-              Mover nota para a lixeira?
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              “{notePendingDeletion.title}” será movida para a lixeira. Você
-              poderá restaurá-la depois.
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <Button
+      {notePendingDeletion
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[210] grid place-items-center p-4"
+              role="presentation"
+            >
+              <button
                 type="button"
-                variant="ghost"
+                className="flowy-glass-scrim absolute inset-0 animate-fade-in"
+                aria-label="Cancelar"
                 onClick={() => setNotePendingDeletion(null)}
+              />
+              <div
+                className="relative w-full max-w-sm flowy-glass flowy-glass-strong rounded-2xl border p-5 animate-scale-in"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="delete-note-title"
               >
-                Cancelar
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={async () => {
-                  const noteId = notePendingDeletion.id;
-                  setNotePendingDeletion(null);
-                  await handleTrash(noteId);
-                }}
-              >
-                Mover para lixeira
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {creationOpen ? (
-        <div
-          className="fixed inset-0 z-[100] !mt-0 flex items-end justify-center p-3 sm:items-center sm:p-4"
-          role="presentation"
-        >
-          <button
-            type="button"
-            className="flowy-glass-scrim absolute inset-0 animate-fade-in"
-            aria-label="Fechar"
-            onClick={() => setCreationOpen(false)}
-          />
-          <section
-            className="relative w-full max-w-2xl flowy-glass flowy-glass-strong animate-scale-in rounded-3xl border p-5 sm:p-6"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-note-title"
-          >
-            <h2 id="create-note-title" className="text-lg font-semibold">
-              O que você quer criar?
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Escolha o formato. Você pode mudar o título e a pasta depois.
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {creationOptions.map((option) => {
-                const Icon = option.icon;
-                const highlighted = isDiagramView
-                  ? option.kind !== "text"
-                  : option.kind === "text";
-                return (
-                  <button
-                    key={option.kind}
+                <h2 id="delete-note-title" className="font-semibold">
+                  Mover nota para a lixeira?
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  “{notePendingDeletion.title}” será movida para a lixeira. Você
+                  poderá restaurá-la depois.
+                </p>
+                <div className="mt-5 flex justify-end gap-2">
+                  <Button
                     type="button"
-                    disabled={create.isPending}
-                    onClick={() => chooseKind(option.kind)}
-                    className={`group flex items-start gap-3 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:flex-col ${
-                      highlighted
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border"
-                    }`}
+                    variant="ghost"
+                    onClick={() => setNotePendingDeletion(null)}
                   >
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                      <Icon className="size-5" aria-hidden="true" />
-                    </span>
-                    <span>
-                      <strong className="block">{option.title}</strong>
-                      <span className="mt-1 block text-sm leading-5 text-muted-foreground">
-                        {option.description}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-5 flex justify-end">
-              <Button
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={async () => {
+                      const noteId = notePendingDeletion.id;
+                      setNotePendingDeletion(null);
+                      await handleTrash(noteId);
+                    }}
+                  >
+                    Mover para lixeira
+                  </Button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+      {creationOpen
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[210] flex items-end justify-center sm:items-center sm:p-4"
+              role="presentation"
+            >
+              <button
                 type="button"
-                variant="ghost"
+                className="flowy-glass-scrim absolute inset-0 animate-fade-in"
+                aria-label="Fechar"
                 onClick={() => setCreationOpen(false)}
+              />
+              <section
+                className="relative max-h-[92dvh] w-full max-w-2xl animate-in overflow-y-auto overscroll-contain rounded-t-[1.75rem] border p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] flowy-glass flowy-glass-strong fade-in slide-in-from-bottom-6 sm:rounded-3xl sm:p-6"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="create-note-title"
               >
-                Cancelar
-              </Button>
-            </div>
-          </section>
-        </div>
-      ) : null}
+                <h2 id="create-note-title" className="text-lg font-semibold">
+                  O que você quer criar?
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Escolha o formato. Você pode mudar o título e a pasta depois.
+                </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {creationOptions.map((option) => {
+                    const Icon = option.icon;
+                    const highlighted = isDiagramView
+                      ? option.kind !== "text"
+                      : option.kind === "text";
+                    return (
+                      <button
+                        key={option.kind}
+                        type="button"
+                        disabled={create.isPending}
+                        onClick={() => chooseKind(option.kind)}
+                        className={`group flex items-start gap-3 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:flex-col ${
+                          highlighted
+                            ? "border-primary/40 bg-primary/5"
+                            : "border-border"
+                        }`}
+                      >
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                          <Icon className="size-5" aria-hidden="true" />
+                        </span>
+                        <span>
+                          <strong className="block">{option.title}</strong>
+                          <span className="mt-1 block text-sm leading-5 text-muted-foreground">
+                            {option.description}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-5 flex justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setCreationOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </section>
+            </div>,
+            document.body,
+          )
+        : null}
       {templatePickerOpen ? (
         <TemplatePicker
           title="Novo mapa ou fluxograma"

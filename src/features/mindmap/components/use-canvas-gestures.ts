@@ -24,6 +24,8 @@ export interface GestureCallbacks {
   onBackgroundTap: () => void;
   onRelationTap: (id: string) => void;
   onTopicLongPress: (id: string, clientX: number, clientY: number) => void;
+  /** Topics that can be dragged; others pan the canvas (the root). */
+  canDrag: (id: string) => boolean;
   onDragMove: (
     id: string,
     mapX: number,
@@ -133,7 +135,11 @@ export function useCanvasGestures(
     if (target.closest(CONTROL_SELECTOR) || event.button === 2) return;
     const point = local(event.clientX, event.clientY);
     pointers.current.set(event.pointerId, point);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } catch {
+      // The pointer may already be gone; moves still reach the canvas.
+    }
     if (pointers.current.size === 2) {
       startPinch();
       return;
@@ -172,7 +178,9 @@ export function useCanvasGestures(
   function moveTopic(g: Extract<Gesture, { type: "topic" }>, point: Point) {
     const threshold = g.touch ? DRAG_THRESHOLD_TOUCH : DRAG_THRESHOLD_MOUSE;
     if (!g.dragging && distance(point, g.start) < threshold) return;
-    if (!g.dragging && g.touch && !g.lifted) {
+    // Touch drags a topic straight away (like MindMeister); the root and
+    // other fixed topics pan the canvas instead.
+    if (!g.dragging && !cb.canDrag(g.id)) {
       clearPressTimer();
       gesture.current = {
         type: "pan",
