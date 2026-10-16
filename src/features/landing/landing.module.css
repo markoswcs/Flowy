@@ -250,6 +250,49 @@
   animation: spin 40s linear infinite;
 }
 
+.ctaBox {
+  border: 1px solid rgb(167 139 250 / 0.25);
+  background: linear-gradient(180deg, rgb(20 14 38 / 0.9), rgb(10 8 20 / 0.95));
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.04) inset,
+    0 40px 120px -40px rgb(124 58 237 / 0.6);
+}
+
+.ctaGrid {
+  background-image:
+    linear-gradient(rgb(167 139 250 / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(167 139 250 / 0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(60% 60% at 50% 50%, black, transparent 80%);
+}
+
+.orbitReverse {
+  animation: spin 28s linear infinite reverse;
+}
+
+/* Icons ride the ring; the counter-rotation keeps them upright. */
+.orbitIcon {
+  position: absolute;
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid rgb(167 139 250 / 0.35);
+  border-radius: 0.8rem;
+  background: rgb(30 22 56 / 0.95);
+  color: var(--violet-hot);
+  box-shadow: 0 0 24px rgb(124 58 237 / 0.45);
+  translate: -50% -50%;
+}
+
+.orbit .orbitIcon {
+  animation: spin 40s linear infinite reverse;
+}
+
+.orbitReverse .orbitIcon {
+  animation: spin 28s linear infinite;
+}
+
 .marquee {
   animation: marquee 30s linear infinite;
 }
@@ -348,6 +391,8 @@
   .mindLine,
   .ring,
   .orbit,
+  .orbitReverse,
+  .orbitIcon,
   .marquee {
     animation: none;
   }

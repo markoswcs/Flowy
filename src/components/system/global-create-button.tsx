@@ -57,7 +57,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
       ref={containerRef}
       data-tour="create"
       className={cn(
-        "global-create-button fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+0.25rem)] left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
+        "global-create-button fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+1.6rem)] left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
         className,
       )}
     >
@@ -124,7 +124,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "group relative flex size-14 items-center justify-center rounded-[1.15rem] bg-gradient-to-br from-violet-500 to-indigo-600 shadow-[0_10px_30px_-6px_rgb(124_58_237/0.7)] ring-1 ring-white/20 transition-all duration-300 active:scale-90 md:size-16 md:rounded-[1.4rem] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/50",
+          "group relative flex size-[3.6rem] items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 shadow-[0_10px_30px_-6px_rgb(124_58_237/0.75)] ring-[5px] ring-background md:ring-1 md:ring-white/20 transition-all duration-300 active:scale-90 md:size-16 md:rounded-[1.4rem] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/50",
           open ? "rotate-45" : "hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-6px_rgb(124_58_237/0.85)]",
         )}
         aria-label={open ? "Fechar menu" : "Criar novo item"}

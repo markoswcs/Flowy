@@ -25,6 +25,7 @@ import {
 } from "@/features/settings/use-settings";
 import { optimizeImage } from "@/lib/image-optimizer";
 import { DeleteAccountButton } from "@/components/auth/delete-account-button";
+import { SwitchRow } from "@/components/ui/switch-row";
 import { PushNotificationsSection } from "@/features/settings/push-notifications-section";
 import { normalizeThemePreference } from "@/lib/theme";
 import { createClient } from "@/lib/supabase/client";
@@ -228,16 +229,13 @@ export function SettingsPage() {
         <PushNotificationsSection />
         <section aria-labelledby="motion-heading">
           <h2 id="motion-heading" className="text-base font-semibold">Movimento</h2>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={reduceMotion}
-            onClick={toggleReduceMotion}
-            className="mt-4 flex w-full items-center justify-between rounded-2xl border border-border/60 bg-card/50 p-4 text-left transition-all hover:border-primary/40 hover:bg-card"
-          >
-            <span className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Sparkles className="size-5" /></span><span><span className="block text-sm font-medium">Reduzir animações</span><span className="mt-0.5 block text-xs text-muted-foreground">Deixa transições e efeitos visuais mais simples.</span></span></span>
-            <span className={`relative h-7 w-12 rounded-full transition-colors ${reduceMotion ? "bg-primary" : "bg-muted"}`}><span className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition-transform ${reduceMotion ? "translate-x-6" : "translate-x-1"}`} /></span>
-          </button>
+          <SwitchRow
+            icon={<Sparkles className="size-5" />}
+            title="Reduzir animações"
+            description="Deixa transições e efeitos visuais mais simples."
+            checked={reduceMotion}
+            onToggle={toggleReduceMotion}
+          />
         </section>
         <section aria-labelledby="profile-heading">
           <h2 id="profile-heading" className="text-base font-semibold">

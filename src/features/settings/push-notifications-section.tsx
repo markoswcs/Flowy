@@ -4,6 +4,7 @@ import { Bell } from "lucide-react";
 import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
+import { SwitchRow } from "@/components/ui/switch-row";
 import { usePushNotifications, type PushStatus } from "@/features/settings/use-push-notifications";
 
 const descriptions: Record<PushStatus, string> = {
@@ -51,17 +52,14 @@ export function PushNotificationsSection() {
   return (
     <section aria-labelledby="notifications-heading">
       <h2 id="notifications-heading" className="text-base font-semibold">Notificações</h2>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={enabled}
+      <SwitchRow
+        icon={<Bell className="size-5" />}
+        title="Lembretes de tarefas"
+        description={descriptions[status]}
+        checked={enabled}
         disabled={!canToggle || busy}
-        onClick={toggle}
-        className="mt-4 flex w-full items-center justify-between rounded-2xl border border-border/60 bg-card/50 p-4 text-left transition-all hover:border-primary/40 hover:bg-card disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        <span className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Bell className="size-5" /></span><span><span className="block text-sm font-medium">Lembretes de tarefas</span><span className="mt-0.5 block text-xs text-muted-foreground">{descriptions[status]}</span></span></span>
-        <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${enabled ? "bg-primary" : "bg-muted"}`}><span className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition-transform ${enabled ? "translate-x-6" : "translate-x-1"}`} /></span>
-      </button>
+        onToggle={toggle}
+      />
       {enabled ? (
         <Button type="button" variant="outline" size="sm" className="mt-3" loading={busy} onClick={test}>
           Enviar notificação de teste

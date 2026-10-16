@@ -484,15 +484,31 @@ export function LandingPage() {
           </section>
 
           <section className="px-4 pb-24 sm:px-6">
-            <Reveal className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] border border-white/10 px-6 py-16 text-center sm:py-24">
-              <div className="absolute inset-0 -z-10 bg-[radial-gradient(60%_80%_at_50%_0%,rgb(124_58_237/0.45),transparent_70%)]" />
+            <Reveal className={cn(styles.ctaBox, "relative isolate mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] px-6 py-20 text-center sm:py-28")}>
               <div
-                className={cn(styles.orbit, "pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/10")}
                 aria-hidden="true"
+                className="absolute inset-0 -z-10 bg-[radial-gradient(55%_70%_at_50%_0%,rgb(124_58_237/0.5),transparent_70%),radial-gradient(40%_50%_at_50%_110%,rgb(99_102_241/0.35),transparent_70%)]"
               />
+              <div aria-hidden="true" className={cn(styles.ctaGrid, "absolute inset-0 -z-10")} />
+              {/* Two slow orbits with feature icons riding on them. */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[520px] -translate-x-1/2 -translate-y-1/2 sm:size-[680px]"
+              >
+                <div className={cn(styles.orbit, "absolute inset-0 rounded-full border border-dashed border-white/15")}>
+                  <span className={cn(styles.orbitIcon, "left-1/2 top-0")}><CalendarClock className="size-4" /></span>
+                  <span className={cn(styles.orbitIcon, "left-1/2 top-full")}><Workflow className="size-4" /></span>
+                </div>
+                <div className={cn(styles.orbitReverse, "absolute inset-[18%] rounded-full border border-white/10")}>
+                  <span className={cn(styles.orbitIcon, "left-0 top-1/2")}><Bell className="size-4" /></span>
+                  <span className={cn(styles.orbitIcon, "left-full top-1/2")}><Sparkles className="size-4" /></span>
+                </div>
+              </div>
               <DisplayHeading className="mx-auto max-w-2xl">
                 Pronto para entrar no{" "}
-                <span className={cn(styles.serif, "font-[family-name:var(--font-serif)] font-normal")}>fluxo</span>?
+                <span className="whitespace-nowrap">
+                  <span className={cn(styles.serif, "font-[family-name:var(--font-serif)] font-normal")}>fluxo</span>?
+                </span>
               </DisplayHeading>
               <p className="mx-auto mt-5 max-w-md text-[color:var(--muted)]">
                 Crie sua conta grátis e organize seu dia ainda hoje.

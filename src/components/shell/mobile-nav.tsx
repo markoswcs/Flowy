@@ -24,12 +24,12 @@ function NavItem({
       aria-label={label}
       title={label}
       aria-current={active ? "page" : undefined}
-      className="relative grid h-full place-items-center rounded-2xl transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="relative grid h-full place-items-center rounded-2xl transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
     >
       <span
         className={cn(
-          "grid size-11 place-items-center rounded-2xl transition-all duration-300",
-          active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
+          "grid h-10 w-14 place-items-center rounded-2xl transition-all duration-300",
+          active ? "bg-violet-500/15 text-violet-400" : "text-muted-foreground hover:text-foreground",
         )}
       >
         {icon}
@@ -37,7 +37,7 @@ function NavItem({
       <span
         aria-hidden="true"
         className={cn(
-          "absolute bottom-1.5 size-1 rounded-full bg-primary transition-all duration-300",
+          "absolute bottom-1 size-1 rounded-full bg-violet-400 transition-all duration-300",
           active ? "scale-100 opacity-100" : "scale-0 opacity-0",
         )}
       />
@@ -56,7 +56,7 @@ export function MobileNav() {
       aria-label="Navegação móvel"
       className="flowy-mobile-nav fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden"
     >
-      <div className="grid h-16 grid-cols-5 items-center rounded-[1.6rem] border border-border/60 bg-card/85 px-1 shadow-[0_18px_50px_-12px_rgb(0_0_0/0.65)] backdrop-blur-xl">
+      <div className="grid h-[4.25rem] grid-cols-[1fr_1fr_4.75rem_1fr_1fr] items-center rounded-[2rem] border border-border/60 bg-card/90 px-2 shadow-[0_18px_50px_-12px_rgb(0_0_0/0.65)] backdrop-blur-xl">
         <NavItem label="Início" href="/app" active={pathname === "/app"} icon={<Home className="size-5" />} />
         <NavItem
           label="Notas"
