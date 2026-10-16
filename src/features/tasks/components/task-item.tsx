@@ -148,6 +148,7 @@ export function TaskEditor({
           rows={1}
           placeholder="Título da tarefa"
           aria-label="Título da tarefa"
+          maxLength={300}
           className="w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-base font-semibold leading-snug text-foreground placeholder:text-muted-foreground shadow-none outline-none focus:border-transparent focus:outline-none focus:ring-0"
           autoFocus
           required
@@ -435,7 +436,7 @@ export function TaskItem({
                   : "text-foreground"
               }`}
             >
-              <span className="break-words">{task.title}</span>
+              <span className="line-clamp-2 break-words" title={task.title}>{task.title}</span>
             </button>
 
             {!compact ? (

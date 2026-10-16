@@ -278,6 +278,7 @@ function DashboardContent({
                 }
               }}
               aria-label="Pesquisar ou criar tarefa"
+              maxLength={300}
               enterKeyHint="done"
               placeholder="Pesquisar ou criar… ex.: Reunião amanhã 15h #urgente"
               className="h-10 min-w-0 flex-1 appearance-none border-none bg-transparent px-2 text-sm shadow-none placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -310,7 +311,7 @@ function DashboardContent({
               title="Selecionar várias tarefas"
               className={cn(
                 "flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-all active:scale-95",
-                selection?.active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                selection?.active ? "bg-violet-500 text-white" : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
             >
               <ListChecks className="size-4" aria-hidden="true" />

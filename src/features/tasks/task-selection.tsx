@@ -18,6 +18,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 import {
   useRestoreTask,
@@ -155,9 +156,10 @@ export function BulkActionBar({
     );
   }
 
-  return (
+  // Rendered on <body> so no list card or page layer can paint over it.
+  return createPortal(
     <div
-      className="fixed inset-x-3 bottom-[5.6rem] z-[95] mx-auto max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 md:bottom-8"
+      className="fixed inset-x-3 bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+5rem)] z-[95] mx-auto max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-300 md:bottom-8"
       role="toolbar"
       aria-label="Ações em massa"
     >
@@ -220,7 +222,7 @@ export function BulkActionBar({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-1 rounded-[1.4rem] border border-primary/30 bg-card/95 p-1.5 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.5)] backdrop-blur-xl">
+      <div className="flex items-center gap-1 rounded-[1.4rem] border border-violet-400/30 bg-card p-1.5 shadow-[0_20px_60px_-15px_rgb(124_58_237/0.55)]">
         <button
           type="button"
           onClick={selection.clear}
@@ -235,13 +237,13 @@ export function BulkActionBar({
           className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-sm font-semibold tabular-nums hover:bg-accent"
           aria-label={allSelected ? "Desmarcar todas" : "Selecionar todas"}
         >
-          <CheckSquare className="size-4 text-primary" />
+          <CheckSquare className="size-4 text-violet-400" />
           {count}
           <span className="hidden text-xs font-normal text-muted-foreground sm:inline">
             {allSelected ? "· desmarcar" : "· todas"}
           </span>
         </button>
-        <div className="ml-auto flex items-center gap-0.5">
+        <div className="ml-auto flex min-w-0 items-center gap-0.5">
           <BarButton
             label="Concluir"
             disabled={!count || busy}
@@ -271,7 +273,8 @@ export function BulkActionBar({
           </BarButton>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -296,15 +299,16 @@ function BarButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
+      title={label}
       aria-expanded={active}
       className={cn(
-        "flex h-10 flex-col items-center justify-center gap-0.5 rounded-xl px-2 text-[10px] font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:scale-95 disabled:opacity-40 sm:flex-row sm:gap-1.5 sm:px-3 sm:text-xs",
-        active && "bg-primary/15 text-primary",
+        "flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-xl text-sm font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:scale-90 disabled:opacity-40 sm:w-auto sm:px-3",
+        active && "bg-violet-500/15 text-violet-400",
         danger && "hover:bg-destructive/10 hover:text-destructive",
       )}
     >
       {children}
-      <span>{label}</span>
+      <span className="hidden sm:inline">{label}</span>
     </button>
   );
 }

@@ -98,7 +98,7 @@ function KanbanTaskCard({
         >
           <p
             className={cn(
-              "text-sm font-medium leading-5",
+              "line-clamp-3 break-words text-sm font-medium leading-5",
               task.status === "completed" && "text-muted-foreground line-through"
             )}
           >

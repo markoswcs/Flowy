@@ -125,6 +125,7 @@ export function TaskComposer({
           onChange={(event) => setTitle(event.target.value)}
           placeholder="O que precisa ser feito? Use #etiqueta e /pasta"
           aria-label="Título da nova tarefa"
+          maxLength={300}
           className="h-12 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
           disabled={createMutation.isPending}
         />
