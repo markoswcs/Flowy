@@ -20,11 +20,12 @@ function formatDateLabel(value: string): string {
   if (value === tomorrowDateKey()) return "Amanhã";
   const [year, month, day] = value.split("-").map(Number);
   if (!year || !month || !day) return value;
-  return new Intl.DateTimeFormat("pt-BR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-  }).format(new Date(year, month - 1, day));
+  // Compact so it fits half the width of a phone: "19/10 · seg".
+  const date = new Date(year, month - 1, day);
+  const weekday = new Intl.DateTimeFormat("pt-BR", { weekday: "short" })
+    .format(date)
+    .replace(".", "");
+  return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")} · ${weekday}`;
 }
 
 // Native pickers only open from their own icon on desktop; showPicker opens them

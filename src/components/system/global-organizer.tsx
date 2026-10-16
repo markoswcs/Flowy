@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CategoryManager } from "@/features/categories/components/category-manager";
 import { FolderManager } from "@/features/folders/components/folder-manager";
 import { cn } from "@/lib/utils";
+import { holdOverlay } from "@/lib/overlay";
 
 export function GlobalOrganizer() {
   const [open, setOpen] = useState(false);
@@ -45,12 +46,8 @@ export function GlobalOrganizer() {
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      document.body.classList.add("has-overlay");
-    } else {
-      document.body.classList.remove("has-overlay");
-    }
-    return () => document.body.classList.remove("has-overlay");
+    if (!open) return;
+    return holdOverlay();
   }, [open]);
 
   if (!open) return null;

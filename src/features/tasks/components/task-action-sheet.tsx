@@ -5,6 +5,7 @@ import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
+import { holdOverlay } from "@/lib/overlay";
 
 /** Bottom sheet opened by holding a task (or right-clicking it). */
 export function TaskActionSheet({
@@ -27,13 +28,13 @@ export function TaskActionSheet({
   onTrash: () => void;
 }) {
   useEffect(() => {
-    document.body.classList.add("has-overlay");
+    const release = holdOverlay();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.classList.remove("has-overlay");
+      release();
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);

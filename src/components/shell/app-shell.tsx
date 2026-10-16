@@ -24,6 +24,7 @@ import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
 import { useProfile } from "@/features/settings/use-settings";
 import { cn, getInitials } from "@/lib/utils";
+import { holdOverlay } from "@/lib/overlay";
 
 interface AppShellProps {
   children: ReactNode;
@@ -109,16 +110,12 @@ export function AppShell({
   }, [categories, categoriesQuery.data]);
 
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-      document.body.classList.add("has-overlay");
-    } else {
-      document.body.style.overflow = "";
-      document.body.classList.remove("has-overlay");
-    }
+    if (!mobileOpen) return;
+    document.body.style.overflow = "hidden";
+    const release = holdOverlay();
     return () => {
       document.body.style.overflow = "";
-      document.body.classList.remove("has-overlay");
+      release();
     };
   }, [mobileOpen]);
 
@@ -226,7 +223,7 @@ export function AppShell({
             "scrollbar-thin min-w-0 flex-1 overflow-x-hidden",
             isNoteEditor
               ? "overflow-hidden p-0"
-              : "overflow-y-auto px-4 py-5 pb-32 sm:px-6 md:px-8 md:py-12 md:pb-8",
+              : "overflow-y-auto overscroll-y-contain px-4 py-5 pb-32 sm:px-6 md:px-8 md:py-12 md:pb-8",
           )}
         >
           <div

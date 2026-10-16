@@ -27,6 +27,7 @@ import {
   useTrashNote,
 } from "@/features/notes/use-notes";
 import type { NoteKind } from "@/types/content";
+import { holdOverlay } from "@/lib/overlay";
 
 const creationOptions = [
   {
@@ -122,7 +123,7 @@ export function NoteList() {
   const overlayOpen = creationOpen || Boolean(notePendingDeletion);
   useEffect(() => {
     if (!overlayOpen) return;
-    document.body.classList.add("has-overlay");
+    const release = holdOverlay();
     const close = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setCreationOpen(false);
@@ -130,7 +131,7 @@ export function NoteList() {
     };
     window.addEventListener("keydown", close);
     return () => {
-      document.body.classList.remove("has-overlay");
+      release();
       window.removeEventListener("keydown", close);
     };
   }, [overlayOpen]);

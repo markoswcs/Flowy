@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
 import { TaskComposer } from "@/features/tasks/components/task-composer";
+import { holdOverlay } from "@/lib/overlay";
 
 export function GlobalTaskComposer() {
   const [open, setOpen] = useState(false);
@@ -46,12 +47,8 @@ export function GlobalTaskComposer() {
   }, []);
 
   useEffect(() => {
-    if (open) {
-      document.body.classList.add("has-overlay");
-    } else {
-      document.body.classList.remove("has-overlay");
-    }
-    return () => document.body.classList.remove("has-overlay");
+    if (!open) return;
+    return holdOverlay();
   }, [open]);
 
   if (!open) return null;

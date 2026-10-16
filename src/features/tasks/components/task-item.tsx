@@ -1,6 +1,7 @@
 "use client";
 
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   CalendarDays,
   Check,
@@ -27,6 +28,7 @@ import {
   useUpdateTask,
 } from "@/features/tasks/use-tasks";
 import { useTaskSelection } from "@/features/tasks/task-selection";
+import { holdOverlay } from "@/lib/overlay";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/providers/notification-provider";
 import type {
@@ -262,7 +264,7 @@ export function TaskEditor({
         />
       </div>
 
-      <div className="flex items-center justify-end gap-2 border-t border-border/40 pt-3">
+      <div className="sticky bottom-0 -mx-4 -mb-1 flex items-center justify-end gap-2 border-t border-border/40 bg-card px-4 py-3 sm:-mx-6 sm:px-6">
         <Button
           type="button"
           variant="ghost"
@@ -284,6 +286,39 @@ export function TaskEditor({
   );
 }
 
+/** Editing happens in its own sheet (bottom sheet on phones, dialog on desktop). */
+function TaskEditorSheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  useEffect(() => {
+    const release = holdOverlay();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      release();
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true">
+      <button
+        type="button"
+        aria-label="Fechar edição"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      />
+      <div className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.75rem] border border-border/60 bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300 sm:rounded-[1.75rem]">
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30 sm:hidden" aria-hidden="true" />
+        <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pt-6">
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function TaskItem({
   task,
   folders,
@@ -300,6 +335,7 @@ export function TaskItem({
   const selected = Boolean(selection?.isSelected(task.id));
   const pressTimer = useRef<number | null>(null);
   const pressStarted = useRef(false);
+  const pressOrigin = useRef({ x: 0, y: 0 });
   const [actionsOpen, setActionsOpen] = useState(false);
   const completed = task.status === "completed";
   const optimistic = task.id.startsWith("optimistic-");
@@ -358,9 +394,12 @@ export function TaskItem({
   }
 
   // Holding a task opens its actions; while selecting, a tap toggles it.
-  function startPress() {
+  // Touch only: a mouse uses right-click (onContextMenu) instead. Any finger
+  // movement or a browser-cancelled touch (scroll) aborts the long press.
+  function startPress(event: React.PointerEvent) {
     pressStarted.current = false;
-    if (selecting || optimistic || editing) return;
+    if (event.pointerType === "mouse" || selecting || optimistic || editing) return;
+    pressOrigin.current = { x: event.clientX, y: event.clientY };
     pressTimer.current = window.setTimeout(() => {
       pressTimer.current = null;
       pressStarted.current = true;
@@ -371,6 +410,12 @@ export function TaskItem({
   function cancelPress() {
     if (pressTimer.current) window.clearTimeout(pressTimer.current);
     pressTimer.current = null;
+  }
+  function trackPress(event: React.PointerEvent) {
+    if (!pressTimer.current) return;
+    const dx = event.clientX - pressOrigin.current.x;
+    const dy = event.clientY - pressOrigin.current.y;
+    if (dx * dx + dy * dy > 64) cancelPress();
   }
 
   const when = relativeTaskDate(task.due_date);
@@ -388,9 +433,8 @@ export function TaskItem({
       onPointerDown={startPress}
       onPointerUp={cancelPress}
       onPointerLeave={cancelPress}
-      onPointerMove={(event) => {
-        if (Math.abs(event.movementX) + Math.abs(event.movementY) > 6) cancelPress();
-      }}
+      onPointerCancel={cancelPress}
+      onPointerMove={trackPress}
       onContextMenu={(event) => {
         if (editing || optimistic) return;
         event.preventDefault();
@@ -411,7 +455,7 @@ export function TaskItem({
       }}
       data-selected={selecting ? selected : undefined}
       className={cn(
-        "group relative mb-2 overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-sm transition-all duration-300 hover:border-border hover:bg-card/70 active:scale-[0.99] animate-scale-in",
+        "group relative mb-2 overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-sm transition-all duration-300 hover:border-border hover:bg-card/70 animate-scale-in [-webkit-touch-callout:none]",
         selecting && "cursor-pointer select-none",
         selected && "border-violet-400/60 bg-violet-500/10 shadow-[0_0_0_1px_rgb(167_139_250/0.4)]",
         completed && !selecting && "opacity-70",
@@ -545,12 +589,14 @@ export function TaskItem({
       ) : null}
 
       {editing ? (
-        <TaskEditor
-          task={task}
-          folders={folders}
-          categories={categories}
-          onClose={() => setEditing(false)}
-        />
+        <TaskEditorSheet onClose={() => setEditing(false)}>
+          <TaskEditor
+            task={task}
+            folders={folders}
+            categories={categories}
+            onClose={() => setEditing(false)}
+          />
+        </TaskEditorSheet>
       ) : null}
     </article>
   );

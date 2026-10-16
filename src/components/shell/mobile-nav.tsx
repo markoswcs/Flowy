@@ -56,7 +56,7 @@ export function MobileNav() {
       aria-label="Navegação móvel"
       className="flowy-mobile-nav fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden"
     >
-      <div className="grid h-[4.25rem] grid-cols-[1fr_1fr_4.75rem_1fr_1fr] items-center rounded-[2rem] border border-border/60 bg-card/90 px-2 shadow-[0_18px_50px_-12px_rgb(0_0_0/0.65)] backdrop-blur-xl">
+      <div className="grid h-[4.25rem] grid-cols-[1fr_1fr_4.75rem_1fr_1fr] items-center rounded-[2rem] border border-border/60 bg-card/95 px-2 shadow-[0_18px_50px_-12px_rgb(0_0_0/0.65)] backdrop-blur-md">
         <NavItem label="Início" href="/app" active={pathname === "/app"} icon={<Home className="size-5" />} />
         <NavItem
           label="Notas"

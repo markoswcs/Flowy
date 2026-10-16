@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/providers/notification-provider";
 import type { Category, Folder, Task, TaskPriority } from "@/types/productivity";
+import { holdOverlay } from "@/lib/overlay";
 
 interface SelectionValue {
   active: boolean;
@@ -69,13 +70,13 @@ export function TaskSelectionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!active) return;
-    document.body.classList.add("has-overlay");
+    const release = holdOverlay();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") clear();
     };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.classList.remove("has-overlay");
+      release();
       window.removeEventListener("keydown", onKey);
     };
   }, [active, clear]);
