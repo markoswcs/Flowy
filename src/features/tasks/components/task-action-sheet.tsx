@@ -50,9 +50,9 @@ export function TaskActionSheet({
         type="button"
         aria-label="Fechar"
         onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+        className="flowy-glass-scrim absolute inset-0 animate-in fade-in"
       />
-      <div className="relative w-full max-w-md rounded-t-[1.75rem] border border-border/60 bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl animate-in slide-in-from-bottom-8 duration-300 sm:rounded-[1.75rem] sm:pb-3">
+      <div className="relative w-full max-w-md flowy-glass flowy-glass-strong rounded-t-[1.75rem] border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl animate-in slide-in-from-bottom-8 duration-300 sm:rounded-[1.75rem] sm:pb-3">
         <div className="mx-auto mb-3 mt-1 h-1 w-10 rounded-full bg-muted-foreground/30 sm:hidden" aria-hidden="true" />
         <p className="line-clamp-2 px-3 pb-3 text-sm font-semibold leading-snug">{title}</p>
         <div className="grid gap-1">

@@ -113,7 +113,7 @@ export function CustomSelect({
       {open && typeof document !== "undefined" && createPortal(
         <div 
           id="custom-select-portal"
-          className="absolute z-[9999] mt-1.5 overflow-hidden rounded-xl border border-border/50 bg-popover/90 p-1 shadow-2xl backdrop-blur-3xl animate-in fade-in zoom-in-95 slide-in-from-top-2"
+          className="absolute z-[9999] mt-1.5 overflow-hidden flowy-glass flowy-glass-strong rounded-xl border p-1 animate-in fade-in zoom-in-95 slide-in-from-top-2"
           style={{ 
             top: coords.top, 
             left: coords.left, 

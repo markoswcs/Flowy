@@ -91,7 +91,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         {items.map((item) => (
           <div
             key={item.id}
-            className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border border-border/60 bg-card/95 py-2.5 pl-3 pr-1.5 text-card-foreground shadow-[0_18px_50px_-15px_rgb(0_0_0/0.7)] backdrop-blur-xl animate-in fade-in slide-in-from-top-3 duration-300"
+            className="pointer-events-auto flex w-full max-w-md items-center gap-3 flowy-glass flowy-glass-strong rounded-2xl border py-2.5 pl-3 pr-1.5 text-card-foreground animate-in fade-in slide-in-from-top-3 duration-300"
           >
             <span className="grid size-7 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
               <Info className="size-3.5" aria-hidden="true" />

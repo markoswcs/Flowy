@@ -165,7 +165,7 @@ export function BulkActionBar({
       aria-label="Ações em massa"
     >
       {menu ? (
-        <div className="mb-2 max-h-64 overflow-y-auto rounded-3xl border border-border/70 bg-card/95 p-2 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95">
+        <div className="mb-2 max-h-64 overflow-y-auto flowy-glass flowy-glass-strong rounded-3xl border p-2 animate-in fade-in zoom-in-95">
           {menu === "folder" ? (
             <>
               <MenuItem onClick={() => void run("Pasta removida", (task) => updateTask.mutateAsync({ id: task.id, folder_id: null }))}>

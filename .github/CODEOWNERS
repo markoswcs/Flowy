@@ -1,0 +1,8 @@
+# Changes to security-sensitive areas need the owner's review.
+/supabase/          @markoswcs
+/src/app/api/       @markoswcs
+/src/app/(auth)/    @markoswcs
+/src/lib/supabase/  @markoswcs
+/next.config.ts     @markoswcs
+/proxy.ts           @markoswcs
+/.github/           @markoswcs

@@ -57,10 +57,10 @@ export function GlobalOrganizer() {
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200"
+        className="flowy-glass-scrim absolute inset-0 animate-in fade-in"
         aria-label="Fechar"
       />
-      <div className="relative z-10 flex max-h-[88dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.75rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-6 fade-in duration-300 sm:rounded-[1.75rem] sm:zoom-in-95 sm:slide-in-from-bottom-0">
+      <div className="relative z-10 flex max-h-[88dvh] w-full max-w-lg flex-col overflow-hidden flowy-glass flowy-glass-strong rounded-t-[1.75rem] border animate-in slide-in-from-bottom-6 fade-in duration-300 sm:rounded-[1.75rem] sm:zoom-in-95 sm:slide-in-from-bottom-0">
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted-foreground/30 sm:hidden" aria-hidden="true" />
         <div className="flex items-center justify-between border-b border-border p-4">
           <div className="inline-flex rounded-xl bg-muted p-1" role="tablist">

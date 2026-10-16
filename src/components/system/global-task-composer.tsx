@@ -56,7 +56,7 @@ export function GlobalTaskComposer() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in" role="presentation">
       <div 
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm transition-opacity" 
+        className="flowy-glass-scrim absolute inset-0 transition-opacity" 
         onClick={() => setOpen(false)} 
         aria-hidden="true" 
       />

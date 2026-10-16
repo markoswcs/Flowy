@@ -12,6 +12,7 @@ import {
 import { BulkActionBar, TaskSelectionProvider, useTaskSelection } from "@/features/tasks/task-selection";
 
 import { Input } from "@/components/ui/input";
+import { GettingStarted } from "@/features/onboarding/getting-started";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
 import { TaskFilters } from "@/features/tasks/components/task-filters";
@@ -370,6 +371,8 @@ function DashboardContent({
           ) : null}
         </div>
       </header>
+
+      <GettingStarted />
 
       <div className="space-y-4 sm:space-y-5">
 

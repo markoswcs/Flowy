@@ -377,12 +377,12 @@ export function NoteList() {
         >
           <button
             type="button"
-            className="absolute inset-0 animate-fade-in bg-background/80 backdrop-blur-md"
+            className="flowy-glass-scrim absolute inset-0 animate-fade-in"
             aria-label="Cancelar"
             onClick={() => setNotePendingDeletion(null)}
           />
           <div
-            className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl animate-scale-in"
+            className="relative w-full max-w-sm flowy-glass flowy-glass-strong rounded-2xl border p-5 animate-scale-in"
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-note-title"
@@ -424,12 +424,12 @@ export function NoteList() {
         >
           <button
             type="button"
-            className="absolute inset-0 animate-fade-in bg-background/80 backdrop-blur-md"
+            className="flowy-glass-scrim absolute inset-0 animate-fade-in"
             aria-label="Fechar"
             onClick={() => setCreationOpen(false)}
           />
           <section
-            className="relative w-full max-w-2xl animate-scale-in rounded-3xl border border-border/70 bg-card p-5 shadow-2xl sm:p-6"
+            className="relative w-full max-w-2xl flowy-glass flowy-glass-strong animate-scale-in rounded-3xl border p-5 sm:p-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-note-title"
