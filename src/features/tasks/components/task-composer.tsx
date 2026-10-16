@@ -8,13 +8,18 @@ import {
   Plus,
   Repeat2,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { TaskScheduleFields } from "@/features/tasks/components/task-schedule-fields";
+import {
+  SmartSuggestionChips,
+  useSmartOrganize,
+  withDismissed,
+} from "@/features/tasks/components/smart-suggestions";
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
 import { useCreateTask } from "@/features/tasks/use-tasks";
 import { cn } from "@/lib/utils";
@@ -55,10 +60,21 @@ export function TaskComposer({
   const [priority, setPriority] = useState<TaskPriority>("normal");
   const [folderId, setFolderId] = useState(defaultFolderId ?? "");
   const [categoryIds, setCategoryIds] = useState<string[]>(defaultCategoryIds);
+  const [dismissed, setDismissed] = useState({ folder: false, categoryIds: [] as string[] });
+  const rawSuggestion = useSmartOrganize(title, folders, categories);
+  const suggestion = withDismissed(rawSuggestion, dismissed);
+  // Suggestions only fill what the person has not chosen by hand.
+  const suggestedExtras = suggestion
+    ? {
+        ...suggestion,
+        folderId: folderId ? null : suggestion.folderId,
+        categoryIds: suggestion.categoryIds.filter((id) => !categoryIds.includes(id)),
+      }
+    : null;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const cleanTitle = title.trim();
+    const cleanTitle = (suggestion?.title ?? title).trim();
     if (!cleanTitle) return;
     if (recurrence !== "none" && !dueDate) {
       toast.error("Escolha uma data para repetir a tarefa.");
@@ -72,8 +88,8 @@ export function TaskComposer({
         due_time: dueDate && dueTime ? dueTime : null,
         recurrence: recurrence === "none" ? null : recurrence,
         priority,
-        folder_id: folderId || null,
-        category_ids: categoryIds,
+        folder_id: folderId || suggestedExtras?.folderId || null,
+        category_ids: [...categoryIds, ...(suggestedExtras?.categoryIds ?? [])],
       },
       {
         onSuccess: () => {
@@ -84,6 +100,7 @@ export function TaskComposer({
           setPriority("normal");
           setFolderId(defaultFolderId ?? "");
           setCategoryIds(defaultCategoryIds);
+          setDismissed({ folder: false, categoryIds: [] });
           if (compact) setDetailsOpen(false);
           addNotification({ title: "Tarefa criada", description: cleanTitle });
         },
@@ -106,7 +123,7 @@ export function TaskComposer({
           id="mobile-task-input"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="O que precisa ser feito?"
+          placeholder="O que precisa ser feito? Use #etiqueta e /pasta"
           aria-label="Título da nova tarefa"
           className="h-12 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
           disabled={createMutation.isPending}
@@ -140,6 +157,16 @@ export function TaskComposer({
         </div>
       </div>
 
+      <SmartSuggestionChips
+        suggestion={suggestedExtras}
+        folders={folders}
+        categories={categories}
+        onRemoveFolder={() => setDismissed((current) => ({ ...current, folder: true }))}
+        onRemoveCategory={(id) =>
+          setDismissed((current) => ({ ...current, categoryIds: [...current.categoryIds, id] }))
+        }
+        className="px-3 pb-1"
+      />
       {detailsOpen && (
         <div className="grid gap-5 animate-in slide-in-from-top-2 fade-in px-4 pb-4 pt-2 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2 sm:col-span-2">

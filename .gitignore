@@ -25,3 +25,10 @@
 *.log
 *.tsbuildinfo
 next-env.d.ts
+
+# tooling and local state
+.vercel
+.claude/
+supabase/.temp/
+supabase/.branches/
+.dev-server*.log

@@ -7,22 +7,8 @@
   <em>Aplicação pessoal de produtividade para gerenciar sua vida com foco e leveza.</em>
 </p>
 
-## 📸 Interface
-
-<div align="center">
-  <img src="public/screenshots/desktop.png" alt="Flowy Desktop" width="800" />
-</div>
-
-<br/>
-
-<p align="center">
-  <img src="public/screenshots/mobile1.png" alt="Flowy Mobile Tasks" width="300" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="public/screenshots/mobile2.png" alt="Flowy Mobile Notes" width="300" />
-</p>
-
 ## 🚀 Sobre o Projeto
-Flowy é uma aplicação de produtividade desenvolvida com as melhores práticas de mercado. Ela reúne tarefas, notas, pastas, categorias, Kanban, busca global e lixeira com retenção de sete dias, tudo em uma interface escura (dark mode) moderna, responsiva e com alta performance.
+Flowy é uma aplicação de produtividade desenvolvida com as melhores práticas de mercado. Ela reúne tarefas, notas, pastas, etiquetas, Kanban, fluxogramas, mapas mentais, lembretes push, login com Google, busca global e lixeira com retenção de sete dias, tudo em uma interface escura (dark mode) moderna, responsiva e com alta performance.
 
 ## 🛠️ Tecnologias
 - **Frontend:** Next.js, React, Tailwind CSS, Lucide Icons, TipTap (Editor)

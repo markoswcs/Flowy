@@ -4,7 +4,7 @@ import { CheckSquare, Folder, NotebookPen, Plus, Tag, X } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useCreateNote } from "@/features/notes/use-notes";
 import { cn } from "@/lib/utils";
@@ -55,6 +55,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
   return (
     <div
       ref={containerRef}
+      data-tour="create"
       className={cn(
         "global-create-button fixed bottom-[3.2rem] left-1/2 z-[100] -translate-x-1/2 md:bottom-10 md:left-auto md:right-10 md:translate-x-0 transition-all duration-300",
         className,
@@ -101,7 +102,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
               <Tag className="size-4" />
             </div>
             <span className="text-foreground transition-colors group-hover:text-purple-500">
-              Tag
+              Etiqueta
             </span>
           </button>
           <button

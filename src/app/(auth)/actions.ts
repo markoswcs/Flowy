@@ -25,12 +25,8 @@ const signupSchema = z
     name: z
       .string()
       .trim()
-      .min(2, "Informe seu nome.")
-      .max(50, "O nome não pode ter mais de 50 caracteres.")
-      .regex(
-        /^[^\s]+\s+[^\s]+$/,
-        "Informe nome e sobrenome para concluir o cadastro."
-      ),
+      .min(2, "Informe como podemos te chamar.")
+      .max(50, "O nome não pode ter mais de 50 caracteres."),
     email,
     password,
     confirmPassword: z.string(),
@@ -68,9 +64,16 @@ function validationError(error: z.ZodError): AuthActionState {
   };
 }
 
+// E-mail links must always point at the public Flowy domain. Using the request
+// origin in production could send people to a protected Vercel preview URL.
 async function getSiteUrl() {
-  const requestHeaders = await headers();
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (process.env.NODE_ENV === "production") {
+    if (configured && !configured.includes("localhost")) return configured;
+    const vercelProduction = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    if (vercelProduction) return `https://${vercelProduction}`;
+  }
+  const requestHeaders = await headers();
   return requestHeaders.get("origin") || configured || "http://localhost:3000";
 }
 
@@ -106,7 +109,7 @@ export async function signUpAction(
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      emailRedirectTo: `${siteUrl}/auth/callback?next=/login?confirmacao=email`,
+      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent("/login?confirmacao=email")}`,
       data: { display_name: parsed.data.name },
     },
   });
@@ -117,7 +120,8 @@ export async function signUpAction(
 
   return {
     status: "success",
-    message: "Conta criada. Confira seu e-mail para confirmar o acesso.",
+    message:
+      "Conta criada! Enviamos um link de confirmação para o seu e-mail. Depois de confirmar, você volta direto para o login do Flowy.",
   };
 }
 
@@ -133,7 +137,7 @@ export async function requestPasswordResetAction(
   const { error } = await supabase.auth.resetPasswordForEmail(
     parsed.data.email,
     {
-      redirectTo: `${siteUrl}/auth/callback?next=/redefinir-senha`,
+      redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent("/redefinir-senha")}`,
     },
   );
 
@@ -209,4 +213,22 @@ export async function deleteAccountAction(formData: FormData) {
 
   await supabase.auth.signOut({ scope: "local" });
   redirect("/login?conta=excluida");
+}
+
+export async function signInWithGoogleAction(formData: FormData) {
+  const next = safeNextPath(
+    typeof formData.get("next") === "string" ? (formData.get("next") as string) : null,
+  );
+  const supabase = await createClient();
+  const siteUrl = await getSiteUrl();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}`,
+      queryParams: { prompt: "select_account" },
+    },
+  });
+
+  if (error || !data.url) redirect("/login?erro=google");
+  redirect(data.url);
 }

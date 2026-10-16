@@ -11,6 +11,7 @@ import {
   ChevronsDownUp,
   Crosshair,
   Download,
+  LayoutGrid,
   GitBranchPlus,
   GitFork,
   ListPlus,
@@ -29,7 +30,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useSaveNote, useTrashNote } from "@/features/notes/use-notes";
 import { useOnlineStatus } from "@/hooks/use-online-status";
@@ -97,31 +98,73 @@ function isDarkTheme() {
   return !document.documentElement.classList.contains("white");
 }
 
-function ToolButton({
-  label,
-  onClick,
-  active,
-  children,
-}: {
+interface Tool {
+  id: string;
   label: string;
-  onClick: () => void;
+  icon: ReactNode;
+  needsNode?: boolean;
   active?: boolean;
-  children: ReactNode;
+  danger?: boolean;
+}
+
+interface ToolGroup {
+  title: string;
+  tools: Tool[];
+}
+
+function DockButton({
+  tool,
+  disabled,
+  onRun,
+}: {
+  tool: Tool;
+  disabled?: boolean;
+  onRun: (id: string) => void;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      aria-pressed={active}
+      onClick={() => onRun(tool.id)}
+      disabled={disabled}
+      aria-label={tool.label}
+      aria-pressed={tool.active}
+      data-tip={tool.label}
       className={cn(
-        "flex min-w-14 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:scale-95 sm:min-w-0 sm:flex-row sm:gap-2 sm:px-3 sm:text-xs",
-        active && "bg-primary/15 text-primary",
+        "flowy-dock-button grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent hover:text-foreground active:scale-90 disabled:pointer-events-none disabled:opacity-35",
+        tool.active && "bg-primary/15 text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.35)]",
+        tool.danger && "hover:bg-destructive/10 hover:text-destructive",
       )}
     >
-      {children}
-      <span className="whitespace-nowrap">{label}</span>
+      {tool.icon}
+    </button>
+  );
+}
+
+function SheetButton({
+  tool,
+  disabled,
+  onRun,
+}: {
+  tool: Tool;
+  disabled?: boolean;
+  onRun: (id: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => {
+        onRun(tool.id);
+      }}
+      aria-pressed={tool.active}
+      className={cn(
+        "flex flex-col items-center gap-1.5 rounded-2xl px-1 py-2.5 text-[11px] font-medium text-muted-foreground transition-all active:scale-95 disabled:opacity-35",
+        tool.active ? "bg-primary/15 text-primary" : "bg-muted/40 hover:bg-accent hover:text-foreground",
+        tool.danger && "text-destructive",
+      )}
+    >
+      <span className="grid size-8 place-items-center">{tool.icon}</span>
+      {tool.label}
     </button>
   );
 }
@@ -140,6 +183,11 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
   const [linking, setLinking] = useState(false);
   const [focused, setFocused] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [hasSelection, setHasSelection] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [hint, setHint] = useState<string | null>(null);
+  const hintTimer = useRef<number | null>(null);
   const layoutIndex = useRef(0);
   const titleRef = useRef(title);
 
@@ -204,8 +252,14 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
       scheduleSave();
     });
 
+    mind.bus.addListener("scale", (value) => setZoomLevel(Math.round(value * 100)));
+    mind.bus.addListener("unselectNodes", () => {
+      window.setTimeout(() => setHasSelection(Boolean(mind.currentNode)), 0);
+    });
+
     // "Ligar tópicos": first selected topic is the origin, the next one the target.
     mind.bus.addListener("selectNodes", (nodes) => {
+      setHasSelection(nodes.length > 0);
       const from = linkFrom.current;
       const target = nodes[0];
       if (!from || !target || target.id === from) return;
@@ -247,11 +301,18 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
     [persist],
   );
 
+  // Short tips appear inside the canvas instead of as notifications.
+  function showHint(message: string) {
+    if (hintTimer.current) window.clearTimeout(hintTimer.current);
+    setHint(message);
+    hintTimer.current = window.setTimeout(() => setHint(null), 2600);
+  }
+
   function withSelection(action: (mind: MindElixirInstance) => void) {
     const mind = mindRef.current;
     if (!mind) return;
     if (!mind.currentNode) {
-      toast("Toque em um tópico primeiro.");
+      showHint("Toque em um tópico primeiro.");
       return;
     }
     action(mind);
@@ -273,7 +334,7 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
     withSelection((mind) => {
       const node = mind.currentNode!;
       if (!node.nodeObj.children?.length) {
-        toast("Esse tópico não tem filhos para recolher.");
+        showHint("Esse tópico não tem filhos para recolher.");
         return;
       }
       mind.expandNode(node, node.nodeObj.expanded === false);
@@ -301,7 +362,7 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
     layoutIndex.current = (layoutIndex.current + 1) % LAYOUTS.length;
     const layout = LAYOUTS[layoutIndex.current] ?? LAYOUTS[0];
     layout.apply(mind);
-    toast(`Layout: ${layout.label.toLowerCase()}`);
+    showHint(`Layout: ${layout.label.toLowerCase()}`);
     scheduleSave();
   }
 
@@ -320,7 +381,7 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
     withSelection((mind) => {
       linkFrom.current = mind.currentNode!.nodeObj.id;
       setLinking(true);
-      toast("Agora toque no tópico que você quer ligar.");
+      showHint("Agora toque no tópico que você quer ligar.");
     });
   }
 
@@ -344,6 +405,156 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
       toast.error("Não foi possível excluir o mapa mental.");
     }
   }
+
+  const iconClass = "size-[18px]";
+  const historyTools: Tool[] = [
+    { id: "undo", label: "Desfazer", icon: <Undo2 className={iconClass} /> },
+    { id: "redo", label: "Refazer", icon: <Redo2 className={iconClass} /> },
+  ];
+  const addTools: Tool[] = [
+    { id: "child",
+      label: "Filho",
+      icon: <GitBranchPlus className={iconClass} />,
+      needsNode: true },
+    { id: "sibling",
+      label: "Irmão",
+      icon: <ListPlus className={iconClass} />,
+      needsNode: true },
+    { id: "parent",
+      label: "Pai",
+      icon: <GitFork className={iconClass} />,
+      needsNode: true },
+  ];
+  const editTools: Tool[] = [
+    { id: "edit",
+      label: "Editar texto",
+      icon: <PencilLine className={iconClass} />,
+      needsNode: true },
+    { id: "color",
+      label: "Cor",
+      icon: <Palette className={iconClass} />,
+      needsNode: true,
+      active: paletteOpen },
+    { id: "up",
+      label: "Mover para cima",
+      icon: <ArrowUp className={iconClass} />,
+      needsNode: true },
+    { id: "down",
+      label: "Mover para baixo",
+      icon: <ArrowDown className={iconClass} />,
+      needsNode: true },
+    { id: "collapse",
+      label: "Recolher/expandir",
+      icon: <ChevronsDownUp className={iconClass} />,
+      needsNode: true },
+    { id: "delete",
+      label: "Excluir tópico",
+      icon: <Trash2 className={iconClass} />,
+      needsNode: true,
+      danger: true },
+  ];
+  const connectTools: Tool[] = [
+    { id: "link",
+      label: "Ligar tópicos",
+      icon: <Spline className={iconClass} />,
+      active: linking },
+    { id: "summary",
+      label: "Resumo",
+      icon: <SquareDashedBottom className={iconClass} />,
+      needsNode: true },
+  ];
+  const viewTools: Tool[] = [
+    { id: "focus",
+      label: focused ? "Sair do foco" : "Focar tópico",
+      icon: <Crosshair className={iconClass} />,
+      active: focused },
+    { id: "layout", label: "Trocar layout", icon: <Network className={iconClass} /> },
+    { id: "fit", label: "Centralizar", icon: <Maximize2 className={iconClass} /> },
+    { id: "zoom-out", label: "Diminuir zoom", icon: <ZoomOut className={iconClass} /> },
+    { id: "zoom-in", label: "Aumentar zoom", icon: <ZoomIn className={iconClass} /> },
+  ];
+  function runTool(id: string) {
+    switch (id) {
+      case "undo":
+        mindRef.current?.undo();
+        return;
+      case "redo":
+        mindRef.current?.redo();
+        return;
+      case "child":
+        withSelection((mind) => void mind.addChild());
+        return;
+      case "sibling":
+        withSelection((mind) => void mind.insertSibling("after"));
+        return;
+      case "parent":
+        withSelection((mind) => {
+          if (mind.currentNode?.nodeObj.parent === undefined) {
+            showHint("O tópico central não pode ganhar um pai.");
+            return;
+          }
+          void mind.insertParent();
+        });
+        return;
+      case "edit":
+        withSelection((mind) => void mind.beginEdit());
+        return;
+      case "color":
+        withSelection(() => {
+          setMoreOpen(false);
+          setPaletteOpen((open) => !open);
+        });
+        return;
+      case "up":
+        withSelection((mind) => void mind.moveUpNode());
+        return;
+      case "down":
+        withSelection((mind) => void mind.moveDownNode());
+        return;
+      case "collapse":
+        toggleCollapse();
+        return;
+      case "delete":
+        withSelection((mind) => {
+          if (mind.currentNode?.nodeObj.parent === undefined) {
+            showHint("O tópico central não pode ser excluído.");
+            return;
+          }
+          void mind.removeNodes(mind.currentNodes);
+        });
+        return;
+      case "link":
+        startLinking();
+        return;
+      case "summary":
+        withSelection((mind) => mind.createSummary());
+        return;
+      case "focus":
+        toggleFocus();
+        return;
+      case "layout":
+        cycleLayout();
+        return;
+      case "fit":
+        mindRef.current?.scaleFit();
+        return;
+      case "zoom-out":
+        zoom(-ZOOM_STEP);
+        return;
+      case "zoom-in":
+        zoom(ZOOM_STEP);
+        return;
+    }
+  }
+
+  const toolGroups: ToolGroup[] = [
+    { title: "Histórico", tools: historyTools },
+    { title: "Adicionar", tools: addTools },
+    { title: "Editar", tools: editTools },
+    { title: "Conectar", tools: connectTools },
+    { title: "Visualizar", tools: viewTools },
+  ];
+  const mobileTools = [...historyTools, ...addTools.slice(0, 2), ...editTools.slice(0, 1)];
 
   const statusLabel = !online
     ? "Sem conexão"
@@ -423,9 +634,18 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
           </div>
         ) : null}
 
+        {hint && !linking ? (
+          <div
+            role="status"
+            className="pointer-events-none absolute left-1/2 top-3 z-20 -translate-x-1/2 animate-in fade-in slide-in-from-top-2 whitespace-nowrap rounded-full border border-border/70 bg-card/95 px-4 py-2 text-xs font-medium shadow-lg backdrop-blur"
+          >
+            {hint}
+          </div>
+        ) : null}
+
         {paletteOpen ? (
           <div
-            className="absolute inset-x-2 bottom-24 z-10 mx-auto flex max-w-sm flex-wrap justify-center gap-2 rounded-2xl border border-border/70 bg-card p-3 shadow-xl sm:bottom-28"
+            className="absolute inset-x-3 bottom-[5.5rem] z-20 mx-auto flex max-w-sm flex-wrap justify-center gap-2 rounded-3xl border border-border/70 bg-card/95 p-3 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 sm:bottom-28"
             role="group"
             aria-label="Cor do tópico"
           >
@@ -434,7 +654,7 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
                 key={color.value}
                 type="button"
                 onClick={() => setNodeColor(color.value)}
-                className="size-8 rounded-full border border-border/60 transition-transform hover:scale-110 active:scale-95"
+                className="size-8 rounded-full ring-1 ring-border/60 transition-transform hover:scale-110 active:scale-95"
                 style={{ backgroundColor: color.value }}
                 aria-label={`Cor ${color.name}`}
                 title={color.name}
@@ -443,7 +663,7 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
             <button
               type="button"
               onClick={() => setNodeColor(null)}
-              className="grid size-8 place-items-center rounded-full border border-border/60 text-muted-foreground hover:text-foreground"
+              className="grid size-8 place-items-center rounded-full text-muted-foreground ring-1 ring-border/60 hover:text-foreground"
               aria-label="Remover cor"
               title="Sem cor"
             >
@@ -452,127 +672,92 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
           </div>
         ) : null}
 
+        {moreOpen ? (
+          <div
+            className="absolute inset-x-3 bottom-[5.5rem] z-20 max-h-[60%] overflow-y-auto rounded-3xl border border-border/70 bg-card/95 p-3 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 sm:hidden"
+            aria-label="Mais ferramentas"
+          >
+            {toolGroups.map((group) => (
+              <div key={group.title} className="mb-3 last:mb-0">
+                <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  {group.title}
+                </p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {group.tools.map((tool) => (
+                    <SheetButton
+                      key={tool.id}
+                      tool={tool}
+                      disabled={tool.needsNode && !hasSelection}
+                      onRun={(id) => {
+                        runTool(id);
+                        setMoreOpen(false);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
         <nav
           aria-label="Ferramentas do mapa mental"
-          className="safe-bottom absolute inset-x-2 bottom-2 flex items-center rounded-2xl border border-border/70 bg-card/95 p-1.5 shadow-xl backdrop-blur sm:inset-x-auto sm:bottom-6 sm:left-1/2 sm:max-w-[calc(100%-3rem)] sm:-translate-x-1/2"
+          className="safe-bottom absolute inset-x-3 bottom-3 z-10 flex items-center justify-between gap-1 rounded-[1.4rem] border border-border/70 bg-card/90 p-1.5 shadow-[0_18px_50px_-12px_rgb(0_0_0/0.45)] backdrop-blur-xl sm:inset-x-auto sm:bottom-6 sm:left-1/2 sm:max-w-[calc(100%-3rem)] sm:-translate-x-1/2 sm:justify-start sm:gap-0"
         >
-          {/* Undo/redo stay pinned so they never scroll out of view on phones. */}
-          <div className="flex shrink-0 items-center gap-1 border-r border-border/70 pr-1">
-            <ToolButton label="Desfazer" onClick={() => mindRef.current?.undo()}>
-              <Undo2 className="size-4" />
-            </ToolButton>
-            <ToolButton label="Refazer" onClick={() => mindRef.current?.redo()}>
-              <Redo2 className="size-4" />
-            </ToolButton>
+          {/* Phones: the essentials plus a "more" sheet with every tool. */}
+          <div className="flex items-center gap-0.5 sm:hidden">
+            {mobileTools.map((tool) => (
+              <DockButton
+                key={tool.id}
+                tool={tool}
+                disabled={tool.needsNode && !hasSelection}
+                onRun={runTool}
+              />
+            ))}
           </div>
-          <div className="flex min-w-0 items-center gap-1 overflow-x-auto pl-1 [scrollbar-width:none]">
-            <ToolButton
-              label="Filho"
-              onClick={() => withSelection((mind) => void mind.addChild())}
-            >
-              <GitBranchPlus className="size-4" />
-            </ToolButton>
-            <ToolButton
-              label="Irmão"
-              onClick={() =>
-                withSelection((mind) => void mind.insertSibling("after"))
-              }
-            >
-              <ListPlus className="size-4" />
-            </ToolButton>
-            <ToolButton
-              label="Pai"
-              onClick={() =>
-                withSelection((mind) => {
-                  if (mind.currentNode?.nodeObj.parent === undefined) {
-                    toast("O tópico central não pode ganhar um pai.");
-                    return;
-                  }
-                  void mind.insertParent();
-                })
-              }
-            >
-              <GitFork className="size-4" />
-            </ToolButton>
-            <ToolButton
-              label="Editar"
-              onClick={() => withSelection((mind) => void mind.beginEdit())}
-            >
-              <PencilLine className="size-4" />
-            </ToolButton>
-            <ToolButton
-              label="Cor"
-              active={paletteOpen}
-              onClick={() =>
-                withSelection(() => setPaletteOpen((open) => !open))
-              }
-            >
-              <Palette className="size-4" />
-            </ToolButton>
-            <ToolButton
-              label="Subir"
-              onClick={() => withSelection((mind) => void mind.moveUpNode())}
-            >
-              <ArrowUp className="size-4" />
-            </ToolButton>
-            <ToolButton
-              label="Descer"
-              onClick={() => withSelection((mind) => void mind.moveDownNode())}
-            >
-              <ArrowDown className="size-4" />
-            </ToolButton>
-            <ToolButton label="Recolher" onClick={toggleCollapse}>
-              <ChevronsDownUp className="size-4" />
-            </ToolButton>
-            <ToolButton label="Ligar" onClick={startLinking} active={linking}>
-              <Spline className="size-4" />
-            </ToolButton>
-            <ToolButton
-              label="Resumo"
-              onClick={() => withSelection((mind) => mind.createSummary())}
-            >
-              <SquareDashedBottom className="size-4" />
-            </ToolButton>
-            <ToolButton label="Foco" onClick={toggleFocus} active={focused}>
-              <Crosshair className="size-4" />
-            </ToolButton>
-            <ToolButton label="Layout" onClick={cycleLayout}>
-              <Network className="size-4" />
-            </ToolButton>
-            <ToolButton label="Diminuir" onClick={() => zoom(-ZOOM_STEP)}>
-              <ZoomOut className="size-4" />
-            </ToolButton>
-            <ToolButton label="Aumentar" onClick={() => zoom(ZOOM_STEP)}>
-              <ZoomIn className="size-4" />
-            </ToolButton>
-            <ToolButton
-              label="Centralizar"
-              onClick={() => mindRef.current?.scaleFit()}
-            >
-              <Maximize2 className="size-4" />
-            </ToolButton>
-            <ToolButton
-              label="Excluir"
-              onClick={() =>
-                withSelection((mind) => {
-                  if (mind.currentNode?.nodeObj.parent === undefined) {
-                    toast("O tópico central não pode ser excluído.");
-                    return;
-                  }
-                  void mind.removeNodes(mind.currentNodes);
-                })
-              }
-            >
-              <Trash2 className="size-4" />
-            </ToolButton>
-            <span className="contents sm:hidden">
-              <ToolButton label="Exportar" onClick={exportImage}>
-                <Download className="size-4" />
-              </ToolButton>
-              <ToolButton label="Lixeira" onClick={() => void handleTrash()}>
-                <Trash2 className="size-4 text-destructive" />
-              </ToolButton>
-            </span>
+          <button
+            type="button"
+            onClick={() => {
+              setPaletteOpen(false);
+              setMoreOpen((open) => !open);
+            }}
+            aria-expanded={moreOpen}
+            className={cn(
+              "flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-all active:scale-95 sm:hidden",
+              moreOpen ? "bg-primary text-primary-foreground" : "bg-primary/15 text-primary",
+            )}
+          >
+            {moreOpen ? <X className="size-4" /> : <LayoutGrid className="size-4" />}
+            Mais
+          </button>
+
+          {/* Desktop: every tool, grouped, with labels on hover. */}
+          <div className="hidden items-center sm:flex">
+            {toolGroups.map((group, index) => (
+              <div
+                key={group.title}
+                role="group"
+                aria-label={group.title}
+                className={cn(
+                  "flex items-center gap-0.5 px-1.5",
+                  index > 0 && "border-l border-border/60",
+                )}
+              >
+                {group.tools.map((tool) => (
+                  <DockButton
+                    key={tool.id}
+                    tool={tool}
+                    disabled={tool.needsNode && !hasSelection}
+                    onRun={runTool}
+                  />
+                ))}
+                {group.title === "Visualizar" ? (
+                  <span className="min-w-12 text-center text-xs font-semibold tabular-nums text-muted-foreground">
+                    {zoomLevel}%
+                  </span>
+                ) : null}
+              </div>
+            ))}
           </div>
         </nav>
       </div>

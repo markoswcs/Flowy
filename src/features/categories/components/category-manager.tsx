@@ -54,7 +54,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
       {
         onSuccess: () => {
           setName("");
-          notify("Tag criada");
+          notify("Etiqueta criada");
         },
       },
     );
@@ -73,7 +73,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
       {
         onSuccess: () => {
           setEditingId(null);
-          notify("Tag salva");
+          notify("Etiqueta salva");
         },
       },
     );
@@ -98,7 +98,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
   function remove(category: Category) {
     deleteMutation.mutate(category.id, {
       onSuccess: () =>
-        notify("Tag movida para a lixeira", {
+        notify("Etiqueta movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(category.id),
@@ -111,7 +111,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
     <section aria-labelledby="category-manager-title" className="space-y-3">
       <div className="rounded-xl bg-muted/40 p-4">
         <h2 id="category-manager-title" className="font-semibold">
-          Criar uma tag
+          Criar uma etiqueta
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Etiquetas ajudam a agrupar e organizar suas tarefas.
@@ -125,7 +125,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="Ex.: Urgente, Aguardando ou Ideias"
-          aria-label="Nome da nova tag"
+          aria-label="Nome da nova etiqueta"
           autoFocus={autoFocusNew}
         />
         </label>
@@ -147,17 +147,17 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
           className="w-full sm:w-auto"
         >
           <Plus className="size-4" aria-hidden="true" />
-          Criar tag
+          Criar etiqueta
         </Button>
       </form>
 
       {categoriesQuery.isLoading ? (
         <p className="py-4 text-sm text-muted-foreground">
-          Carregando tags...
+          Carregando etiquetas...
         </p>
       ) : categoriesQuery.isError ? (
         <div className="flex items-center justify-between gap-3 py-3 text-sm text-destructive">
-          <span>Não foi possível carregar as tags.</span>
+          <span>Não foi possível carregar as etiquetas.</span>
           <Button
             type="button"
             variant="outline"
@@ -169,7 +169,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
         </div>
       ) : categories.length === 0 ? (
         <p className="py-4 text-sm text-muted-foreground">
-          Nenhuma tag criada.
+          Nenhuma etiqueta criada.
         </p>
       ) : (
         <ul className="divide-y divide-border rounded-md border border-border">
@@ -235,7 +235,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
                       className="size-9 min-h-9"
                       onClick={() => save(category)}
                       disabled={!editingName.trim() || updateMutation.isPending}
-                      aria-label="Salvar tag"
+                      aria-label="Salvar etiqueta"
                     >
                       <Check className="size-4" aria-hidden="true" />
                     </Button>

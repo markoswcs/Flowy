@@ -6,7 +6,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { notify } from "@/providers/notification-provider";
 
 import { taskKeys } from "@/features/tasks/query-keys";
@@ -99,7 +99,7 @@ export function useCreateCategory() {
     },
     onError: (error, _input, context) => {
       if (context) restore(queryClient, context.snapshots);
-      toast.error("Não foi possível criar a tag.", {
+      toast.error("Não foi possível criar a etiqueta.", {
         description: messageFromUnknownError(error),
       });
     },
@@ -142,7 +142,7 @@ export function useUpdateCategory() {
     },
     onError: (error, _input, context) => {
       if (context) restore(queryClient, context.snapshots);
-      toast.error("Não foi possível salvar a tag.", {
+      toast.error("Não foi possível salvar a etiqueta.", {
         description: messageFromUnknownError(error),
       });
     },
@@ -172,7 +172,7 @@ export function useReorderCategories() {
     },
     onError: (error, _categories, context) => {
       if (context) restore(queryClient, context.snapshots);
-      toast.error("Não foi possível reordenar as tags.", {
+      toast.error("Não foi possível reordenar as etiquetas.", {
         description: messageFromUnknownError(error),
       });
     },
@@ -197,7 +197,7 @@ export function useSoftDeleteCategory() {
     },
     onError: (error, _categoryId, context) => {
       if (context) restore(queryClient, context.snapshots);
-      toast.error("Não foi possível mover a tag para a lixeira.", {
+      toast.error("Não foi possível mover a etiqueta para a lixeira.", {
         description: messageFromUnknownError(error),
       });
     },
@@ -214,11 +214,11 @@ export function useRestoreCategory() {
   return useMutation({
     mutationFn: restoreCategory,
     onError: (error) => {
-      toast.error("Não foi possível desfazer a exclusão da tag.", {
+      toast.error("Não foi possível desfazer a exclusão da etiqueta.", {
         description: messageFromUnknownError(error),
       });
     },
-    onSuccess: () => notify("Tag restaurada"),
+    onSuccess: () => notify("Etiqueta restaurada"),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: categoryKeys.all });
       void queryClient.invalidateQueries({ queryKey: taskKeys.all });

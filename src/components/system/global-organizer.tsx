@@ -56,14 +56,15 @@ export function GlobalOrganizer() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[110] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label="Organizar pastas e etiquetas">
       <button
         type="button"
         onClick={() => setOpen(false)}
         className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200"
         aria-label="Fechar"
       />
-      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in zoom-in-95 fade-in duration-200">
+      <div className="relative z-10 flex max-h-[88dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.75rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-6 fade-in duration-300 sm:rounded-[1.75rem] sm:zoom-in-95 sm:slide-in-from-bottom-0">
+        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted-foreground/30 sm:hidden" aria-hidden="true" />
         <div className="flex items-center justify-between border-b border-border p-4">
           <div className="inline-flex rounded-xl bg-muted p-1" role="tablist">
             <button
@@ -95,7 +96,25 @@ export function GlobalOrganizer() {
             <X className="size-4" />
           </Button>
         </div>
-        <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-6">
+        <div className="flex items-start gap-3 border-b border-border/60 bg-muted/30 px-4 py-3 text-xs leading-5 text-muted-foreground sm:px-6">
+          {target === "categories" ? (
+            <Tag className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+          ) : (
+            <Folder className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+          )}
+          <p>
+            {target === "categories" ? (
+              <>
+                <strong className="text-foreground">Etiquetas</strong> são marcadores que você combina: uma tarefa pode ter várias (ex.: Urgente + Cliente). Ao criar uma tarefa, digite <code className="rounded bg-background px-1">#nome</code> ou deixe o Flowy sugerir.
+              </>
+            ) : (
+              <>
+                <strong className="text-foreground">Pastas</strong> são onde a tarefa mora: cada tarefa fica em uma pasta (ex.: Trabalho, Pessoal). Ao criar uma tarefa, digite <code className="rounded bg-background px-1">/nome</code> ou deixe o Flowy sugerir.
+              </>
+            )}
+          </p>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
           {target === "categories" ? (
             <CategoryManager key="categories-active" autoFocusNew />
           ) : (

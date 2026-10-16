@@ -8,14 +8,16 @@ export function Logo({
   compact = false,
   className,
   onClick,
+  href = "/app",
 }: {
+  href?: string;
   compact?: boolean;
   className?: string;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
   return (
     <Link
-      href="/app"
+      href={href}
       className={cn(
         "inline-flex items-center gap-2 rounded-md font-semibold tracking-tight focus-visible:ring-2 focus-visible:ring-ring",
         className,

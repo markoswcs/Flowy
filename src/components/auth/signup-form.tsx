@@ -32,11 +32,12 @@ export function SignupForm() {
         </AuthMessage>
       ) : null}
       <div className="space-y-2">
-        <Label htmlFor="name">Nome e sobrenome</Label>
+        <Label htmlFor="name">Como podemos te chamar?</Label>
         <Input
           id="name"
           name="name"
-          autoComplete="name"
+          autoComplete="given-name"
+          placeholder="Seu nome"
           autoFocus
           value={form.name}
           onChange={(event) => setField("name", event.target.value)}

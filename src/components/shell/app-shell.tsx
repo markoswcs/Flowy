@@ -17,6 +17,7 @@ import { GlobalTaskComposer } from "@/components/system/global-task-composer";
 import { GlobalCreateButton } from "@/components/system/global-create-button";
 import { GlobalOrganizer } from "@/components/system/global-organizer";
 import { GlobalInstallPrompt } from "@/components/system/global-install-prompt";
+import { OnboardingTour } from "@/components/system/onboarding-tour";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useCategories } from "@/features/categories/use-categories";
@@ -29,6 +30,7 @@ interface AppShellProps {
   folders?: ShellFolder[];
   categories?: ShellCategory[];
   user?: ShellUser;
+  showOnboarding?: boolean;
 }
 
 const fallbackUser: ShellUser = { name: "Usuário", email: "" };
@@ -56,6 +58,7 @@ export function AppShell({
   folders = [],
   categories = [],
   user = fallbackUser,
+  showOnboarding = false,
 }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -183,6 +186,7 @@ export function AppShell({
       </a>
 
       <aside
+        data-tour="nav"
         className={cn(
           "theme-shell-panel relative z-10 hidden shrink-0 border-r border-border/50 transition-[width] duration-200 md:block",
           collapsed ? "w-20" : "w-64",
@@ -234,6 +238,9 @@ export function AppShell({
       {!isNoteEditor ? <GlobalCreateButton /> : null}
       <GlobalOrganizer />
       <GlobalInstallPrompt />
+      {showOnboarding && pathname === "/app" ? (
+        <OnboardingTour name={user.name.split(/\s+/)[0] || user.name} />
+      ) : null}
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 md:hidden" role="presentation">

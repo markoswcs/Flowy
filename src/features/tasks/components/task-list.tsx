@@ -75,7 +75,10 @@ export function TaskList({
 
   return (
     <div>
-      {tasks.map((task, index) => (
+      {/* Finished tasks sink to the bottom; open ones keep their order. */}
+      {[...tasks]
+        .sort((a, b) => Number(a.status === "completed") - Number(b.status === "completed"))
+        .map((task, index) => (
         <div
           key={task.id}
           className="flowy-list-item"

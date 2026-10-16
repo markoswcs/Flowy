@@ -16,9 +16,15 @@ interface AppHomePageProps {
 
 export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
+  const user = claims
+    ? {
+        id: claims.sub,
+        email: typeof claims.email === "string" ? claims.email : undefined,
+        user_metadata: (claims.user_metadata ?? {}) as Record<string, unknown>,
+      }
+    : null;
 
   if (!user) return null;
 
@@ -52,7 +58,9 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   const metadataName =
     typeof user?.user_metadata?.display_name === "string"
       ? user.user_metadata.display_name
-      : null;
+      : typeof user?.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : null;
   const emailName = user?.email?.split("@")[0] || "Usuário";
 
   return (

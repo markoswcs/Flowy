@@ -107,21 +107,24 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
 
   switch (filters.scope) {
     case "today":
-      query = query.eq("due_date", today).neq("status", "completed");
+      query = query.eq("due_date", today);
       break;
     case "overdue":
-      query = query.lt("due_date", today).neq("status", "completed");
+      query = query.lt("due_date", today);
       break;
     case "upcoming":
-      query = query.gt("due_date", today).neq("status", "completed");
+      query = query.gt("due_date", today);
       break;
     case "completed":
       query = query.eq("status", "completed");
       break;
   }
 
+  // Finished tasks stay in the list (struck through, at the bottom) for a day,
+  // then only show under "Concluídas".
   if (filters.scope !== "completed" && filters.status !== "completed") {
-    query = query.neq("status", "completed");
+    const since = new Date(Date.now() - COMPLETED_VISIBLE_MS).toISOString();
+    query = query.or(`status.neq.completed,completed_at.gte.${since}`);
   }
 
   if (filters.status && filters.status !== "all") {
@@ -150,6 +153,8 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
   if (error) throw error;
   return ((data ?? []) as unknown as TaskJoinRow[]).map(normalizeTask);
 }
+
+export const COMPLETED_VISIBLE_MS = 24 * 60 * 60 * 1000;
 
 export async function getTask(taskId: string): Promise<Task> {
   const { supabase, userId } = await getAuthenticatedClient();

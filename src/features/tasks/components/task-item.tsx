@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import {
   CalendarDays,
   Check,
@@ -13,7 +13,7 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -22,10 +22,10 @@ import { TaskScheduleFields } from "@/features/tasks/components/task-schedule-fi
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
 import {
   useRestoreTask,
-  useRestoreCompletedTask,
   useSoftDeleteTask,
   useUpdateTask,
 } from "@/features/tasks/use-tasks";
+import { useTaskSelection } from "@/features/tasks/task-selection";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/providers/notification-provider";
 import type {
@@ -292,9 +292,12 @@ export function TaskItem({
   const updateMutation = useUpdateTask();
   const deleteMutation = useSoftDeleteTask();
   const restoreMutation = useRestoreTask();
-  const restoreCompletedMutation = useRestoreCompletedTask();
   const { addNotification } = useNotifications();
-  const [leaving, setLeaving] = useState(false);
+  const selection = useTaskSelection();
+  const selecting = Boolean(selection?.active);
+  const selected = Boolean(selection?.isSelected(task.id));
+  const pressTimer = useRef<number | null>(null);
+  const pressStarted = useRef(false);
   const completed = task.status === "completed";
   const optimistic = task.id.startsWith("optimistic-");
   const formattedDate = formatTaskDate(task.due_date);
@@ -303,11 +306,6 @@ export function TaskItem({
   function toggleCompleted() {
     const nextCompleted = !completed;
 
-    if (nextCompleted && !task.recurrence) {
-      setLeaving(true);
-      window.setTimeout(() => saveTask(), 620);
-      return;
-    }
     saveTask();
 
     function saveTask() {
@@ -330,21 +328,16 @@ export function TaskItem({
               }${updatedTask.due_time ? ` às ${updatedTask.due_time.slice(0, 5)}` : ""}` });
             return;
           }
-          deleteMutation.mutate(task.id, {
-            onSuccess: () => {
-              addNotification({
-                title: "Tarefa concluída e movida para a lixeira",
-                description: task.title,
-                action: {
-                  label: "Desfazer",
-                  onClick: () => restoreCompletedMutation.mutate(task.id),
-                },
-              });
-              window.dispatchEvent(new Event("flowy:open-notifications"));
+          addNotification({
+            title: "Tarefa concluída",
+            description: task.title,
+            action: {
+              label: "Desfazer",
+              onClick: () =>
+                updateMutation.mutate({ id: task.id, status: "todo", completed_at: null }),
             },
           });
         },
-        onError: () => setLeaving(false),
       },
     );
     }
@@ -363,8 +356,51 @@ export function TaskItem({
     });
   }
 
+  // Holding a task for a moment starts multi-select (handy on phones).
+  function startPress() {
+    if (!selection || selecting || optimistic || editing) return;
+    pressTimer.current = window.setTimeout(() => {
+      pressTimer.current = null;
+      pressStarted.current = true;
+      selection.start(task.id);
+      navigator.vibrate?.(15);
+    }, 480);
+  }
+  function cancelPress() {
+    if (pressTimer.current) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+  }
+
   return (
-    <article className={cn("mb-2 rounded-2xl border border-border/50 bg-card/40 p-3 shadow-sm backdrop-blur-2xl transition-all duration-300 hover:scale-[1.01] hover:bg-card/50 active:scale-[0.99] sm:p-4 animate-scale-in", leaving && "pointer-events-none")} style={leaving ? { animation: "flowy-task-complete 620ms cubic-bezier(.22, 1, .36, 1) forwards" } : undefined}>
+    <article
+      onPointerDown={startPress}
+      onPointerUp={cancelPress}
+      onPointerLeave={cancelPress}
+      onPointerMove={(event) => {
+        if (Math.abs(event.movementX) + Math.abs(event.movementY) > 6) cancelPress();
+      }}
+      onContextMenu={(event) => {
+        if (selecting) event.preventDefault();
+      }}
+      onClickCapture={(event) => {
+        if (!selecting || !selection) return;
+        event.preventDefault();
+        event.stopPropagation();
+        // The click that ends the long press must not undo its selection.
+        if (pressStarted.current) {
+          pressStarted.current = false;
+          return;
+        }
+        selection.toggle(task.id);
+      }}
+      data-selected={selecting ? selected : undefined}
+      className={cn(
+        "mb-2 rounded-2xl border border-border/50 bg-card/40 p-3 shadow-sm backdrop-blur-2xl transition-all duration-300 hover:bg-card/50 active:scale-[0.99] sm:p-4 animate-scale-in",
+        !selecting && "hover:scale-[1.01]",
+        selecting && "cursor-pointer select-none",
+        selected && "border-primary/60 bg-primary/10 shadow-[0_0_0_1px_hsl(var(--primary)/0.4)]",
+      )}
+    >
       {!editing && (
         <div className="flex min-w-0 items-start gap-3">
           <button
@@ -376,13 +412,17 @@ export function TaskItem({
             }
             onClick={toggleCompleted}
             disabled={optimistic || updateMutation.isPending}
-            className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-              completed
+            className={cn(
+              "mt-0.5 flex size-6 shrink-0 items-center justify-center border-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+              selecting ? "rounded-md" : "rounded-full",
+              (selecting ? selected : completed)
                 ? "border-primary bg-primary text-primary-foreground"
-                : "border-muted-foreground/50 hover:border-primary"
-            } disabled:opacity-50`}
+                : "border-muted-foreground/50 hover:border-primary",
+            )}
           >
-            {completed ? <Check className="size-3.5" aria-hidden="true" /> : null}
+            {(selecting ? selected : completed) ? (
+              <Check className="size-3.5 animate-in zoom-in duration-200" aria-hidden="true" />
+            ) : null}
           </button>
 
           <div className="min-w-0 flex-1">

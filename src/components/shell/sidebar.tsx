@@ -273,8 +273,8 @@ export function Sidebar({
                   type="button"
                   onClick={() => openOrganizer("categories")}
                   className="flex size-7 items-center justify-center rounded-full bg-white/5 text-muted-foreground hover:bg-primary/20 hover:text-primary transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  aria-label="Nova tag"
-                  title="Nova tag"
+                  aria-label="Nova etiqueta"
+                  title="Nova etiqueta"
                 >
                   <Plus className="size-3.5" aria-hidden="true" />
                 </button>

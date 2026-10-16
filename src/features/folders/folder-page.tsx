@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText, Folder as FolderIcon, FolderX, Pencil, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { notify } from "@/providers/notification-provider";
 
 import { Button, buttonVariants } from "@/components/ui/button";

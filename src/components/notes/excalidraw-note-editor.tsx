@@ -4,7 +4,7 @@ import { ArrowLeft, PenTool, Redo2, Save, Trash2, Undo2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type {
   BinaryFileData,
   BinaryFiles,

@@ -322,6 +322,42 @@
     display: none;
   }
 
+  /* Label bubble for icon-only dock buttons (pointer devices only). */
+  .flowy-dock-button {
+    position: relative;
+  }
+
+  @media (hover: hover) {
+    .flowy-dock-button::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 0.6rem);
+      left: 50%;
+      z-index: 30;
+      padding: 0.3rem 0.6rem;
+      border: 1px solid hsl(var(--border));
+      border-radius: 0.6rem;
+      background: hsl(var(--popover, var(--card)));
+      color: hsl(var(--foreground));
+      font-size: 0.7rem;
+      font-weight: 500;
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 4px);
+      transition:
+        opacity 150ms ease,
+        transform 150ms ease;
+    }
+
+    .flowy-dock-button:hover::after,
+    .flowy-dock-button:focus-visible::after {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
   /* Pen-only and trash live in the canvas menu on phones; the header has them on sm+. */
   .flowy-excalidraw .flowy-mobile-menu-group {
     margin-top: 0.25rem;

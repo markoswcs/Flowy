@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AuthCard, AuthMessage } from "@/components/auth/auth-card";
+import { GoogleButton } from "@/components/auth/google-button";
 import { LoginForm } from "@/components/auth/login-form";
 import { safeNextPath } from "@/lib/utils";
 
@@ -36,6 +37,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           status: "success" as const,
           text: "Senha alterada. Entre novamente para continuar.",
         }
+      : params.erro === "google"
+        ? {
+            status: "error" as const,
+            text: "Não foi possível entrar com o Google. Tente novamente.",
+          }
       : params.erro
         ? {
             status: "error" as const,
@@ -63,6 +69,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         {message ? (
           <AuthMessage status={message.status}>{message.text}</AuthMessage>
         ) : null}
+        <GoogleButton next={next} />
         <LoginForm next={next} />
       </div>
     </AuthCard>

@@ -8,6 +8,16 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get("code");
   const next = safeNextPath(url.searchParams.get("next"));
 
+  // Supabase confirms the address before redirecting here, so the sign-up link
+  // only needs to land on the login page. Skipping the code exchange keeps it
+  // working when the e-mail is opened on another device or browser.
+  if (next.startsWith("/login")) {
+    const failed = url.searchParams.has("error") && !code;
+    return NextResponse.redirect(
+      new URL(failed ? "/login?erro=link-expirado" : next, url.origin),
+    );
+  }
+
   if (!code) {
     return NextResponse.redirect(
       new URL("/login?erro=link-invalido", url.origin),

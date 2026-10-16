@@ -24,7 +24,9 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  // Refreshes the session cookie; getClaims verifies the JWT locally when the
+  // project uses asymmetric keys, avoiding a round trip on every request.
+  await supabase.auth.getClaims();
 
   return response;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { usePushNotifications, type PushStatus } from "@/features/settings/use-push-notifications";

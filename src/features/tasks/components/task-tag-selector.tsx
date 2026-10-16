@@ -46,7 +46,7 @@ export function TaskTagSelector({
           onChange([...new Set([...value, category.id])]);
           setName("");
           setCreating(false);
-          notify("Tag criada e adicionada à tarefa");
+          notify("Etiqueta criada e adicionada à tarefa");
         },
       },
     );
@@ -104,9 +104,9 @@ export function TaskTagSelector({
                 setCreating(false);
               }
             }}
-            aria-label="Nome da nova tag"
+            aria-label="Nome da nova etiqueta"
             autoFocus
-            placeholder="Nova tag"
+            placeholder="Nova etiqueta"
             className="h-8 w-32 rounded-full px-3 text-xs"
             disabled={createMutation.isPending}
           />
@@ -118,7 +118,7 @@ export function TaskTagSelector({
             loading={createMutation.isPending}
             disabled={!name.trim()}
             className="size-8 min-h-8 rounded-full"
-            aria-label="Criar tag"
+            aria-label="Criar etiqueta"
           >
             <Check className="size-3.5" aria-hidden="true" />
           </Button>
@@ -131,7 +131,7 @@ export function TaskTagSelector({
               setCreating(false);
             }}
             className="size-8 min-h-8 rounded-full"
-            aria-label="Cancelar criação de tag"
+            aria-label="Cancelar criação de etiqueta"
           >
             <X className="size-3.5" aria-hidden="true" />
           </Button>
@@ -150,7 +150,7 @@ export function TaskTagSelector({
           ) : (
             <Tag className="size-3" aria-hidden="true" />
           )}
-          {categories.length ? "Nova tag" : "Criar tag"}
+          {categories.length ? "Nova etiqueta" : "Criar etiqueta"}
         </button>
       )}
     </div>

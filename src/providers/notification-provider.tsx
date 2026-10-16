@@ -1,72 +1,136 @@
 "use client";
 
-import { Bell, CheckCheck, Info, Trash2 } from "lucide-react";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Info, X } from "lucide-react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
-type Notification = { id: string; title: string; description?: string; createdAt: number; read: boolean; action?: { label: string; onClick: () => void } };
-type NotificationsContextValue = {
-  addNotification: (notification: Omit<Notification, "id" | "createdAt" | "read">) => void;
-  openNotifications: () => void;
-  items: Notification[];
-  clearNotifications: () => void;
+type Notification = {
+  id: string;
+  title: string;
+  description?: string;
+  action?: { label: string; onClick: () => void };
 };
+type NewNotification = Omit<Notification, "id">;
+type NotificationsContextValue = {
+  addNotification: (notification: NewNotification) => void;
+};
+
 const NotificationsContext = createContext<NotificationsContextValue | null>(null);
-const storageKey = "flowy:notifications";
 const notificationEvent = "flowy:add-notification";
+const VISIBLE = 2;
 
 export function notify(
   title: string,
   options: { description?: string; action?: { label: string; onClick: () => void } } = {},
 ) {
-  window.dispatchEvent(new CustomEvent(notificationEvent, { detail: { title, ...options } }));
+  window.dispatchEvent(
+    new CustomEvent(notificationEvent, { detail: { title, ...options } }),
+  );
 }
 
-function formatTime(value: number) { return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(value); }
-
+/**
+ * In-app feedback is a short banner at the top of the screen. Reminders and
+ * other alerts reach the person as push notifications on their device.
+ */
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<Notification[]>(() => {
-    if (typeof window === "undefined") return [];
-    const stored = window.localStorage.getItem(storageKey);
-    if (!stored) return [];
-    try { return JSON.parse(stored) as Notification[]; } catch { window.localStorage.removeItem(storageKey); return []; }
-  });
-  const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const [items, setItems] = useState<Notification[]>([]);
+  const timers = useRef(new Map<string, number>());
+
   useEffect(() => {
     document.documentElement.classList.toggle(
       "reduce-motion",
       window.localStorage.getItem("flowy:reduce-motion") === "true",
     );
+    const active = timers.current;
+    return () => active.forEach((timer) => window.clearTimeout(timer));
   }, []);
-  useEffect(() => { window.localStorage.setItem(storageKey, JSON.stringify(items)); }, [items]);
-  useEffect(() => { const close = (event: MouseEvent) => { if (panelRef.current && !panelRef.current.contains(event.target as Node)) setOpen(false); }; if (open) window.addEventListener("mousedown", close); return () => window.removeEventListener("mousedown", close); }, [open]);
-  const addNotification = useCallback((notification: Omit<Notification, "id" | "createdAt" | "read">) => { setItems((current) => [{ ...notification, id: crypto.randomUUID(), createdAt: Date.now(), read: false }, ...current].slice(0, 50)); }, []);
+
+  const dismiss = useCallback((id: string) => {
+    window.clearTimeout(timers.current.get(id));
+    timers.current.delete(id);
+    setItems((current) => current.filter((item) => item.id !== id));
+  }, []);
+
+  const addNotification = useCallback(
+    (notification: NewNotification) => {
+      const id = crypto.randomUUID();
+      setItems((current) => [{ ...notification, id }, ...current].slice(0, VISIBLE));
+      timers.current.set(
+        id,
+        window.setTimeout(() => dismiss(id), notification.action ? 6000 : 3200),
+      );
+    },
+    [dismiss],
+  );
+
   useEffect(() => {
-    const addFromEvent = (event: Event) => addNotification((event as CustomEvent<Omit<Notification, "id" | "createdAt" | "read">>).detail);
+    const addFromEvent = (event: Event) =>
+      addNotification((event as CustomEvent<NewNotification>).detail);
     window.addEventListener(notificationEvent, addFromEvent);
     return () => window.removeEventListener(notificationEvent, addFromEvent);
   }, [addNotification]);
-  useEffect(() => {
-    const toggle = () => setOpen((current) => !current);
-    window.addEventListener("flowy:toggle-notifications", toggle);
-    return () => window.removeEventListener("flowy:toggle-notifications", toggle);
-  }, []);
-  useEffect(() => {
-    const openNotifications = () => setOpen(true);
-    window.addEventListener("flowy:open-notifications", openNotifications);
-    return () => window.removeEventListener("flowy:open-notifications", openNotifications);
-  }, []);
-  const unreadCount = items.filter((item) => !item.read).length;
-  const openNotifications = useCallback(() => setOpen(true), []);
-  const clearNotifications = useCallback(() => setItems([]), []);
-  const value = useMemo(
-    () => ({ addNotification, openNotifications, items, clearNotifications }),
-    [addNotification, clearNotifications, items, openNotifications],
+
+  const value = useMemo(() => ({ addNotification }), [addNotification]);
+
+  return (
+    <NotificationsContext.Provider value={value}>
+      {children}
+      <div
+        className="pointer-events-none fixed inset-x-0 top-[max(0.75rem,env(safe-area-inset-top))] z-[300] flex flex-col items-center gap-2 px-3"
+        aria-live="polite"
+        role="status"
+      >
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border border-border/60 bg-card/95 py-2.5 pl-3 pr-1.5 text-card-foreground shadow-[0_18px_50px_-15px_rgb(0_0_0/0.7)] backdrop-blur-xl animate-in fade-in slide-in-from-top-3 duration-300"
+          >
+            <span className="grid size-7 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+              <Info className="size-3.5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{item.title}</p>
+              {item.description ? (
+                <p className="truncate text-xs text-muted-foreground">{item.description}</p>
+              ) : null}
+            </div>
+            {item.action ? (
+              <button
+                type="button"
+                onClick={() => {
+                  item.action?.onClick();
+                  dismiss(item.id);
+                }}
+                className="shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+              >
+                {item.action.label}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => dismiss(item.id)}
+              className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label="Fechar aviso"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </NotificationsContext.Provider>
   );
-  return <NotificationsContext.Provider value={value}>{children}<div ref={panelRef} className="fixed right-4 top-20 z-[70]"><Button type="button" variant="outline" size="icon" onClick={() => setOpen((value) => !value)} className="hidden relative rounded-2xl border-border/50 bg-card/80 shadow-soft backdrop-blur-xl" aria-label="Abrir notificações" aria-expanded={open}><Bell className={cn("size-4", unreadCount && "animate-[flowy-bell_1s_ease-in-out]")} />{unreadCount ? <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground ring-2 ring-background">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}</Button>{open ? <section className="absolute right-0 top-0 mt-3 w-[380px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-border/60 bg-card/95 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200" aria-label="Notificações"><div className="flex items-center justify-between border-b border-border/50 px-4 py-3"><div><p className="font-semibold">Notificações</p><p className="text-xs text-muted-foreground">Atualizações do seu espaço</p></div><div className="flex items-center gap-1"><Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setItems((current) => current.map((item) => ({ ...item, read: true })))} disabled={!unreadCount} aria-label="Marcar todas como vistas"><CheckCheck className="size-4" /></Button><Button type="button" variant="ghost" size="icon" className="size-8 hover:text-destructive" onClick={() => setItems([])} disabled={!items.length} aria-label="Limpar notificações"><Trash2 className="size-4" /></Button></div></div><div className="max-h-[min(60vh,480px)] overflow-y-auto p-2">{items.length ? items.map((item) => <div key={item.id} className={cn("mb-1 rounded-2xl p-3 transition-colors", item.read ? "bg-transparent" : "bg-primary/10")}><div className="flex gap-3"><span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary"><Info className="size-3.5" /></span><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className="text-sm font-medium">{item.title}</p><time className="shrink-0 text-[11px] text-muted-foreground">{formatTime(item.createdAt)}</time></div>{item.description ? <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{item.description}</p> : null}{item.action ? <button type="button" className="mt-2 text-xs font-semibold text-primary hover:underline" onClick={() => { item.action?.onClick(); setItems((current) => current.map((currentItem) => currentItem.id === item.id ? { ...currentItem, read: true } : currentItem)); }}>{item.action.label}</button> : null}</div></div></div>) : <div className="px-5 py-10 text-center"><Bell className="mx-auto mb-3 size-7 text-muted-foreground/50" /><p className="text-sm font-medium">Tudo em dia</p><p className="mt-1 text-xs text-muted-foreground">As próximas atualizações aparecerão aqui.</p></div>}</div></section> : null}</div></NotificationsContext.Provider>;
 }
 
-export function useNotifications() { const context = useContext(NotificationsContext); if (!context) throw new Error("useNotifications must be used within NotificationProvider"); return context; }
+export function useNotifications() {
+  const context = useContext(NotificationsContext);
+  if (!context) throw new Error("useNotifications must be used within NotificationProvider");
+  return context;
+}

@@ -89,7 +89,7 @@ export function TaskFilters({
         </label>
 
         <label className="relative group flex-1 min-w-[110px] lg:min-w-[130px]">
-          <span className="sr-only">Filtrar por tag</span>
+          <span className="sr-only">Filtrar por etiqueta</span>
           <CustomSelect
             value={value.categoryId ?? "all"}
             onChange={(val) => onChange({ ...value, categoryId: val })}

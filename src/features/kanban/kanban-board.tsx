@@ -28,7 +28,7 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { notify } from "@/providers/notification-provider";
 
 import { KanbanColumnView } from "@/features/kanban/kanban-column";

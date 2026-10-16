@@ -1,81 +1,60 @@
 "use client";
 
 import { Grid2x2, Columns3, List } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type TaskView = "list" | "kanban" | "matrix";
+export type TaskView = "list" | "kanban" | "matrix";
 
-function SwitcherInner({ activeView }: { activeView: TaskView }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  
-  const createQueryString = (name: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set(name, value);
-    return params.toString();
-  };
+const views = [
+  { value: "list", label: "Lista", icon: List },
+  { value: "kanban", label: "Kanban", icon: Columns3 },
+  { value: "matrix", label: "Matriz", icon: Grid2x2 },
+] as const;
 
-  const listHref = `${pathname}?${createQueryString("layout", "list")}`;
-  const kanbanHref = `${pathname}?${createQueryString("layout", "kanban")}`;
-  const matrixHref = `${pathname}?${createQueryString("layout", "matrix")}`;
+// Switching views is instant client state; the URL is only updated so a
+// reload or shared link opens the same view.
+export function TaskViewSwitcher({
+  activeView,
+  onChange,
+}: {
+  activeView: TaskView;
+  onChange: (view: TaskView) => void;
+}) {
+  function select(view: TaskView) {
+    onChange(view);
+    const url = new URL(window.location.href);
+    url.searchParams.set("layout", view);
+    window.history.replaceState(window.history.state, "", url);
+  }
 
   return (
     <div
-      className="flex rounded-md border border-border bg-muted/40 p-1"
+      className="relative flex rounded-full border border-border bg-muted/40 p-1"
       role="group"
       aria-label="Visualização das tarefas"
     >
-      <Link
-        href={listHref}
-        aria-current={activeView === "list" ? "page" : undefined}
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "min-h-8 gap-1.5 px-2.5 max-[400px]:px-2",
-          activeView === "list" && "bg-background shadow-sm hover:bg-background",
-        )}
-      >
-        <List className="size-3.5" aria-hidden="true" />
-        <span className="max-[400px]:sr-only">Lista</span>
-      </Link>
-      <Link
-        href={kanbanHref}
-        aria-current={activeView === "kanban" ? "page" : undefined}
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "min-h-8 gap-1.5 px-2.5 max-[400px]:px-2",
-          activeView === "kanban" &&
-            "bg-background shadow-sm hover:bg-background",
-        )}
-      >
-        <Columns3 className="size-3.5" aria-hidden="true" />
-        <span className="max-[400px]:sr-only">Kanban</span>
-      </Link>
-      <Link
-        href={matrixHref}
-        aria-current={activeView === "matrix" ? "page" : undefined}
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "min-h-8 gap-1.5 px-2.5 max-[400px]:px-2",
-          activeView === "matrix" &&
-            "bg-background shadow-sm hover:bg-background",
-        )}
-      >
-        <Grid2x2 className="size-3.5" aria-hidden="true" />
-        <span className="max-[400px]:sr-only">Matriz</span>
-      </Link>
+      {views.map(({ value, label, icon: Icon }) => {
+        const active = activeView === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            onClick={() => select(value)}
+            aria-pressed={active}
+            aria-label={label}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "min-h-8 gap-1.5 rounded-full px-2.5 transition-all duration-300 max-[400px]:px-2",
+              active && "bg-background text-foreground shadow-sm hover:bg-background",
+            )}
+          >
+            <Icon className="size-3.5" aria-hidden="true" />
+            <span className="max-[400px]:sr-only">{label}</span>
+          </button>
+        );
+      })}
     </div>
-  );
-}
-
-export function TaskViewSwitcher({ activeView }: { activeView: TaskView }) {
-  return (
-    <Suspense fallback={<div className="h-10 w-40 bg-muted rounded-md animate-pulse" />}>
-      <SwitcherInner activeView={activeView} />
-    </Suspense>
   );
 }

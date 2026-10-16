@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { NetworkStatus } from "@/components/ui/network-status";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
-import { ToastProvider } from "@/providers/toast-provider";
 import { NotificationProvider } from "@/providers/notification-provider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -14,8 +13,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/sw.js")
-        .then((reg) => console.log("Service Worker registered.", reg))
-        .catch((err) => console.error("Service Worker registration failed.", err));
+        .catch(() => {
+          // Offline support and push are optional; the app works without them.
+        });
     }
   }, []);
 
@@ -29,7 +29,6 @@ export function AppProviders({ children }: { children: ReactNode }) {
     >
       <QueryProvider><NotificationProvider>{children}</NotificationProvider></QueryProvider>
       <NetworkStatus />
-      <ToastProvider />
     </ThemeProvider>
   );
 }

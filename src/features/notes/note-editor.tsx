@@ -39,7 +39,7 @@ import {
   type ErrorInfo,
   type ReactNode,
 } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { notify } from "@/providers/notification-provider";
 
 import {
@@ -499,7 +499,7 @@ function TextNoteEditor({ note }: { note: Note }) {
                 ))
               ) : (
                 <p className="px-2 py-1 text-xs text-muted-foreground">
-                  Nenhuma tag
+                  Nenhuma etiqueta
                 </p>
               )}
             </div>

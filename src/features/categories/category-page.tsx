@@ -51,7 +51,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
         onSuccess: () => {
           setDraftName(null);
           setEditing(false);
-          notify("Tag renomeada");
+          notify("Etiqueta renomeada");
         },
       },
     );
@@ -62,7 +62,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
     deleteMutation.mutate(category.id, {
       onSuccess: () => {
         router.push("/app");
-        notify("Tag movida para a lixeira", {
+        notify("Etiqueta movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(category.id),
@@ -86,7 +86,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
     return (
       <EmptyState
         icon={<Tag className="size-5" aria-hidden="true" />}
-        title="Tag não encontrada."
+        title="Etiqueta não encontrada."
         description="Ela pode ter sido excluída ou você não tem acesso a ela."
         action={
           <Link
@@ -110,7 +110,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
           <Input
             value={name}
             onChange={(event) => setDraftName(event.target.value)}
-            aria-label="Nome da tag"
+            aria-label="Nome da etiqueta"
             autoFocus
           />
           <Button
@@ -145,7 +145,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
               {category.name}
             </div>
           }
-          description={`Tag · ${tasksQuery.data?.length ?? 0} ${tasksQuery.data?.length === 1 ? "tarefa marcada" : "tarefas marcadas"}`}
+          description={`Etiqueta · ${tasksQuery.data?.length ?? 0} ${tasksQuery.data?.length === 1 ? "tarefa marcada" : "tarefas marcadas"}`}
           actions={
             <>
               <Button
@@ -166,7 +166,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
                 onClick={removeCategory}
                 loading={deleteMutation.isPending}
                 className="text-muted-foreground hover:text-destructive"
-                aria-label="Mover tag para a lixeira"
+                aria-label="Mover etiqueta para a lixeira"
               >
                 <Trash2 className="size-4" aria-hidden="true" />
               </Button>
@@ -189,8 +189,8 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
             loading={tasksQuery.isLoading}
             error={tasksQuery.error}
             onRetry={() => tasksQuery.refetch()}
-            emptyTitle="Nenhuma tarefa usa esta tag."
-            emptyDescription="Quando você marcar uma tarefa com esta tag, ela aparecerá aqui."
+            emptyTitle="Nenhuma tarefa usa esta etiqueta."
+            emptyDescription="Quando você marcar uma tarefa com esta etiqueta, ela aparecerá aqui."
           />
         </section>
       </div>

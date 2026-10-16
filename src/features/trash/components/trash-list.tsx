@@ -33,7 +33,7 @@ interface TrashListProps {
 const kindLabels: Record<TrashItemKind, string> = {
   task: "Tarefa",
   folder: "Pasta",
-  category: "Tag",
+  category: "Etiqueta",
   note: "Nota",
   board: "Quadro",
   column: "Coluna",
