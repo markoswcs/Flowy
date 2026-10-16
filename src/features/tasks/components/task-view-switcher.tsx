@@ -35,38 +35,38 @@ function SwitcherInner({ activeView }: { activeView: TaskView }) {
         aria-current={activeView === "list" ? "page" : undefined}
         className={cn(
           buttonVariants({ variant: "ghost", size: "sm" }),
-          "min-h-8 gap-1.5 px-2.5",
+          "min-h-8 gap-1.5 px-2.5 max-[400px]:px-2",
           activeView === "list" && "bg-background shadow-sm hover:bg-background",
         )}
       >
         <List className="size-3.5" aria-hidden="true" />
-        Lista
+        <span className="max-[400px]:sr-only">Lista</span>
       </Link>
       <Link
         href={kanbanHref}
         aria-current={activeView === "kanban" ? "page" : undefined}
         className={cn(
           buttonVariants({ variant: "ghost", size: "sm" }),
-          "min-h-8 gap-1.5 px-2.5",
+          "min-h-8 gap-1.5 px-2.5 max-[400px]:px-2",
           activeView === "kanban" &&
             "bg-background shadow-sm hover:bg-background",
         )}
       >
         <Columns3 className="size-3.5" aria-hidden="true" />
-        Kanban
+        <span className="max-[400px]:sr-only">Kanban</span>
       </Link>
       <Link
         href={matrixHref}
         aria-current={activeView === "matrix" ? "page" : undefined}
         className={cn(
           buttonVariants({ variant: "ghost", size: "sm" }),
-          "min-h-8 gap-1.5 px-2.5",
+          "min-h-8 gap-1.5 px-2.5 max-[400px]:px-2",
           activeView === "matrix" &&
             "bg-background shadow-sm hover:bg-background",
         )}
       >
         <Grid2x2 className="size-3.5" aria-hidden="true" />
-        Matriz
+        <span className="max-[400px]:sr-only">Matriz</span>
       </Link>
     </div>
   );

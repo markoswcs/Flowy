@@ -5,17 +5,27 @@ import type { MindElixirData, MindElixirInstance, NodeObj } from "mind-elixir";
 import { pt } from "mind-elixir/i18n";
 import "mind-elixir/style.css";
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
+  ChevronsDownUp,
+  Crosshair,
   Download,
   GitBranchPlus,
+  GitFork,
   ListPlus,
   Maximize2,
+  Network,
+  Palette,
+  PencilLine,
   Redo2,
   Spline,
   SquareDashedBottom,
   Trash2,
   Undo2,
   X,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -23,12 +33,20 @@ import { toast } from "sonner";
 
 import { useSaveNote, useTrashNote } from "@/features/notes/use-notes";
 import { useOnlineStatus } from "@/hooks/use-online-status";
+import { ORGANIZER_COLORS } from "@/lib/color-palette";
 import { cn } from "@/lib/utils";
 import type { Note } from "@/types/content";
 
 type SaveStatus = "saved" | "saving" | "offline" | "error";
 
 const SAVE_DELAY = 800;
+const ZOOM_STEP = 0.2;
+
+const LAYOUTS = [
+  { label: "Dos dois lados", apply: (mind: MindElixirInstance) => mind.initSide() },
+  { label: "Para a direita", apply: (mind: MindElixirInstance) => mind.initRight() },
+  { label: "Para a esquerda", apply: (mind: MindElixirInstance) => mind.initLeft() },
+] as const;
 
 function starterMap(title: string): MindElixirData {
   const data = MindElixir.new(title.trim() || "Ideia central");
@@ -120,6 +138,9 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
   const [title, setTitle] = useState(note.title);
   const [status, setStatus] = useState<SaveStatus>("saved");
   const [linking, setLinking] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const layoutIndex = useRef(0);
   const titleRef = useRef(title);
 
   useEffect(() => {
@@ -164,8 +185,15 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
       allowUndo: true,
       theme: flowyTheme(isDarkTheme()),
     });
-    mind.init(parseMap(note.mindmap_data, note.title));
+    const initialData = parseMap(note.mindmap_data, note.title);
+    mind.init(initialData);
     mindRef.current = mind;
+    layoutIndex.current =
+      initialData.direction === MindElixir.RIGHT
+        ? 1
+        : initialData.direction === MindElixir.LEFT
+          ? 2
+          : 0;
     const fitFrame = window.requestAnimationFrame(() => {
       mind.scaleFit();
       if (mind.scaleVal > 1) mind.scale(1);
@@ -227,6 +255,60 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
       return;
     }
     action(mind);
+  }
+
+  function setNodeColor(color: string | null) {
+    setPaletteOpen(false);
+    withSelection((mind) => {
+      // Mind Elixir merges styles, so empty values are what clear a color.
+      void mind.reshapeNode(mind.currentNode!, {
+        style: color
+          ? { background: color, color: "#0b0b0f" }
+          : { background: "", color: "" },
+      });
+    });
+  }
+
+  function toggleCollapse() {
+    withSelection((mind) => {
+      const node = mind.currentNode!;
+      if (!node.nodeObj.children?.length) {
+        toast("Esse tópico não tem filhos para recolher.");
+        return;
+      }
+      mind.expandNode(node, node.nodeObj.expanded === false);
+      scheduleSave();
+    });
+  }
+
+  function toggleFocus() {
+    const mind = mindRef.current;
+    if (!mind) return;
+    if (focused) {
+      mind.cancelFocus();
+      setFocused(false);
+      return;
+    }
+    withSelection((current) => {
+      current.focusNode(current.currentNode!);
+      setFocused(true);
+    });
+  }
+
+  function cycleLayout() {
+    const mind = mindRef.current;
+    if (!mind) return;
+    layoutIndex.current = (layoutIndex.current + 1) % LAYOUTS.length;
+    const layout = LAYOUTS[layoutIndex.current] ?? LAYOUTS[0];
+    layout.apply(mind);
+    toast(`Layout: ${layout.label.toLowerCase()}`);
+    scheduleSave();
+  }
+
+  function zoom(delta: number) {
+    const mind = mindRef.current;
+    if (!mind) return;
+    mind.scale(Math.min(3, Math.max(0.2, mind.scaleVal + delta)));
   }
 
   function startLinking() {
@@ -341,67 +423,157 @@ export default function MindmapNoteEditor({ note }: { note: Note }) {
           </div>
         ) : null}
 
+        {paletteOpen ? (
+          <div
+            className="absolute inset-x-2 bottom-24 z-10 mx-auto flex max-w-sm flex-wrap justify-center gap-2 rounded-2xl border border-border/70 bg-card p-3 shadow-xl sm:bottom-28"
+            role="group"
+            aria-label="Cor do tópico"
+          >
+            {ORGANIZER_COLORS.map((color) => (
+              <button
+                key={color.value}
+                type="button"
+                onClick={() => setNodeColor(color.value)}
+                className="size-8 rounded-full border border-border/60 transition-transform hover:scale-110 active:scale-95"
+                style={{ backgroundColor: color.value }}
+                aria-label={`Cor ${color.name}`}
+                title={color.name}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => setNodeColor(null)}
+              className="grid size-8 place-items-center rounded-full border border-border/60 text-muted-foreground hover:text-foreground"
+              aria-label="Remover cor"
+              title="Sem cor"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        ) : null}
+
         <nav
           aria-label="Ferramentas do mapa mental"
-          className="safe-bottom absolute inset-x-2 bottom-2 flex items-center gap-1 overflow-x-auto rounded-2xl border border-border/70 bg-card/95 p-1.5 shadow-xl backdrop-blur [scrollbar-width:none] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2"
+          className="safe-bottom absolute inset-x-2 bottom-2 flex items-center rounded-2xl border border-border/70 bg-card/95 p-1.5 shadow-xl backdrop-blur sm:inset-x-auto sm:bottom-6 sm:left-1/2 sm:max-w-[calc(100%-3rem)] sm:-translate-x-1/2"
         >
-          <ToolButton
-            label="Filho"
-            onClick={() => withSelection((mind) => void mind.addChild())}
-          >
-            <GitBranchPlus className="size-4" />
-          </ToolButton>
-          <ToolButton
-            label="Irmão"
-            onClick={() =>
-              withSelection((mind) => void mind.insertSibling("after"))
-            }
-          >
-            <ListPlus className="size-4" />
-          </ToolButton>
-          <ToolButton label="Ligar" onClick={startLinking} active={linking}>
-            <Spline className="size-4" />
-          </ToolButton>
-          <ToolButton
-            label="Resumo"
-            onClick={() => withSelection((mind) => mind.createSummary())}
-          >
-            <SquareDashedBottom className="size-4" />
-          </ToolButton>
-          <ToolButton
-            label="Centralizar"
-            onClick={() => mindRef.current?.scaleFit()}
-          >
-            <Maximize2 className="size-4" />
-          </ToolButton>
-          <ToolButton label="Desfazer" onClick={() => mindRef.current?.undo()}>
-            <Undo2 className="size-4" />
-          </ToolButton>
-          <ToolButton label="Refazer" onClick={() => mindRef.current?.redo()}>
-            <Redo2 className="size-4" />
-          </ToolButton>
-          <ToolButton
-            label="Excluir"
-            onClick={() =>
-              withSelection((mind) => {
-                if (mind.currentNode?.nodeObj.parent === undefined) {
-                  toast("O tópico central não pode ser excluído.");
-                  return;
-                }
-                void mind.removeNodes(mind.currentNodes);
-              })
-            }
-          >
-            <Trash2 className="size-4" />
-          </ToolButton>
-          <span className="contents sm:hidden">
-            <ToolButton label="Exportar" onClick={exportImage}>
-              <Download className="size-4" />
+          {/* Undo/redo stay pinned so they never scroll out of view on phones. */}
+          <div className="flex shrink-0 items-center gap-1 border-r border-border/70 pr-1">
+            <ToolButton label="Desfazer" onClick={() => mindRef.current?.undo()}>
+              <Undo2 className="size-4" />
             </ToolButton>
-            <ToolButton label="Lixeira" onClick={() => void handleTrash()}>
-              <Trash2 className="size-4 text-destructive" />
+            <ToolButton label="Refazer" onClick={() => mindRef.current?.redo()}>
+              <Redo2 className="size-4" />
             </ToolButton>
-          </span>
+          </div>
+          <div className="flex min-w-0 items-center gap-1 overflow-x-auto pl-1 [scrollbar-width:none]">
+            <ToolButton
+              label="Filho"
+              onClick={() => withSelection((mind) => void mind.addChild())}
+            >
+              <GitBranchPlus className="size-4" />
+            </ToolButton>
+            <ToolButton
+              label="Irmão"
+              onClick={() =>
+                withSelection((mind) => void mind.insertSibling("after"))
+              }
+            >
+              <ListPlus className="size-4" />
+            </ToolButton>
+            <ToolButton
+              label="Pai"
+              onClick={() =>
+                withSelection((mind) => {
+                  if (mind.currentNode?.nodeObj.parent === undefined) {
+                    toast("O tópico central não pode ganhar um pai.");
+                    return;
+                  }
+                  void mind.insertParent();
+                })
+              }
+            >
+              <GitFork className="size-4" />
+            </ToolButton>
+            <ToolButton
+              label="Editar"
+              onClick={() => withSelection((mind) => void mind.beginEdit())}
+            >
+              <PencilLine className="size-4" />
+            </ToolButton>
+            <ToolButton
+              label="Cor"
+              active={paletteOpen}
+              onClick={() =>
+                withSelection(() => setPaletteOpen((open) => !open))
+              }
+            >
+              <Palette className="size-4" />
+            </ToolButton>
+            <ToolButton
+              label="Subir"
+              onClick={() => withSelection((mind) => void mind.moveUpNode())}
+            >
+              <ArrowUp className="size-4" />
+            </ToolButton>
+            <ToolButton
+              label="Descer"
+              onClick={() => withSelection((mind) => void mind.moveDownNode())}
+            >
+              <ArrowDown className="size-4" />
+            </ToolButton>
+            <ToolButton label="Recolher" onClick={toggleCollapse}>
+              <ChevronsDownUp className="size-4" />
+            </ToolButton>
+            <ToolButton label="Ligar" onClick={startLinking} active={linking}>
+              <Spline className="size-4" />
+            </ToolButton>
+            <ToolButton
+              label="Resumo"
+              onClick={() => withSelection((mind) => mind.createSummary())}
+            >
+              <SquareDashedBottom className="size-4" />
+            </ToolButton>
+            <ToolButton label="Foco" onClick={toggleFocus} active={focused}>
+              <Crosshair className="size-4" />
+            </ToolButton>
+            <ToolButton label="Layout" onClick={cycleLayout}>
+              <Network className="size-4" />
+            </ToolButton>
+            <ToolButton label="Diminuir" onClick={() => zoom(-ZOOM_STEP)}>
+              <ZoomOut className="size-4" />
+            </ToolButton>
+            <ToolButton label="Aumentar" onClick={() => zoom(ZOOM_STEP)}>
+              <ZoomIn className="size-4" />
+            </ToolButton>
+            <ToolButton
+              label="Centralizar"
+              onClick={() => mindRef.current?.scaleFit()}
+            >
+              <Maximize2 className="size-4" />
+            </ToolButton>
+            <ToolButton
+              label="Excluir"
+              onClick={() =>
+                withSelection((mind) => {
+                  if (mind.currentNode?.nodeObj.parent === undefined) {
+                    toast("O tópico central não pode ser excluído.");
+                    return;
+                  }
+                  void mind.removeNodes(mind.currentNodes);
+                })
+              }
+            >
+              <Trash2 className="size-4" />
+            </ToolButton>
+            <span className="contents sm:hidden">
+              <ToolButton label="Exportar" onClick={exportImage}>
+                <Download className="size-4" />
+              </ToolButton>
+              <ToolButton label="Lixeira" onClick={() => void handleTrash()}>
+                <Trash2 className="size-4 text-destructive" />
+              </ToolButton>
+            </span>
+          </div>
         </nav>
       </div>
     </div>

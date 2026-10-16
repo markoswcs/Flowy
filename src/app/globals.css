@@ -335,6 +335,14 @@
     }
   }
 
+  /* On desktop the canvas reaches the bottom of the window; lift the footer
+     tools (zoom, undo/redo, help) so they don't hug the screen edge. */
+  @media (min-width: 901px) {
+    .flowy-excalidraw .App-menu_bottom {
+      bottom: 1.75rem;
+    }
+  }
+
   .flowy-excalidraw .flowy-menu-item-danger,
   .flowy-excalidraw .flowy-menu-item-danger svg {
     color: hsl(var(--destructive)) !important;

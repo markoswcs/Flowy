@@ -346,10 +346,17 @@ export function Sidebar({
           <div className="flex flex-col items-center gap-3">
             <Link
               href="/app/settings"
-              className="flex size-9 items-center justify-center rounded-full bg-accent text-[11px] font-bold shadow-soft focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={onNavigate}
+              className="flex size-9 items-center justify-center rounded-full bg-accent bg-cover bg-center text-[11px] font-bold shadow-soft focus-visible:ring-2 focus-visible:ring-ring"
+              style={
+                user.avatarUrl
+                  ? { backgroundImage: `url(${user.avatarUrl})` }
+                  : undefined
+              }
               title={user.name}
+              aria-label={`Configurações de ${user.name}`}
             >
-              {getInitials(user.name)}
+              {user.avatarUrl ? null : getInitials(user.name)}
             </Link>
             {!mobile ? (
               <Button

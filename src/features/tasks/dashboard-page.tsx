@@ -151,30 +151,30 @@ export function DashboardPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
-      <header className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-6 flex-1">
-          <div className="group flex flex-col gap-1.5 transition-all duration-300">
-            <h1 className="flex items-center gap-3 text-3xl sm:text-4xl font-bold tracking-tight">
+    <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-6">
+      <header className="relative flex flex-col gap-3 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0 flex-1 space-y-3 sm:space-y-6">
+          <div className="group flex min-w-0 flex-col gap-1 transition-all duration-300 sm:gap-1.5">
+            <h1 className="flex min-w-0 items-center gap-2.5 text-2xl font-bold tracking-tight sm:gap-3 sm:text-4xl">
               <span className={cn(
-                "flex items-center justify-center p-2 rounded-2xl bg-gradient-to-br shadow-lg transition-all duration-500 group-hover:scale-110 group-hover:rotate-12",
+                "flex shrink-0 items-center justify-center rounded-xl p-1.5 bg-gradient-to-br shadow-lg transition-all duration-500 group-hover:scale-110 group-hover:rotate-12 sm:rounded-2xl sm:p-2",
                 gradient,
                 "text-white"
               )}>
-                <TimeIcon className="size-6 sm:size-7 animate-in zoom-in duration-700" />
+                <TimeIcon className="size-5 sm:size-7 animate-in zoom-in duration-700" />
               </span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 transition-all duration-500 group-hover:to-foreground/90">
+              <span className="min-w-0 truncate bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 transition-all duration-500 group-hover:to-foreground/90">
                 {greeting}, {firstName}
               </span>
             </h1>
-            <p className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground/80 pl-1 animate-in fade-in slide-in-from-left-2 duration-700 delay-150">
-              <Sparkles className="size-4 text-primary/60" />
-              {phrase}
+            <p className="flex min-w-0 items-center gap-2 pl-1 text-xs text-muted-foreground/80 animate-in fade-in slide-in-from-left-2 duration-700 delay-150 sm:text-base">
+              <Sparkles className="size-3.5 shrink-0 text-primary/60 sm:size-4" />
+              <span className="truncate sm:whitespace-normal">{phrase}</span>
             </p>
           </div>
           
-          <div className="pt-2">
-            <div className="scrollbar-none -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap" role="group" aria-label="Período">
+          <div className="sm:pt-2">
+            <div className="grid grid-cols-5 gap-1 sm:flex sm:flex-wrap sm:gap-2" role="group" aria-label="Período">
               {scopes.map((scope) => {
                 const selected = (filters.scope ?? "all") === scope.value;
                 const Icon = scope.icon;
@@ -185,12 +185,12 @@ export function DashboardPage({
                     aria-pressed={selected}
                     onClick={() => setFilters({ ...filters, scope: scope.value })}
                     className={cn(
-                      "flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95",
+                      "flex min-w-0 flex-col items-center gap-1 rounded-2xl px-1 py-1.5 text-[11px] leading-tight transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:shrink-0 sm:flex-row sm:gap-2 sm:rounded-full sm:px-4 sm:py-2 sm:text-sm",
                       selected ? scope.activeClass : cn("text-muted-foreground", scope.bgClass)
                     )}
                   >
-                    <Icon className={cn("size-4", selected ? "" : scope.colorClass)} />
-                    {scope.label}
+                    <Icon className={cn("size-4 shrink-0", selected ? "" : scope.colorClass)} />
+                    <span className="max-w-full truncate">{scope.label}</span>
                   </button>
                 );
               })}
@@ -198,7 +198,7 @@ export function DashboardPage({
           </div>
         </div>
 
-        <div className="scrollbar-none -mx-1 flex max-w-full flex-nowrap items-center justify-start gap-2 overflow-x-auto px-1 pb-2 lg:mx-0 lg:justify-end lg:pb-0">
+        <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto lg:justify-end">
           <Button
             type="button"
             variant="outline"
@@ -215,20 +215,23 @@ export function DashboardPage({
             size="sm"
             onClick={() => setStatusBarOpen(!statusBarOpen)}
             aria-expanded={statusBarOpen}
+            aria-label="Filtros"
             className={cn(
               "shrink-0 rounded-full text-muted-foreground hover:text-foreground",
               statusBarOpen && "bg-primary/10 text-primary",
             )}
           >
             <SlidersHorizontal className="size-4" aria-hidden="true" />
-            Filtros
+            <span className="hidden sm:inline">Filtros</span>
           </Button>
-          <TaskViewSwitcher activeView={initialLayout} />
+          <div className="ml-auto min-w-0 lg:ml-0">
+            <TaskViewSwitcher activeView={initialLayout} />
+          </div>
         </div>
         {notificationsOpen ? <section className="absolute right-0 top-full z-[80] mt-3 w-[380px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-border/60 bg-card/95 shadow-2xl backdrop-blur-2xl"><div className="flex items-center justify-between border-b border-border/50 px-4 py-3"><div><p className="font-semibold">Notificações</p><p className="text-xs text-muted-foreground">Atualizações recentes</p></div><Button type="button" variant="ghost" size="sm" onClick={clearNotifications} disabled={!items.length} className="h-8 rounded-xl px-2 text-xs text-muted-foreground hover:text-destructive"><Trash2 className="size-3.5" />Limpar</Button></div><div className="max-h-[420px] overflow-y-auto p-2">{items.length ? items.map((item) => <div key={item.id} className="mb-1 flex gap-3 rounded-2xl bg-primary/10 p-3"><Info className="mt-0.5 size-4 shrink-0 text-primary" /><div><p className="text-sm font-medium">{item.title}</p>{item.description ? <p className="text-xs text-muted-foreground">{item.description}</p> : null}{item.action ? <button type="button" className="mt-2 text-xs font-semibold text-primary hover:underline" onClick={item.action.onClick}>{item.action.label}</button> : null}</div></div>) : <p className="px-4 py-8 text-center text-sm text-muted-foreground">Tudo em dia.</p>}</div></section> : null}
       </header>
 
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-5">
 
         {/* Search Bar - Always Visible */}
         <div className="relative z-40 flex w-full flex-col gap-3 rounded-3xl border border-white/5 bg-black/20 p-2 backdrop-blur-2xl ring-1 ring-white/10 lg:flex-row lg:items-center lg:rounded-full lg:p-1.5 transition-all duration-500 hover:bg-black/30 hover:ring-white/20">
