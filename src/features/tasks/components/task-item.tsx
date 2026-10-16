@@ -306,9 +306,9 @@ function TaskEditorSheet({ onClose, children }: { onClose: () => void; children:
         type="button"
         aria-label="Fechar edição"
         onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+        className="flowy-glass-scrim absolute inset-0 animate-in fade-in"
       />
-      <div className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[1.75rem] border border-border/60 bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300 sm:rounded-[1.75rem]">
+      <div className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden flowy-glass flowy-glass-strong rounded-t-[1.75rem] border animate-in slide-in-from-bottom-8 duration-300 sm:rounded-[1.75rem]">
         <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30 sm:hidden" aria-hidden="true" />
         <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pt-6">
           {children}

@@ -63,7 +63,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
     >
       <div
         className={cn(
-          "absolute bottom-full mb-5 flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/95 backdrop-blur-xl shadow-xl transition-all duration-300 origin-bottom",
+          "absolute bottom-full mb-5 flex flex-col overflow-hidden flowy-glass flowy-glass-strong rounded-2xl border transition-all duration-300 origin-bottom",
           "left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0 w-[180px]",
           open
             ? "visible translate-y-0 opacity-100 scale-100"

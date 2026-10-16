@@ -208,6 +208,15 @@ export async function deleteAccountAction(formData: FormData) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   await admin.storage.from("avatars").remove([`${user.id}/avatar`]);
+  // Drawing images are personal data too; remove them before the account.
+  const { data: media } = await admin.storage
+    .from("excalidraw-media")
+    .list(user.id, { limit: 1000 });
+  if (media?.length) {
+    await admin.storage
+      .from("excalidraw-media")
+      .remove(media.map((file) => `${user.id}/${file.name}`));
+  }
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) throw new Error(getAuthErrorMessage(error.message));
 

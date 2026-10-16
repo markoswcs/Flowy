@@ -186,8 +186,8 @@ export function TaskCalendar({
       </div>
 
       {editingTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-3xl border border-border/50 bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="flowy-glass-scrim fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md flowy-glass flowy-glass-strong rounded-3xl border p-6 animate-in fade-in zoom-in-95">
             <h3 className="mb-4 text-lg font-bold">Editar Tarefa</h3>
             <TaskEditor
               task={editingTask}

@@ -396,6 +396,25 @@ export function SettingsPage() {
 
         <section
           className="border-t border-border pt-8"
+          aria-labelledby="help-heading"
+        >
+          <h2 id="help-heading" className="text-base font-semibold">
+            Ajuda
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Veja de novo o passo a passo e os atalhos do Flowy.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push("/app?tour=1")}
+            className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-input px-4 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Sparkles className="size-4" /> Rever tutorial
+          </button>
+        </section>
+
+        <section
+          className="border-t border-border pt-8"
           aria-labelledby="account-heading"
         >
           <h2 id="account-heading" className="text-base font-semibold">

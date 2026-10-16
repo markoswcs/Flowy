@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -64,6 +64,7 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const isNoteEditor = /^\/app\/notes\/[^/]+$/.test(pathname);
+  const replayTour = useSearchParams().get("tour") === "1";
   const collapsed = useSyncExternalStore(
     subscribeSidebar,
     getSidebarSnapshot,
@@ -200,7 +201,7 @@ export function AppShell({
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         {!isNoteEditor ? (
-          <header className="flowy-mobile-header relative z-40 flex h-14 shrink-0 items-center justify-between border-b border-border/40 bg-background/80 px-4 backdrop-blur-xl md:hidden">
+          <header className="flowy-mobile-header flowy-glass flowy-glass-strong absolute inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b px-4 md:hidden">
             <Logo className="text-base" />
             {/* Your photo opens the side menu: profile, folders and labels. */}
             <button
@@ -223,7 +224,7 @@ export function AppShell({
             "scrollbar-thin min-w-0 flex-1 overflow-x-hidden",
             isNoteEditor
               ? "overflow-hidden p-0"
-              : "overflow-y-auto overscroll-y-contain px-4 py-5 pb-32 sm:px-6 md:px-8 md:py-12 md:pb-8",
+              : "overflow-y-auto overscroll-y-contain px-4 pb-32 pt-[4.75rem] sm:px-6 md:px-8 md:py-12 md:pb-8",
           )}
         >
           <div
@@ -246,15 +247,19 @@ export function AppShell({
       {!isNoteEditor ? <GlobalCreateButton /> : null}
       <GlobalOrganizer />
       <GlobalInstallPrompt />
-      {showOnboarding && pathname === "/app" ? (
-        <OnboardingTour name={user.name.split(/\s+/)[0] || user.name} />
+      {(showOnboarding || replayTour) && pathname === "/app" ? (
+        <OnboardingTour
+          name={shellUser.name.split(/\s+/)[0] || shellUser.name}
+          replay={replayTour}
+          onClose={replayTour ? () => router.replace("/app") : undefined}
+        />
       ) : null}
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 md:hidden" role="presentation">
           <button
             type="button"
-            className="absolute inset-0 animate-fade-in bg-background/95"
+            className="flowy-glass-scrim absolute inset-0 animate-fade-in"
             aria-label="Fechar menu"
             onClick={closeMobileMenu}
           />

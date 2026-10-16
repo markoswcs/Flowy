@@ -1,5 +1,33 @@
 import type { Config } from "tailwindcss";
 import forms from "@tailwindcss/forms";
+import plugin from "tailwindcss/plugin";
+
+// Enter animations used across the app (`animate-in fade-in zoom-in-95
+// slide-in-from-bottom-4`). They animate the individual `scale`/`translate`
+// properties, so elements centred with `-translate-x-1/2` do not jump.
+const enterAnimations = plugin(({ addUtilities, matchUtilities, theme }) => {
+  addUtilities({
+    ".animate-in": {
+      animation: "flowy-enter 360ms cubic-bezier(0.16, 1, 0.3, 1) both",
+    },
+    ".fade-in": { "--flowy-enter-opacity": "0" },
+    ".zoom-in": { "--flowy-enter-scale": "0.6" },
+  });
+  matchUtilities(
+    { "zoom-in": (value) => ({ "--flowy-enter-scale": value }) },
+    { values: theme("scale") },
+  );
+  const spacing = theme("spacing") as Record<string, string>;
+  matchUtilities(
+    {
+      "slide-in-from-top": (value) => ({ "--flowy-enter-y": `-${value}` }),
+      "slide-in-from-bottom": (value) => ({ "--flowy-enter-y": value }),
+      "slide-in-from-left": (value) => ({ "--flowy-enter-x": `-${value}` }),
+      "slide-in-from-right": (value) => ({ "--flowy-enter-x": value }),
+    },
+    { values: spacing },
+  );
+});
 
 const config: Config = {
   darkMode: "class",
@@ -88,7 +116,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [forms],
+  plugins: [forms, enterAnimations],
 };
 
 export default config;
