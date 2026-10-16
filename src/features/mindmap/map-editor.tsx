@@ -18,6 +18,7 @@ import { useTrashNote } from "@/features/notes/use-notes";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { trackVisualViewport } from "@/lib/visual-viewport";
 import type { Note } from "@/types/content";
 
 const BACK_URL = "/app/notes?tipo=fluxo";
@@ -69,7 +70,11 @@ export default function MapEditor({ note }: { note: Note }) {
 
   useEffect(() => {
     document.body.classList.add("is-flow-editor");
-    return () => document.body.classList.remove("is-flow-editor");
+    const untrack = trackVisualViewport();
+    return () => {
+      untrack();
+      document.body.classList.remove("is-flow-editor");
+    };
   }, []);
 
   // A template picked at creation is saved right away and dropped from the URL.
