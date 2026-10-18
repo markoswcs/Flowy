@@ -1,10 +1,11 @@
 "use client";
 
-import { Home, NotebookPen, Settings, Workflow } from "lucide-react";
+import { Home, Network, NotebookPen, PenTool } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { parseSection, SECTION_HREF } from "@/features/notes/note-sections";
 import { cn } from "@/lib/utils";
 
 function NavItem({
@@ -29,7 +30,9 @@ function NavItem({
       <span
         className={cn(
           "grid h-10 w-14 place-items-center rounded-2xl transition-all duration-300",
-          active ? "bg-violet-500/15 text-violet-400" : "text-muted-foreground hover:text-foreground",
+          active
+            ? "bg-violet-500/15 text-violet-400"
+            : "text-muted-foreground hover:text-foreground",
         )}
       >
         {icon}
@@ -47,7 +50,7 @@ function NavItem({
 
 export function MobileNav() {
   const pathname = usePathname();
-  const noteType = useSearchParams().get("tipo");
+  const section = parseSection(useSearchParams().get("tipo"));
   const onNotes = pathname === "/app/notes";
 
   return (
@@ -57,26 +60,31 @@ export function MobileNav() {
       className="flowy-mobile-nav fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden"
     >
       <div className="grid h-[4.25rem] grid-cols-[1fr_1fr_4.75rem_1fr_1fr] items-center flowy-glass rounded-[2rem] border px-2">
-        <NavItem label="Início" href="/app" active={pathname === "/app"} icon={<Home className="size-5" />} />
+        <NavItem
+          label="Início"
+          href="/app"
+          active={pathname === "/app"}
+          icon={<Home className="size-5" />}
+        />
         <NavItem
           label="Notas"
-          href="/app/notes?tipo=nota"
-          active={onNotes && noteType !== "fluxo"}
+          href={SECTION_HREF.nota}
+          active={onNotes && section === "nota"}
           icon={<NotebookPen className="size-5" />}
         />
         {/* The create button floats in this slot. */}
         <span aria-hidden="true" />
         <NavItem
-          label="Diagramas"
-          href="/app/notes?tipo=fluxo"
-          active={onNotes && noteType === "fluxo"}
-          icon={<Workflow className="size-5" />}
+          label="Mapas"
+          href={SECTION_HREF.mapa}
+          active={onNotes && section === "mapa"}
+          icon={<Network className="size-5" />}
         />
         <NavItem
-          label="Configurações"
-          href="/app/settings"
-          active={pathname === "/app/settings"}
-          icon={<Settings className="size-5" />}
+          label="Desenhos"
+          href={SECTION_HREF.desenho}
+          active={onNotes && section === "desenho"}
+          icon={<PenTool className="size-5" />}
         />
       </div>
     </nav>

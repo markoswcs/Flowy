@@ -9,7 +9,7 @@ import {
   Star,
   Trash2,
   Network,
-  Workflow,
+  PenTool,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,6 +28,13 @@ import {
   useTrashNote,
 } from "@/features/notes/use-notes";
 import { TEMPLATE_PARAM } from "@/features/mindmap/components/constants";
+import {
+  NEW_PARAM,
+  parseSection,
+  SECTION_HREF,
+  SECTION_KIND,
+  type NoteSection,
+} from "@/features/notes/note-sections";
 import { TemplatePicker } from "@/features/mindmap/components/template-picker";
 import type { TemplateId } from "@/features/mindmap/types";
 import type { NoteKind } from "@/types/content";
@@ -37,31 +44,60 @@ const MAP_TITLES: Partial<Record<TemplateId, string>> = {
   org: "Organograma sem título",
 };
 
-const creationOptions = [
+const SECTION_COPY: Record<
+  NoteSection,
   {
-    kind: "text",
-    icon: FileText,
-    title: "Nota",
-    description: "Texto, checklist, links, imagens e desenho.",
+    eyebrow: string;
+    title: string;
+    description: string;
+    create: string;
+    empty: string;
+    emptyHint: string;
+    search: string;
+    notFound: string;
+  }
+> = {
+  nota: {
+    eyebrow: "Espaço de escrita",
+    title: "Notas",
+    description:
+      "Capture ideias, referências e planos em um lugar simples de consultar.",
+    create: "Nova nota",
+    empty: "Sua primeira nota começa aqui",
+    emptyHint:
+      "Crie uma nota para guardar o que importa e retome quando quiser.",
+    search: "Pesquisar notas",
+    notFound: "Nenhuma nota encontrada",
   },
-  {
-    kind: "mindmap",
-    icon: Network,
-    title: "Mapa mental",
-    description: "Ideias em ramos, organograma e linha do tempo. Estilo XMind.",
+  mapa: {
+    eyebrow: "Mapas mentais",
+    title: "Mapas",
+    description:
+      "Organize ideias em ramos, organogramas e linhas do tempo, no estilo XMind.",
+    create: "Novo mapa",
+    empty: "Seu primeiro mapa mental começa aqui",
+    emptyHint: "Comece com um modelo pronto ou do zero.",
+    search: "Pesquisar mapas",
+    notFound: "Nenhum mapa encontrado",
   },
-  {
-    kind: "excalidraw",
-    icon: Workflow,
-    title: "Desenho",
-    description: "Quadro livre para fluxogramas, esboços e diagramas à mão.",
+  desenho: {
+    eyebrow: "Quadro livre",
+    title: "Desenhos",
+    description:
+      "Fluxogramas, esboços e diagramas desenhados à mão, com o Excalidraw.",
+    create: "Novo desenho",
+    empty: "Seu primeiro desenho começa aqui",
+    emptyHint: "Desenhe um fluxograma, um esboço ou o que vier à cabeça.",
+    search: "Pesquisar desenhos",
+    notFound: "Nenhum desenho encontrado",
   },
-] as const satisfies ReadonlyArray<{
-  kind: NoteKind;
-  icon: typeof FileText;
-  title: string;
-  description: string;
-}>;
+};
+
+const SECTION_ICON: Record<NoteSection, typeof FileText> = {
+  nota: FileText,
+  mapa: Network,
+  desenho: PenTool,
+};
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -82,43 +118,19 @@ export function NoteList() {
     id: string;
     title: string;
   } | null>(null);
-  const [creationOpen, setCreationOpen] = useState(false);
-  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const deferredSearch = useDeferredValue(search);
-  const typeFilter = searchParams.get("tipo");
-  const isDiagramView = typeFilter === "fluxo";
-  const pageCopy = isDiagramView
-    ? {
-        eyebrow: "Espaço visual",
-        title: "Mapas e desenhos",
-        description:
-          "Mapas mentais para organizar ideias e desenhos livres para fluxogramas.",
-        create: "Novo",
-        empty: "Seu primeiro mapa ou desenho começa aqui",
-        emptyHint:
-          "Crie um mapa mental ou um desenho para organizar suas ideias.",
-        search: "Pesquisar diagramas",
-      }
-    : {
-        eyebrow: "Espaço de escrita",
-        title: "Notas",
-        description:
-          "Capture ideias, referências e planos em um lugar simples de consultar.",
-        create: "Nova nota",
-        empty: "Sua primeira nota começa aqui",
-        emptyHint:
-          "Crie uma nota para guardar o que importa e retome quando quiser.",
-        search: "Pesquisar notas",
-      };
+  const section = parseSection(searchParams.get("tipo"));
+  const pageCopy = SECTION_COPY[section];
+  const EmptyIcon = SECTION_ICON[section];
+  // "+ Mapa mental" from anywhere lands here with ?novo=1.
+  const templatePickerOpen =
+    pickerOpen || (section === "mapa" && searchParams.has(NEW_PARAM));
 
   const filteredNotes = useMemo(() => {
     const term = deferredSearch.trim().toLocaleLowerCase("pt-BR");
-    const notesByType = (notes.data ?? []).filter((note) =>
-      isDiagramView
-        ? note.kind !== "text"
-        : typeFilter === "nota"
-          ? note.kind === "text"
-          : true,
+    const notesByType = (notes.data ?? []).filter(
+      (note) => note.kind === SECTION_KIND[section],
     );
     if (!term) return notesByType;
 
@@ -127,15 +139,14 @@ export function NoteList() {
         .toLocaleLowerCase("pt-BR")
         .includes(term),
     );
-  }, [deferredSearch, notes.data, typeFilter, isDiagramView]);
+  }, [deferredSearch, notes.data, section]);
 
-  const overlayOpen = creationOpen || Boolean(notePendingDeletion);
+  const overlayOpen = Boolean(notePendingDeletion);
   useEffect(() => {
     if (!overlayOpen) return;
     const release = holdOverlay();
     const close = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      setCreationOpen(false);
       setNotePendingDeletion(null);
     };
     window.addEventListener("keydown", close);
@@ -145,10 +156,14 @@ export function NoteList() {
     };
   }, [overlayOpen]);
 
-  function chooseKind(kind: NoteKind) {
-    if (kind !== "mindmap") return void handleCreate(kind);
-    setCreationOpen(false);
-    setTemplatePickerOpen(true);
+  function startCreate() {
+    if (section === "mapa") return setPickerOpen(true);
+    void handleCreate(SECTION_KIND[section]);
+  }
+
+  function closePicker() {
+    setPickerOpen(false);
+    if (searchParams.has(NEW_PARAM)) router.replace(SECTION_HREF.mapa);
   }
 
   async function handleCreate(kind: NoteKind, template?: TemplateId) {
@@ -162,8 +177,7 @@ export function NoteList() {
               ? "Desenho sem título"
               : undefined,
       });
-      setCreationOpen(false);
-      setTemplatePickerOpen(false);
+      setPickerOpen(false);
       const query = template ? `?${TEMPLATE_PARAM}=${template}` : "";
       router.push(`/app/notes/${note.id}${query}`);
     } catch (error) {
@@ -217,11 +231,7 @@ export function NoteList() {
             {pageCopy.description}
           </p>
         </div>
-        <Button
-          type="button"
-          onClick={() => setCreationOpen(true)}
-          loading={create.isPending}
-        >
+        <Button type="button" onClick={startCreate} loading={create.isPending}>
           <Plus className="size-4" aria-hidden="true" />
           {pageCopy.create}
         </Button>
@@ -236,7 +246,7 @@ export function NoteList() {
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Pesquisar por título ou conteúdo"
+          placeholder={pageCopy.search}
           className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring"
         />
       </label>
@@ -272,10 +282,10 @@ export function NoteList() {
       ) : filteredNotes.length === 0 ? (
         <section className="flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 text-center">
           <span className="grid size-11 place-items-center rounded-lg bg-muted text-muted-foreground">
-            <FileText className="size-5" aria-hidden="true" />
+            <EmptyIcon className="size-5" aria-hidden="true" />
           </span>
           <h2 className="mt-4 text-lg font-semibold">
-            {search ? "Nenhuma nota encontrada" : pageCopy.empty}
+            {search ? pageCopy.notFound : pageCopy.empty}
           </h2>
           <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
             {search
@@ -286,7 +296,7 @@ export function NoteList() {
             <Button
               className="mt-5"
               type="button"
-              onClick={() => setCreationOpen(true)}
+              onClick={startCreate}
               loading={create.isPending}
             >
               <Plus className="size-4" aria-hidden="true" />
@@ -310,7 +320,7 @@ export function NoteList() {
                 <div className="relative pointer-events-none min-w-0">
                   <h2 className="line-clamp-2 text-base font-semibold leading-5 sm:text-lg sm:leading-6">
                     {note.kind === "excalidraw" ? (
-                      <Workflow
+                      <PenTool
                         className="mr-1 inline size-4 text-primary"
                         aria-hidden="true"
                       />
@@ -435,81 +445,12 @@ export function NoteList() {
             document.body,
           )
         : null}
-      {creationOpen
-        ? createPortal(
-            <div
-              className="fixed inset-0 z-[210] flex items-end justify-center sm:items-center sm:p-4"
-              role="presentation"
-            >
-              <button
-                type="button"
-                className="flowy-glass-scrim absolute inset-0 animate-fade-in"
-                aria-label="Fechar"
-                onClick={() => setCreationOpen(false)}
-              />
-              <section
-                className="relative max-h-[92dvh] w-full max-w-2xl animate-in overflow-y-auto overscroll-contain rounded-t-[1.75rem] border p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] flowy-glass flowy-glass-strong fade-in slide-in-from-bottom-6 sm:rounded-3xl sm:p-6"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="create-note-title"
-              >
-                <h2 id="create-note-title" className="text-lg font-semibold">
-                  O que você quer criar?
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Escolha o formato. Você pode mudar o título e a pasta depois.
-                </p>
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  {creationOptions.map((option) => {
-                    const Icon = option.icon;
-                    const highlighted = isDiagramView
-                      ? option.kind !== "text"
-                      : option.kind === "text";
-                    return (
-                      <button
-                        key={option.kind}
-                        type="button"
-                        disabled={create.isPending}
-                        onClick={() => chooseKind(option.kind)}
-                        className={`group flex items-start gap-3 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:flex-col ${
-                          highlighted
-                            ? "border-primary/40 bg-primary/5"
-                            : "border-border"
-                        }`}
-                      >
-                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                          <Icon className="size-5" aria-hidden="true" />
-                        </span>
-                        <span>
-                          <strong className="block">{option.title}</strong>
-                          <span className="mt-1 block text-sm leading-5 text-muted-foreground">
-                            {option.description}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="mt-5 flex justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setCreationOpen(false)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </section>
-            </div>,
-            document.body,
-          )
-        : null}
       {templatePickerOpen ? (
         <TemplatePicker
           title="Novo mapa mental"
           busy={create.isPending}
           onPick={(template) => void handleCreate("mindmap", template)}
-          onClose={() => setTemplatePickerOpen(false)}
+          onClose={closePicker}
         />
       ) : null}
     </div>

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+
+import { parseSection } from "@/features/notes/note-sections";
 
 import type { NavigationItem } from "@/components/shell/navigation";
 import { cn } from "@/lib/utils";
@@ -16,9 +18,14 @@ export function NavLink({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const active =
-    pathname === item.href ||
-    (item.href !== "/app" && pathname.startsWith(`${item.href}/`));
+  const searchParams = useSearchParams();
+  const [path, query] = item.href.split("?");
+  const section = query ? new URLSearchParams(query).get("tipo") : null;
+  const active = section
+    ? pathname === path &&
+      parseSection(searchParams.get("tipo")) === parseSection(section)
+    : pathname === item.href ||
+      (item.href !== "/app" && pathname.startsWith(`${item.href}/`));
   const Icon = item.icon;
 
   return (

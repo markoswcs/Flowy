@@ -17,6 +17,7 @@ import { useOnlineStatus } from "@/hooks/use-online-status";
 import { createClient } from "@/lib/supabase/client";
 import { trackVisualViewport } from "@/lib/visual-viewport";
 import type { Note } from "@/types/content";
+import { SECTION_HREF } from "@/features/notes/note-sections";
 
 const ExcalidrawCanvas = dynamic(
   () =>
@@ -419,7 +420,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
   async function handleTrash() {
     try {
       await trash.mutateAsync(note.id);
-      router.push("/app/notes");
+      router.push(SECTION_HREF.desenho);
     } catch {
       toast.error("Não foi possível excluir o fluxograma.");
     }
@@ -457,7 +458,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
       <header className="flowy-flow-editor-header grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-1 px-2 py-2 sm:mx-auto sm:grid-cols-[2.75rem_minmax(0,1fr)_auto_2.75rem_2.75rem_2.75rem] sm:w-full sm:max-w-[1800px] sm:px-6 sm:py-3">
         <button
           type="button"
-          onClick={() => router.push("/app/notes")}
+          onClick={() => router.push(SECTION_HREF.desenho)}
           className="grid size-11 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
           aria-label="Voltar para notas"
         >

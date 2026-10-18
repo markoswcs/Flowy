@@ -1,11 +1,21 @@
 "use client";
 
-import { CheckSquare, Folder, NotebookPen, Plus, Tag, X } from "lucide-react";
+import {
+  CheckSquare,
+  Folder,
+  Network,
+  NotebookPen,
+  PenTool,
+  Plus,
+  Tag,
+  X,
+} from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "@/lib/toast";
 
+import { NEW_PARAM, SECTION_HREF } from "@/features/notes/note-sections";
 import { useCreateNote } from "@/features/notes/use-notes";
 import { cn } from "@/lib/utils";
 
@@ -42,14 +52,28 @@ export function GlobalCreateButton({ className }: { className?: string }) {
     setOpen(false);
   };
 
-  const handleCreateNote = async () => {
+  const handleCreateNote = async (kind: "text" | "excalidraw" = "text") => {
     setOpen(false);
     try {
-      const note = await createNote.mutateAsync();
+      const note = await createNote.mutateAsync(
+        kind === "excalidraw"
+          ? { kind, title: "Desenho sem título" }
+          : undefined,
+      );
       router.push(`/app/notes/${note.id}`);
     } catch {
-      toast.error("Não foi possível criar a nota.");
+      toast.error(
+        kind === "excalidraw"
+          ? "Não foi possível criar o desenho."
+          : "Não foi possível criar a nota.",
+      );
     }
+  };
+
+  // Maps start from the template picker on the Mapas page.
+  const handleCreateMap = () => {
+    setOpen(false);
+    router.push(`${SECTION_HREF.mapa}&${NEW_PARAM}=1`);
   };
 
   return (
@@ -106,7 +130,30 @@ export function GlobalCreateButton({ className }: { className?: string }) {
             </span>
           </button>
           <button
-            onClick={handleCreateNote}
+            onClick={handleCreateMap}
+            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-emerald-500/10 focus-visible:outline-none"
+          >
+            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500 transition-transform group-active:scale-95">
+              <Network className="size-4" />
+            </div>
+            <span className="text-foreground transition-colors group-hover:text-emerald-500">
+              Mapa mental
+            </span>
+          </button>
+          <button
+            onClick={() => void handleCreateNote("excalidraw")}
+            disabled={createNote.isPending}
+            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-sky-500/10 focus-visible:outline-none disabled:opacity-50"
+          >
+            <div className="flex size-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-500 transition-transform group-active:scale-95">
+              <PenTool className="size-4" />
+            </div>
+            <span className="text-foreground transition-colors group-hover:text-sky-500">
+              Desenho
+            </span>
+          </button>
+          <button
+            onClick={() => void handleCreateNote()}
             disabled={createNote.isPending}
             className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-orange-500/10 focus-visible:outline-none disabled:opacity-50"
           >
@@ -125,7 +172,9 @@ export function GlobalCreateButton({ className }: { className?: string }) {
         onClick={() => setOpen(!open)}
         className={cn(
           "group relative flex size-[3.6rem] items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 shadow-[0_10px_30px_-6px_rgb(124_58_237/0.75)] ring-[5px] ring-background md:ring-1 md:ring-white/20 transition-all duration-300 active:scale-90 md:size-16 md:rounded-[1.4rem] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/50",
-          open ? "rotate-45" : "hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-6px_rgb(124_58_237/0.85)]",
+          open
+            ? "rotate-45"
+            : "hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-6px_rgb(124_58_237/0.85)]",
         )}
         aria-label={open ? "Fechar menu" : "Criar novo item"}
       >

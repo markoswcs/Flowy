@@ -1,10 +1,14 @@
 import {
   Home,
-  Settings,
+  Network,
   NotebookPen,
+  PenTool,
+  Settings,
   Trash2,
   type LucideIcon,
 } from "lucide-react";
+
+import { SECTION_HREF } from "@/features/notes/note-sections";
 
 export interface NavigationItem {
   label: string;
@@ -14,7 +18,9 @@ export interface NavigationItem {
 
 export const mainNavigation: NavigationItem[] = [
   { label: "Início", href: "/app", icon: Home },
-  { label: "Notas", href: "/app/notes", icon: NotebookPen },
+  { label: "Notas", href: SECTION_HREF.nota, icon: NotebookPen },
+  { label: "Mapas", href: SECTION_HREF.mapa, icon: Network },
+  { label: "Desenhos", href: SECTION_HREF.desenho, icon: PenTool },
 ];
 
 export const secondaryNavigation: NavigationItem[] = [

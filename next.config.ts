@@ -1,4 +1,27 @@
+import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+
 import type { NextConfig } from "next";
+
+/** Shown at the end of Settings so people can tell which build they run. */
+function buildInfo() {
+  const { version } = JSON.parse(readFileSync("./package.json", "utf8")) as {
+    version: string;
+  };
+  let commit = process.env.VERCEL_GIT_COMMIT_SHA ?? "";
+  if (!commit) {
+    try {
+      commit = execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
+    } catch {
+      commit = "";
+    }
+  }
+  return {
+    NEXT_PUBLIC_APP_VERSION: version,
+    NEXT_PUBLIC_APP_COMMIT: commit.slice(0, 7),
+    NEXT_PUBLIC_APP_BUILT_AT: new Date().toISOString(),
+  };
+}
 
 // Baseline hardening for every response. Scripts are not restricted by CSP
 // here because Next.js injects inline bootstrap scripts; the directives below
@@ -15,7 +38,8 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+    value:
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
   },
   {
     key: "Strict-Transport-Security",
@@ -26,6 +50,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  env: buildInfo(),
   poweredByHeader: false,
   reactStrictMode: true,
   experimental: {
@@ -38,8 +63,14 @@ const nextConfig: NextConfig = {
         // The service worker must always be revalidated so updates reach users.
         source: "/sw.js",
         headers: [
-          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
-          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+          {
+            key: "Content-Type",
+            value: "application/javascript; charset=utf-8",
+          },
         ],
       },
       {
