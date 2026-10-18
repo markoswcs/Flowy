@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Link2, StickyNote } from "lucide-react";
+import { Check, Link2, Plus, StickyNote } from "lucide-react";
 import { memo, useMemo, type CSSProperties } from "react";
 
 import type { PlacedTopic, Topic } from "@/features/mindmap/types";
@@ -18,6 +18,8 @@ export interface TopicNodeHandlers {
   toggleCollapse: (id: string) => void;
   toggleDone: (id: string) => void;
   openNote: (id: string) => void;
+  /** XMind-style "+" next to the selected topic. */
+  addChild: (id: string) => void;
 }
 
 interface TopicNodeProps {
@@ -218,6 +220,57 @@ function CollapseToggle({
       style={{ borderColor: placed.branchColor }}
     >
       {collapsed ? count : "−"}
+    </button>
+  );
+}
+
+// Literal class names so Tailwind generates them (no string interpolation).
+const ADD_HANDLE_POSITION: Record<PlacedTopic["side"], [string, string]> = {
+  right: [
+    "right-0 top-1/2 -translate-y-1/2 translate-x-[calc(100%+8px)]",
+    "right-0 top-1/2 -translate-y-1/2 translate-x-[calc(100%+30px)]",
+  ],
+  left: [
+    "left-0 top-1/2 -translate-y-1/2 -translate-x-[calc(100%+8px)]",
+    "left-0 top-1/2 -translate-y-1/2 -translate-x-[calc(100%+30px)]",
+  ],
+  down: [
+    "bottom-0 left-1/2 -translate-x-1/2 translate-y-[calc(100%+8px)]",
+    "bottom-0 left-1/2 -translate-x-1/2 translate-y-[calc(100%+30px)]",
+  ],
+  up: [
+    "top-0 left-1/2 -translate-x-1/2 -translate-y-[calc(100%+8px)]",
+    "top-0 left-1/2 -translate-x-1/2 -translate-y-[calc(100%+30px)]",
+  ],
+};
+
+function addHandlePosition(side: PlacedTopic["side"], far: boolean): string {
+  const [near, beyond] = ADD_HANDLE_POSITION[side] ?? ADD_HANDLE_POSITION.right;
+  return far ? beyond : near;
+}
+
+function AddChildHandle({
+  side,
+  beyondToggle,
+  onAdd,
+}: {
+  side: PlacedTopic["side"];
+  beyondToggle: boolean;
+  onAdd: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      data-topic-control=""
+      onClick={onAdd}
+      aria-label="Adicionar subtópico (Tab)"
+      title="Adicionar subtópico (Tab)"
+      className={cn(
+        "absolute z-10 grid size-6 animate-in place-items-center rounded-full bg-primary text-primary-foreground shadow-md fade-in zoom-in-50 before:absolute before:-inset-2.5 before:content-[''] hover:scale-110 motion-reduce:transform-none",
+        addHandlePosition(side, beyondToggle),
+      )}
+    >
+      <Plus className="size-3.5" strokeWidth={3} />
     </button>
   );
 }
@@ -446,6 +499,13 @@ function TopicNodeView({
           </div>
         ) : null}
       </div>
+      {selected ? (
+        <AddChildHandle
+          side={placed.side}
+          beyondToggle={hasChildren && placed.depth > 0}
+          onAdd={() => handlers.addChild(topic.id)}
+        />
+      ) : null}
       {hasChildren && placed.depth > 0 ? (
         <CollapseToggle
           topic={topic}

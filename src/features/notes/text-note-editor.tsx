@@ -6,6 +6,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import type { JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import {
   ArrowLeft,
@@ -15,6 +16,7 @@ import {
   Code,
   Ellipsis,
   Folder as FolderIcon,
+  Heading2,
   ImagePlus,
   Italic,
   Link as LinkIcon,
@@ -233,6 +235,41 @@ function Sheet({
   );
 }
 
+/** Shortcuts shown on an empty note (Samsung Notes style). */
+function QuickStarts({
+  onChecklist,
+  onHeading,
+  onImage,
+  onDrawing,
+}: {
+  onChecklist: () => void;
+  onHeading: () => void;
+  onImage: () => void;
+  onDrawing: () => void;
+}) {
+  const items = [
+    { icon: CheckSquare, label: "Checklist", run: onChecklist },
+    { icon: Heading2, label: "Título", run: onHeading },
+    { icon: ImagePlus, label: "Imagem", run: onImage },
+    { icon: PencilLine, label: "Desenho", run: onDrawing },
+  ];
+  return (
+    <div className="mt-6 flex flex-wrap gap-2">
+      {items.map((item) => (
+        <button
+          key={item.label}
+          type="button"
+          onClick={item.run}
+          className="flex min-h-10 items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <item.icon className="flowy-ink size-4" />
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const SHEET_LABEL =
   "mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground";
 
@@ -298,7 +335,7 @@ export function TextNoteEditor({ note }: { note: Note }) {
     content,
     editorProps: {
       attributes: {
-        class: "flowy-editor min-h-[50vh] max-w-none focus:outline-none",
+        class: "flowy-editor min-h-[5rem] max-w-none focus:outline-none",
         "aria-label": "Conteúdo da nota",
       },
     },
@@ -422,6 +459,10 @@ export function TextNoteEditor({ note }: { note: Note }) {
     setLinkValue("");
   }
 
+  function openImagePicker() {
+    imageInput.current?.click();
+  }
+
   async function insertImage(file: File) {
     try {
       const src = await fileToDataUrl(file);
@@ -469,11 +510,16 @@ export function TextNoteEditor({ note }: { note: Note }) {
 
   return (
     <div
-      className="flowy-text-editor min-h-full w-full transition-colors duration-500"
+      className="flowy-text-editor relative min-h-full w-full transition-colors duration-500"
       style={noteColor ? { backgroundColor: noteColor } : undefined}
     >
-      <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-5 pb-36 sm:px-10">
-        <header className="sticky top-0 z-30 -mx-5 flex h-14 items-center gap-1 bg-background/80 px-2 backdrop-blur-xl sm:-mx-10 sm:px-6">
+      {/* Soft wash of the theme colour behind the title, so the page has life. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-primary/[0.12] via-fuchsia-500/[0.04] to-transparent"
+      />
+      <div className="relative mx-auto flex min-h-full w-full max-w-3xl flex-col px-5 pb-36 sm:px-10 md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border/60 md:bg-card/40 md:shadow-[0_30px_80px_-40px_rgb(0_0_0/0.5)] md:backdrop-blur-sm">
+        <header className="sticky top-0 z-30 -mx-5 flex h-14 items-center gap-1 bg-background/70 px-2 backdrop-blur-xl sm:-mx-10 sm:px-6 md:rounded-t-[2rem] md:bg-transparent">
           <button
             type="button"
             onClick={() => router.push(SECTION_HREF.nota)}
@@ -584,14 +630,83 @@ export function TextNoteEditor({ note }: { note: Note }) {
           ))}
         </div>
 
-        <div className="mt-6 flex-1">
+        {/* The empty space below the text keeps focusing the editor. */}
+        <div
+          className="mt-6 flex-1 cursor-text"
+          onMouseDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            event.preventDefault();
+            editor?.commands.focus("end");
+          }}
+        >
           <EditorContent editor={editor} />
+          {editor && editor.isEmpty ? (
+            <QuickStarts
+              onChecklist={() => chain()?.toggleTaskList().run()}
+              onHeading={() => chain()?.toggleHeading({ level: 2 }).run()}
+              onImage={openImagePicker}
+              onDrawing={() => setDrawingOpen(true)}
+            />
+          ) : null}
+          {editor ? (
+            <BubbleMenu
+              editor={editor}
+              options={{ placement: "top", offset: 8 }}
+              className="flowy-glass flowy-glass-strong flex items-center gap-0.5 rounded-2xl border p-1 shadow-xl"
+            >
+              <BarButton
+                icon={Bold}
+                label="Negrito"
+                active={marks.bold}
+                onClick={() => chain()?.toggleBold().run()}
+              />
+              <BarButton
+                icon={Italic}
+                label="Itálico"
+                active={marks.italic}
+                onClick={() => chain()?.toggleItalic().run()}
+              />
+              <BarButton
+                icon={Underline}
+                label="Sublinhado"
+                active={marks.underline}
+                onClick={() => chain()?.toggleUnderline().run()}
+              />
+              <BarButton
+                icon={Strikethrough}
+                label="Riscado"
+                active={marks.strike}
+                onClick={() => chain()?.toggleStrike().run()}
+              />
+              <BarButton
+                icon={Code}
+                label="Código"
+                active={marks.code}
+                onClick={() => chain()?.toggleCode().run()}
+              />
+              <span className="mx-0.5 h-6 w-px bg-border" />
+              <BarButton
+                icon={Heading2}
+                label="Título"
+                active={marks.h2}
+                onClick={() => chain()?.toggleHeading({ level: 2 }).run()}
+              />
+              <BarButton
+                icon={marks.link ? Unlink : LinkIcon}
+                label={marks.link ? "Remover link" : "Adicionar link"}
+                active={marks.link}
+                onClick={() =>
+                  marks.link ? chain()?.unsetLink().run() : setSheet("link")
+                }
+              />
+            </BubbleMenu>
+          ) : null}
         </div>
       </div>
 
       {editor ? (
         <div
-          className="flowy-note-toolbar fixed inset-x-3 z-40 mx-auto max-w-xl"
+          className="flowy-note-toolbar fixed left-1/2 z-40 w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2"
           role="toolbar"
           aria-label="Formatação"
         >
@@ -617,7 +732,7 @@ export function TextNoteEditor({ note }: { note: Note }) {
             <BarButton
               icon={ImagePlus}
               label="Inserir imagem"
-              onClick={() => imageInput.current?.click()}
+              onClick={openImagePicker}
             />
             <BarButton
               icon={PencilLine}

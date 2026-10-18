@@ -195,9 +195,19 @@ function shapeSize(shape: TopicShape, width: number, height: number): Size {
   return { width, height };
 }
 
+/**
+ * XMind's default look: a filled central topic, filled main branches and
+ * subtopics drawn as text on their branch line (no box) in radial, logic and
+ * tree maps. Org charts and timelines keep boxes so they stay readable.
+ */
 export function defaultShape(depth: number, layout: LayoutKind): TopicShape {
   if (layout === "flow") return depth === 0 ? "pill" : "rect";
-  return "rounded";
+  const lined =
+    layout === "mindmap" ||
+    layout === "logic-right" ||
+    layout === "logic-left" ||
+    layout === "tree";
+  return lined && depth >= 2 ? "underline" : "rounded";
 }
 
 export function resolveShape(
