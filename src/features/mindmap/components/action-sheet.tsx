@@ -11,6 +11,10 @@ const ACTIONS: ToolId[] = [
   "edit",
   "format",
   "note",
+  "boundary",
+  "focus",
+  "copy-style",
+  "paste-style",
   "delete",
 ];
 
@@ -36,7 +40,7 @@ export function ActionSheet({ x, y, title, onRun, onClose }: ActionSheetProps) {
   }, [onClose]);
 
   const left = Math.max(8, Math.min(x - 120, window.innerWidth - 248));
-  const top = Math.max(8, Math.min(y + 12, window.innerHeight - 300));
+  const top = Math.max(8, Math.min(y + 12, window.innerHeight - 500));
 
   return (
     <div
@@ -49,7 +53,7 @@ export function ActionSheet({ x, y, title, onRun, onClose }: ActionSheetProps) {
         role="menu"
         aria-label={`Ações para ${title}`}
         onPointerDown={(event) => event.stopPropagation()}
-        className="flowy-glass flowy-glass-strong absolute w-60 animate-scale-in rounded-2xl border p-1.5"
+        className="flowy-glass flowy-glass-strong absolute max-h-[calc(100dvh-1rem)] w-60 animate-scale-in overflow-y-auto rounded-2xl border p-1.5"
         style={{ left, top }}
       >
         <p className="truncate px-3 pb-1 pt-1.5 text-xs font-semibold text-muted-foreground">

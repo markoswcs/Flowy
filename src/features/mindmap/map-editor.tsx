@@ -14,6 +14,7 @@ import {
   useMapDocument,
   type SaveStatus,
 } from "@/features/mindmap/components/use-map-document";
+import { SECTION_HREF } from "@/features/notes/note-sections";
 import { useTrashNote } from "@/features/notes/use-notes";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { toast } from "@/lib/toast";
@@ -21,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { trackVisualViewport } from "@/lib/visual-viewport";
 import type { Note } from "@/types/content";
 
-const BACK_URL = "/app/notes?tipo=fluxo";
+const BACK_URL = SECTION_HREF.mapa;
 
 function isTemplateId(value: string | null): value is TemplateId {
   return TEMPLATES.some((template) => template.id === value);

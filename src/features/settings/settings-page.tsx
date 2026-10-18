@@ -1,5 +1,6 @@
 "use client";
 
+import { AppVersion } from "@/features/settings/app-version";
 import {
   Camera,
   Check,
@@ -470,6 +471,7 @@ export function SettingsPage() {
           </div>
         </section>
       </div>
+      <AppVersion />
     </div>
   );
 }

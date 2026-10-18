@@ -10,11 +10,18 @@ import {
   topicAppearance,
   type TopicAppearance,
 } from "@/features/mindmap/components/appearance";
+import { boundaryRects } from "@/features/mindmap/components/boundaries";
 import { FONT_STACK } from "@/features/mindmap/components/constants";
 import {
+  LABEL_GAP,
+  LABEL_HEIGHT,
   measureTopicBox,
   type TopicBox,
 } from "@/features/mindmap/components/measure";
+import {
+  isOverdue,
+  progressPath,
+} from "@/features/mindmap/components/topic-node";
 import { relationGeometry } from "@/features/mindmap/components/relation-geometry";
 import { floatingTopicIds } from "@/features/mindmap/components/tree-ops";
 
@@ -25,10 +32,15 @@ function escapeXml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 }
 
+function markerFor(color: string): string {
+  return `arrow-${color.replace(/[^a-z0-9]/gi, "")}`;
+}
+
 function shapeSvg(p: PlacedTopic, look: TopicAppearance): string {
   const { x, y, width: w, height: h } = p;
   const stroke = look.border === "transparent" ? "none" : look.border;
-  const attrs = `fill="${look.fill === "transparent" ? "none" : look.fill}" stroke="${stroke}" stroke-width="1.2"`;
+  const dash = look.dashed ? ` stroke-dasharray="6 4"` : "";
+  const attrs = `fill="${look.fill === "transparent" ? "none" : look.fill}" stroke="${stroke}" stroke-width="1.2"${dash}`;
   switch (look.shape) {
     case "diamond":
       return `<polygon points="${x + w / 2},${y} ${x + w},${y + h / 2} ${x + w / 2},${y + h} ${x},${y + h / 2}" ${attrs}/>`;
@@ -61,6 +73,18 @@ function badgesSvg(
     );
     x += 24;
   }
+  if (topic.progress !== undefined) {
+    const v = topic.progress;
+    parts.push(
+      `<circle cx="${x + 9}" cy="${centerY}" r="8" fill="#fff" stroke="#16A34A" stroke-width="1.5"/>` +
+        (v >= 100
+          ? `<circle cx="${x + 9}" cy="${centerY}" r="7" fill="#16A34A"/>`
+          : v > 0
+            ? `<path d="${progressPath(x + 9, centerY, 7, v)}" fill="#16A34A"/>`
+            : ""),
+    );
+    x += 24;
+  }
   if (topic.priority) {
     parts.push(
       `<circle cx="${x + 9}" cy="${centerY}" r="9" fill="${PRIORITY_COLORS[topic.priority]}"/><text x="${x + 9}" y="${centerY + 4}" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">${topic.priority}</text>`,
@@ -75,6 +99,28 @@ function badgesSvg(
   return parts.join("");
 }
 
+function labelsSvg(
+  topic: Topic,
+  box: TopicBox,
+  look: TopicAppearance,
+  p: PlacedTopic,
+  top: number,
+): string {
+  if (!topic.labels?.length) return "";
+  const total =
+    box.labelWidths.reduce((sum, w) => sum + w, 0) +
+    LABEL_GAP * (box.labelWidths.length - 1);
+  let x = p.x + (p.width - total) / 2;
+  return topic.labels
+    .map((label, i) => {
+      const w = box.labelWidths[i] ?? 0;
+      const chip = `<rect x="${x}" y="${top}" width="${w}" height="${LABEL_HEIGHT}" rx="${LABEL_HEIGHT / 2}" fill="${look.color}" fill-opacity="0.12"/><text x="${x + w / 2}" y="${top + 12.5}" font-size="11" font-weight="600" fill="${look.color}" text-anchor="middle">${escapeXml(label)}</text>`;
+      x += w + LABEL_GAP;
+      return chip;
+    })
+    .join("");
+}
+
 function topicSvg(
   topic: Topic,
   p: PlacedTopic,
@@ -84,7 +130,11 @@ function topicSvg(
   const { metrics } = box;
   const contentWidth = box.leading + box.textWidth + box.trailing;
   const startX = p.x + (p.width - contentWidth) / 2;
-  const centerY = p.y + p.height / 2;
+  const labelsHeight = topic.labels?.length ? LABEL_HEIGHT + LABEL_GAP : 0;
+  const rowHeight = Math.max(box.lines.length * metrics.lineHeight, 18);
+  const contentTop =
+    p.y + (p.height - (box.imageHeight + rowHeight + labelsHeight)) / 2;
+  const centerY = contentTop + box.imageHeight + rowHeight / 2;
   const textX = startX + box.leading + box.textWidth / 2;
   const firstBaseline =
     centerY -
@@ -96,11 +146,25 @@ function topicSvg(
         `<tspan x="${textX}" y="${firstBaseline + i * metrics.lineHeight}">${escapeXml(line)}</tspan>`,
     )
     .join("");
-  const decoration = topic.done ? ' text-decoration="line-through"' : "";
+  const decoration =
+    topic.done || topic.style?.strike ? ' text-decoration="line-through"' : "";
+  const italic = metrics.italic ? ' font-style="italic"' : "";
+  const image = topic.image
+    ? `<image href="${escapeXml(topic.image.src)}" x="${p.x + (p.width - topic.image.width) / 2}" y="${contentTop}" width="${topic.image.width}" height="${topic.image.height}"/>`
+    : "";
+  let due = "";
+  if (box.dueLabel) {
+    const dueX = startX + contentWidth - box.dueWidth;
+    const overdue = isOverdue(topic);
+    due = `<rect x="${dueX}" y="${centerY - 9}" width="${box.dueWidth}" height="18" rx="9" fill="${overdue ? "#DC2626" : look.color}" fill-opacity="${overdue ? 1 : 0.12}"/><text x="${dueX + box.dueWidth / 2}" y="${centerY + 4}" font-size="11" font-weight="600" fill="${overdue ? "#fff" : look.color}" text-anchor="middle">${escapeXml(box.dueLabel)}</text>`;
+  }
   return [
     shapeSvg(p, look),
+    image,
     badgesSvg(topic, box, look, startX, centerY),
-    `<text font-size="${metrics.fontSize}" font-weight="${metrics.fontWeight}" fill="${look.color}" text-anchor="middle"${decoration}>${lines}</text>`,
+    `<text font-size="${metrics.fontSize}" font-weight="${metrics.fontWeight}" fill="${look.color}" text-anchor="middle"${decoration}${italic}>${lines}</text>`,
+    due,
+    labelsSvg(topic, box, look, p, centerY + rowHeight / 2 + LABEL_GAP),
   ].join("");
 }
 
@@ -125,6 +189,17 @@ export function buildMapSvg(
         `<path d="${c.path}" stroke="${c.color}" stroke-width="${c.width}" fill="none" stroke-linecap="round"/>`,
     )
     .join("");
+  const boundaries = boundaryRects(doc, layout)
+    .map(
+      (b) =>
+        `<rect x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}" rx="14" fill="${b.color}" fill-opacity="0.07" stroke="${b.color}" stroke-width="1.5" stroke-dasharray="7 5"/>` +
+        (b.label
+          ? `<text x="${b.x + 12}" y="${b.y + 15}" font-size="12" font-weight="700" fill="${b.color}">${escapeXml(b.label)}</text>`
+          : ""),
+    )
+    .join("");
+  const markerColors = new Set([relationColor]);
+  doc.relations.forEach((r) => r.color && markerColors.add(r.color));
   const relations = doc.relations
     .map((relation) => {
       const from = layout.topics.get(relation.from);
@@ -132,10 +207,16 @@ export function buildMapSvg(
       if (!from || !to) return "";
       const g = relationGeometry(relation, from, to, doc.layout);
       const dash = g.dashed ? ' stroke-dasharray="6 5"' : "";
+      const color = relation.color ?? relationColor;
+      const arrows = relation.arrows ?? "end";
+      const marker = `url(#${markerFor(color)})`;
+      const ends =
+        (arrows === "none" ? "" : ` marker-end="${marker}"`) +
+        (arrows === "both" ? ` marker-start="${marker}"` : "");
       const label = relation.label
-        ? `<text x="${g.labelX}" y="${g.labelY - 6}" font-size="12" font-weight="600" fill="${relationColor}" text-anchor="middle" stroke="${background}" stroke-width="4" paint-order="stroke">${escapeXml(relation.label)}</text>`
+        ? `<text x="${g.labelX}" y="${g.labelY - 6}" font-size="12" font-weight="600" fill="${color}" text-anchor="middle" stroke="${background}" stroke-width="4" paint-order="stroke">${escapeXml(relation.label)}</text>`
         : "";
-      return `<path d="${g.path}" stroke="${relationColor}" stroke-width="1.75" fill="none"${dash} marker-end="url(#arrow)"/>${label}`;
+      return `<path d="${g.path}" stroke="${color}" stroke-width="1.75" fill="none"${dash}${ends}/>${label}`;
     })
     .join("");
   const nodes = Array.from(layout.topics.values())
@@ -158,8 +239,9 @@ export function buildMapSvg(
 
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${bounds.x - PADDING} ${bounds.y - PADDING} ${width} ${height}" font-family='${FONT_STACK}'>`,
-    `<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${relationColor}"/></marker></defs>`,
+    `<defs>${[...markerColors].map((color) => `<marker id="${markerFor(color)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join("")}</defs>`,
     `<rect x="${bounds.x - PADDING}" y="${bounds.y - PADDING}" width="${width}" height="${height}" fill="${background}"/>`,
+    boundaries,
     connectors,
     relations,
     nodes,

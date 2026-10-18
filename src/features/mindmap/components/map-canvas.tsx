@@ -18,7 +18,9 @@ import type {
   Topic,
 } from "@/features/mindmap/types";
 import { topicAppearance } from "@/features/mindmap/components/appearance";
+import { boundaryRects } from "@/features/mindmap/components/boundaries";
 import {
+  BoundaryShapes,
   ConnectorPaths,
   RelationPaths,
 } from "@/features/mindmap/components/connector-layer";
@@ -36,7 +38,10 @@ import {
   TopicNode,
   type TopicNodeHandlers,
 } from "@/features/mindmap/components/topic-node";
-import { useCanvasGestures } from "@/features/mindmap/components/use-canvas-gestures";
+import {
+  useCanvasGestures,
+  type MarqueeRect,
+} from "@/features/mindmap/components/use-canvas-gestures";
 import type { ViewportStore } from "@/features/mindmap/components/viewport-store";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +61,7 @@ export interface CanvasHandlers extends TopicNodeHandlers {
   createFloating: (x: number, y: number) => void;
   commitEdit: (id: string, text: string, exit: EditExit) => void;
   cancelEdit: () => void;
+  selectArea: (rect: MarqueeRect, additive: boolean) => void;
 }
 
 interface MapCanvasProps {
@@ -69,6 +75,9 @@ interface MapCanvasProps {
   editing: EditingState | null;
   darkCanvas: boolean;
   linking: boolean;
+  matches: ReadonlySet<string>;
+  /** Large selections skip the animated glow to keep panning smooth. */
+  manySelected: boolean;
   handlers: CanvasHandlers;
 }
 
@@ -136,6 +145,8 @@ export function MapCanvas(props: MapCanvasProps) {
   const worldRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [marquee, setMarquee] = useState<MarqueeRect | null>(null);
+  const boundaries = useMemo(() => boundaryRects(doc, layout), [doc, layout]);
   const topicIndex = useTopicIndex(doc);
   const theme = THEMES[doc.theme] ?? THEMES.flowy;
   const canvasColor = darkCanvas ? theme.canvas.dark : theme.canvas.light;
@@ -158,6 +169,8 @@ export function MapCanvas(props: MapCanvasProps) {
       if (Number.isNaN(x)) return;
       handlers.dropTopic(id, findDropTarget(doc, layout, id, x, y), dx, dy);
     },
+    onMarquee: setMarquee,
+    onMarqueeEnd: handlers.selectArea,
   });
 
   function onDoubleClick(event: MouseEvent<HTMLDivElement>) {
@@ -208,6 +221,7 @@ export function MapCanvas(props: MapCanvasProps) {
         selected={!ghost && selection.has(placed.id)}
         dropping={placed.id === dropParent}
         hidden={!ghost && drag?.id === placed.id}
+        matched={!ghost && props.matches.has(placed.id)}
         handlers={handlers}
       />
     );
@@ -221,6 +235,7 @@ export function MapCanvas(props: MapCanvasProps) {
       role="tree"
       aria-label="Mapa"
       aria-multiselectable="true"
+      data-many-selected={props.manySelected ? "" : undefined}
       tabIndex={-1}
       className={cn(
         "relative h-full w-full touch-none select-none overflow-hidden outline-none [-webkit-touch-callout:none]",
@@ -256,6 +271,7 @@ export function MapCanvas(props: MapCanvasProps) {
           height={1}
           aria-hidden="true"
         >
+          <BoundaryShapes boundaries={boundaries} />
           <ConnectorPaths connectors={layout.connectors} />
           <RelationPaths
             relations={doc.relations}
@@ -291,6 +307,18 @@ export function MapCanvas(props: MapCanvasProps) {
           />
         ) : null}
       </div>
+      {marquee ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute rounded-md border border-primary bg-primary/10"
+          style={{
+            left: marquee.x,
+            top: marquee.y,
+            width: marquee.width,
+            height: marquee.height,
+          }}
+        />
+      ) : null}
     </div>
   );
 }

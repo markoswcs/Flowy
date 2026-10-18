@@ -642,3 +642,46 @@ export function redo(h: MapHistory): MapHistory {
     future: h.future.slice(1),
   };
 }
+
+/** XMind "expand to level": topics deeper than `level` start collapsed. */
+export function expandToLevel(doc: MapDoc, level: number): MapDoc {
+  const apply = <T extends Topic>(t: T, depth: number): T => {
+    const children = t.children.map((c) => apply(c, depth + 1));
+    const next: T = { ...t, children };
+    if (depth > 0 && children.length > 0) next.collapsed = depth >= level;
+    else delete next.collapsed;
+    return next;
+  };
+  return {
+    ...doc,
+    root: apply(doc.root, 0),
+    floating: doc.floating.map((f) => apply(f, 1)),
+  };
+}
+
+/** Expands every collapsed ancestor so `id` becomes visible. */
+export function revealTopic(doc: MapDoc, id: string): MapDoc {
+  return pathTo(doc, id)
+    .slice(0, -1)
+    .reduce(
+      (next, ancestor) =>
+        ancestor.collapsed ? toggleCollapse(next, ancestor.id, false) : next,
+      doc,
+    );
+}
+
+/** Swaps the topic `id` (and its subtree) for `topic`, keeping its place. */
+export function replaceTopic(doc: MapDoc, id: string, topic: Topic): MapDoc {
+  const swap = (t: Topic): Topic => {
+    if (t.id === id) return topic;
+    const children = t.children.map(swap);
+    return children.every((c, i) => c === t.children[i])
+      ? t
+      : { ...t, children };
+  };
+  if (doc.root.id === id) return { ...doc, root: topic };
+  const floating = doc.floating.map((f) =>
+    f.id === id ? { ...topic, x: f.x, y: f.y } : (swap(f) as Floating),
+  );
+  return { ...doc, root: swap(doc.root), floating };
+}

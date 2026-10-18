@@ -27,9 +27,8 @@ export function useViewportControls(
   }
 
   /** Returns false while the canvas has no size yet. */
-  function fit(maxZoom = 1, minZoom = 0): boolean {
+  function fit(maxZoom = 1, minZoom = 0, b = layout.bounds): boolean {
     const { width, height } = size();
-    const b = layout.bounds;
     if (!width || !height) return false;
     const k = clampZoom(
       Math.min(
@@ -38,10 +37,15 @@ export function useViewportControls(
         (height - FIT_PADDING * 2) / Math.max(b.height, 1),
       ),
     );
-    // Text that small is unreadable: keep a floor and centre on the root
-    // (placed around 0,0) so the person can pan out from there.
+    // Text that small is unreadable: keep a zoom floor, still centred on the
+    // whole map so the person can pan from there.
     if (k < minZoom) {
-      store.set({ x: width / 2, y: height / 2, k: clampZoom(minZoom) });
+      const floor = clampZoom(minZoom);
+      store.set({
+        x: width / 2 - (b.x + b.width / 2) * floor,
+        y: height / 2 - (b.y + b.height / 2) * floor,
+        k: floor,
+      });
       return true;
     }
     store.set({
@@ -96,7 +100,7 @@ export function useViewportControls(
 
   const afterLayout = useEffectEvent(() => {
     const phone = size().width < 640;
-    if (pendingFit.current && fit(1, phone ? 0.9 : 0))
+    if (pendingFit.current && fit(1, phone ? 0.5 : 0))
       pendingFit.current = false;
     if (pendingReveal.current) {
       reveal(pendingReveal.current);
@@ -108,8 +112,38 @@ export function useViewportControls(
     afterLayout();
   }, [layout]);
 
+  /** Frames a topic and its visible children (presentation steps). */
+  function frame(id: string) {
+    const placed = layout.topics.get(id);
+    if (!placed) return;
+    let minX = placed.x;
+    let minY = placed.y;
+    let maxX = placed.x + placed.width;
+    let maxY = placed.y + placed.height;
+    for (const p of layout.topics.values()) {
+      if (p.parentId !== id) continue;
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x + p.width);
+      maxY = Math.max(maxY, p.y + p.height);
+    }
+    fit(1.6, 0, { x: minX, y: minY, width: maxX - minX, height: maxY - minY });
+  }
+
+  /** Map coordinates of the middle of the canvas. */
+  function centerPoint() {
+    const { width, height } = size();
+    const view = store.get();
+    return {
+      x: (width / 2 - view.x) / view.k,
+      y: (height / 2 - view.y) / view.k,
+    };
+  }
+
   return {
     fit,
+    frame,
+    centerPoint,
     center,
     zoomBy,
     reveal,

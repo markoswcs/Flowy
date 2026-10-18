@@ -18,6 +18,8 @@ export interface ViewportStore {
   set(next: Viewport): void;
   attach(element: HTMLElement | null, background?: HTMLElement | null): void;
   subscribe(listener: () => void): () => void;
+  /** Fires on every pan or zoom (minimap). */
+  subscribeView(listener: () => void): () => void;
   getZoom(): number;
 }
 
@@ -26,6 +28,7 @@ export function createViewportStore(): ViewportStore {
   let element: HTMLElement | null = null;
   let background: HTMLElement | null = null;
   const listeners = new Set<() => void>();
+  const viewListeners = new Set<() => void>();
 
   function apply() {
     if (element)
@@ -46,6 +49,7 @@ export function createViewportStore(): ViewportStore {
       state = { x: next.x, y: next.y, k };
       apply();
       if (zoomChanged) listeners.forEach((listener) => listener());
+      viewListeners.forEach((listener) => listener());
     },
     attach(next, nextBackground = null) {
       element = next;
@@ -55,6 +59,10 @@ export function createViewportStore(): ViewportStore {
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
+    },
+    subscribeView(listener) {
+      viewListeners.add(listener);
+      return () => viewListeners.delete(listener);
     },
   };
 }

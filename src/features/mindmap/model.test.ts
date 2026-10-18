@@ -8,6 +8,7 @@ import {
   createMap,
   deleteRelation,
   deleteTopics,
+  expandToLevel,
   findParent,
   findTopic,
   flatten,
@@ -16,7 +17,9 @@ import {
   pathTo,
   pushHistory,
   redo,
+  replaceTopic,
   reorder,
+  revealTopic,
   setAllCollapsed,
   toggleCollapse,
   undo,
@@ -270,5 +273,48 @@ describe("themes", () => {
     expect(branchColor("flowy", -1)).toBe(
       THEMES.flowy.branches[THEMES.flowy.branches.length - 1],
     );
+  });
+});
+
+describe("expand, reveal and replace", () => {
+  function deepMap() {
+    const doc = createMap("R", "blank");
+    const first = doc.root.children[0]!;
+    const a = addChild(doc, first.id, "A");
+    const b = addChild(a.doc, a.id, "B");
+    return { doc: b.doc, firstId: first.id, aId: a.id, bId: b.id };
+  }
+
+  it("collapses topics at or below the chosen level", () => {
+    const { doc, firstId, aId } = deepMap();
+    const level1 = expandToLevel(doc, 1);
+    expect(findTopic(level1, firstId)?.collapsed).toBe(true);
+    const level2 = expandToLevel(doc, 2);
+    expect(findTopic(level2, firstId)?.collapsed).toBe(false);
+    expect(findTopic(level2, aId)?.collapsed).toBe(true);
+  });
+
+  it("expands every ancestor of a hidden topic", () => {
+    const { doc, firstId, aId, bId } = deepMap();
+    const hidden = setAllCollapsed(doc, true);
+    const shown = revealTopic(hidden, bId);
+    expect(findTopic(shown, firstId)?.collapsed).toBe(false);
+    expect(findTopic(shown, aId)?.collapsed).toBe(false);
+    expect(visibleTopics(shown).some((t) => t.id === bId)).toBe(true);
+  });
+
+  it("swaps a subtree in place", () => {
+    const { doc, aId } = deepMap();
+    const replaced = replaceTopic(doc, aId, {
+      id: aId,
+      text: "Novo",
+      children: [],
+    });
+    expect(findTopic(replaced, aId)).toEqual({
+      id: aId,
+      text: "Novo",
+      children: [],
+    });
+    expect(flatten(replaced)).toHaveLength(flatten(doc).length - 1);
   });
 });

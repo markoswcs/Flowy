@@ -11,11 +11,13 @@ import {
   createTopic,
   deleteRelation,
   deleteTopics,
+  expandToLevel,
   findParent,
   findTopic,
   moveTopic,
   neighbor,
   reorder,
+  revealTopic,
   setAllCollapsed,
   clearOffsets,
   setLayout,
@@ -39,6 +41,14 @@ import {
   NEW_TOPIC_TEXT,
 } from "@/features/mindmap/components/constants";
 import type { DropTarget } from "@/features/mindmap/components/drop-target";
+import {
+  toFlowyJson,
+  toFreeMind,
+  toIndentedText,
+  toOpml,
+  toXmindFile,
+} from "@/features/mindmap/interop/formats";
+import type { MarqueeRect } from "@/features/mindmap/components/use-canvas-gestures";
 import {
   buildMapSvg,
   downloadBlob,
@@ -65,7 +75,7 @@ import { isDesktopViewport } from "@/features/mindmap/components/use-environment
 import type { Direction } from "@/features/mindmap/components/use-map-shortcuts";
 import type { useViewportControls } from "@/features/mindmap/components/use-viewport-controls";
 
-type Panel = "format" | "note" | null;
+type Panel = "format" | "note" | "outline" | null;
 
 interface UiState {
   editing: EditingState | null;
@@ -77,6 +87,8 @@ interface UiState {
 
 interface ActionDeps {
   doc: MapDoc;
+  /** Whole map (differs from `doc` in focus mode); used for file exports. */
+  exportDoc: MapDoc;
   title: string;
   commit: (doc: MapDoc) => void;
   undo: () => void;
@@ -119,6 +131,7 @@ export function useMapActions(deps: ActionDeps) {
   }));
   const hintTimer = useRef<number | null>(null);
   const clipboard = useRef<Clip | null>(null);
+  const [styleClip, setStyleClip] = useState<TopicStyle | null>(null);
 
   const visibleSelection = useMemo(
     () => selection.filter((id) => layout.topics.has(id)),
@@ -174,8 +187,8 @@ export function useMapActions(deps: ActionDeps) {
     return primary;
   }
 
-  function addChildTopic(base = doc, parentId = primary) {
-    if (!parentId) return requireTopic();
+  /** With nothing selected the new topic goes under the central one. */
+  function addChildTopic(base = doc, parentId = primary ?? base.root.id) {
     const result = addChild(base, parentId, NEW_CHILD_TEXT);
     selectAndEdit(result.doc, result.id, NEW_CHILD_TEXT);
   }
@@ -374,16 +387,35 @@ export function useMapActions(deps: ActionDeps) {
     view.revealSoon(topics[0]?.id ?? parentId);
   }
 
-  async function exportAs(kind: "png" | "svg" | "md" | "copy") {
+  async function exportAs(
+    kind:
+      "png" | "svg" | "md" | "copy" | "xmind" | "mm" | "opml" | "json" | "txt",
+  ) {
     const name = safeFilename(deps.title);
+    const text = (content: string, type: string, ext: string) =>
+      downloadBlob(
+        new Blob([content], { type: `${type};charset=utf-8` }),
+        `${name}.${ext}`,
+      );
     try {
-      if (kind === "md")
+      const full = deps.exportDoc;
+      if (kind === "md") return text(toMarkdown(full), "text/markdown", "md");
+      if (kind === "txt")
+        return text(toIndentedText(full), "text/plain", "txt");
+      if (kind === "mm") return text(toFreeMind(full), "application/xml", "mm");
+      if (kind === "opml")
+        return text(toOpml(full, deps.title), "text/x-opml", "opml");
+      if (kind === "json")
+        return text(toFlowyJson(full), "application/json", "flowy.json");
+      if (kind === "xmind")
         return downloadBlob(
-          new Blob([toMarkdown(doc)], { type: "text/markdown;charset=utf-8" }),
-          `${name}.md`,
+          new Blob([toXmindFile(full, deps.title) as BlobPart], {
+            type: "application/vnd.xmind.workbook",
+          }),
+          `${name}.xmind`,
         );
       if (kind === "copy") {
-        await navigator.clipboard.writeText(toMarkdown(doc));
+        await navigator.clipboard.writeText(toMarkdown(full));
         return showHint("Tópicos copiados para a área de transferência.");
       }
       const { svg, width, height } = buildMapSvg(doc, layout, deps.darkCanvas);
@@ -395,6 +427,62 @@ export function useMapActions(deps: ActionDeps) {
     } catch {
       showHint("Não foi possível exportar o mapa.");
     }
+  }
+
+  function selectArea(rect: MarqueeRect, additive: boolean) {
+    const hits = Array.from(layout.topics.values())
+      .filter(
+        (p) =>
+          p.x < rect.x + rect.width &&
+          p.x + p.width > rect.x &&
+          p.y < rect.y + rect.height &&
+          p.y + p.height > rect.y,
+      )
+      .map((p) => p.id);
+    select(additive ? [...new Set([...selection, ...hits])] : hits);
+    focusCanvas();
+  }
+
+  function toggleBoundary() {
+    const ids = visibleSelection;
+    if (!ids.length) return requireTopic();
+    const add = ids.some((id) => !findTopic(doc, id)?.boundary);
+    commit(
+      ids.reduce(
+        (next, id) => updateTopic(next, id, { boundary: add ? {} : undefined }),
+        doc,
+      ),
+    );
+  }
+
+  function copyStyle() {
+    if (!primaryTopic) return requireTopic();
+    setStyleClip({ ...primaryTopic.style });
+    showHint("Estilo copiado. Selecione tópicos e use Colar estilo.");
+  }
+
+  function pasteStyle() {
+    if (!styleClip || !visibleSelection.length) return;
+    const style = cleanStyle(styleClip);
+    commit(
+      visibleSelection.reduce(
+        (next, id) => updateTopic(next, id, { style }),
+        doc,
+      ),
+    );
+  }
+
+  /** Selects a topic, expanding collapsed ancestors and scrolling to it. */
+  function goToTopic(id: string) {
+    if (!layout.topics.has(id)) {
+      commit(revealTopic(doc, id));
+      setSelection([id]);
+      setRelationId(null);
+      view.revealSoon(id);
+      return;
+    }
+    select([id]);
+    view.reveal(id);
   }
 
   function runTool(id: ToolId) {
@@ -449,9 +537,45 @@ export function useMapActions(deps: ActionDeps) {
         return void exportAs("md");
       case "copy-outline":
         return void exportAs("copy");
+      case "export-xmind":
+        return void exportAs("xmind");
+      case "export-mm":
+        return void exportAs("mm");
+      case "export-opml":
+        return void exportAs("opml");
+      case "export-json":
+        return void exportAs("json");
+      case "export-txt":
+        return void exportAs("txt");
+      case "expand-1":
+        return commit(expandToLevel(doc, 1));
+      case "expand-2":
+        return commit(expandToLevel(doc, 2));
+      case "expand-3":
+        return commit(expandToLevel(doc, 3));
+      case "outline":
+        return patchUi({ panel: ui.panel === "outline" ? null : "outline" });
+      case "boundary":
+        return toggleBoundary();
+      case "floating": {
+        const point = view.centerPoint();
+        return createFloating(point.x, point.y + 80);
+      }
+      case "select-all":
+        return select(Array.from(layout.topics.keys()));
+      case "copy-style":
+        return copyStyle();
+      case "paste-style":
+        return pasteStyle();
       case "trash":
         return deps.onTrash();
       case "template":
+      case "search":
+      case "focus":
+      case "present":
+      case "fullscreen":
+      case "shortcuts":
+      case "import":
         return;
     }
   }
@@ -505,6 +629,7 @@ export function useMapActions(deps: ActionDeps) {
       select([id]);
       patchUi({ panel: "note" });
     },
+    selectArea,
   };
 
   const format: FormatActions = {
@@ -516,6 +641,11 @@ export function useMapActions(deps: ActionDeps) {
       view.fitSoon();
     },
     setTheme: (next: ThemeId) => commit(setTheme(doc, next)),
+    setBranchStyle: (next) => {
+      const updated: MapDoc = { ...doc, branchStyle: next };
+      if (next === "curve") delete updated.branchStyle;
+      commit(updated);
+    },
     updateRelation: (patch) =>
       relation && commit(updateRelation(doc, relation.id, patch)),
     deleteRelation: () => {
@@ -538,6 +668,20 @@ export function useMapActions(deps: ActionDeps) {
     runTool,
     setLayout: format.setLayout,
     setTheme: format.setTheme,
+    styleClip,
+    goToTopic,
+    select,
+    renameTopic: (id: string, text: string) =>
+      commit(updateTopic(doc, id, { text })),
+    /** Saves the row's text and adds a child in one undo step. */
+    addChildTo: (id: string, text?: string) =>
+      addChildTopic(
+        text !== undefined && text !== findTopic(doc, id)?.text
+          ? updateTopic(doc, id, { text })
+          : doc,
+        id,
+      ),
+    toggleTopic,
     clearSelection: () => select([]),
     cancelLinking: () => patchUi({ linking: null }),
     closePanel: () => {
@@ -555,6 +699,8 @@ export function useMapActions(deps: ActionDeps) {
       toggleCollapse: () => primary && toggleTopic(primary),
       toggleBold: () =>
         primaryTopic && patchStyle({ bold: !primaryTopic.style?.bold }),
+      toggleItalic: () =>
+        primaryTopic && patchStyle({ italic: !primaryTopic.style?.italic }),
       startTyping: (text: string) =>
         primary &&
         patchUi({ editing: { id: primary, initial: text, mode: "replace" } }),

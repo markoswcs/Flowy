@@ -1,11 +1,14 @@
 import { createMap, TEMPLATE_LAYOUTS } from "@/features/mindmap/model";
 import type {
+  BranchStyle,
   LayoutKind,
   MapDoc,
   Relation,
   TemplateId,
   ThemeId,
   Topic,
+  TopicFontSize,
+  TopicProgress,
   TopicShape,
   TopicStyle,
 } from "@/features/mindmap/types";
@@ -27,7 +30,14 @@ const THEME_IDS: ThemeId[] = [
   "sunset",
   "forest",
   "mono",
+  "pastel",
+  "midnight",
+  "candy",
 ];
+const SIZES: TopicFontSize[] = ["sm", "md", "lg", "xl"];
+const PROGRESS: TopicProgress[] = [0, 25, 50, 75, 100];
+const BRANCH_STYLES: BranchStyle[] = ["curve", "straight", "elbow"];
+const MAX_IMAGE_CHARS = 400_000;
 const SHAPES: TopicShape[] = [
   "rounded",
   "rect",
@@ -86,12 +96,6 @@ export const TEMPLATES: {
     layout: TEMPLATE_LAYOUTS.swot,
   },
   {
-    id: "flowchart",
-    label: "Fluxograma",
-    description: "Fluxo de cima para baixo com etapas e decisões.",
-    layout: TEMPLATE_LAYOUTS.flowchart,
-  },
-  {
     id: "org",
     label: "Organograma",
     description: "Estrutura hierárquica de áreas e pessoas.",
@@ -109,6 +113,12 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
 }
 
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+function hex(v: unknown): string | undefined {
+  return typeof v === "string" && HEX_COLOR.test(v) ? v : undefined;
+}
+
 function newId(used: Set<string>, candidate: unknown): string {
   let id =
     typeof candidate === "string" && candidate !== ""
@@ -122,9 +132,9 @@ function newId(used: Set<string>, candidate: unknown): string {
 function cleanStyle(raw: unknown): TopicStyle | undefined {
   if (!isObject(raw)) return undefined;
   const style: TopicStyle = {};
-  const fill = str(raw.fill);
-  const color = str(raw.color);
-  const branch = str(raw.branch);
+  const fill = hex(raw.fill);
+  const color = hex(raw.color);
+  const branch = hex(raw.branch);
   if (fill) style.fill = fill;
   if (color) style.color = color;
   if (branch) style.branch = branch;
@@ -134,7 +144,14 @@ function cleanStyle(raw: unknown): TopicStyle | undefined {
   ) {
     style.shape = raw.shape as TopicShape;
   }
-  if (typeof raw.bold === "boolean") style.bold = raw.bold;
+  if (raw.bold === true) style.bold = true;
+  if (raw.italic === true) style.italic = true;
+  if (raw.strike === true) style.strike = true;
+  if (raw.dashed === true) style.dashed = true;
+  const border = hex(raw.border);
+  if (border) style.border = border;
+  if (SIZES.includes(raw.size as TopicFontSize) && raw.size !== "md")
+    style.size = raw.size as TopicFontSize;
   return Object.keys(style).length > 0 ? style : undefined;
 }
 
@@ -177,6 +194,43 @@ function cleanTopic(raw: unknown, used: Set<string>, depth: number): Topic {
   ) {
     topic.offset = { x: offset.x, y: offset.y };
   }
+  if (Array.isArray(r.labels)) {
+    const labels = r.labels
+      .filter((l): l is string => typeof l === "string" && l.trim() !== "")
+      .slice(0, 12);
+    if (labels.length) topic.labels = labels;
+  }
+  if (PROGRESS.includes(r.progress as TopicProgress))
+    topic.progress = r.progress as TopicProgress;
+  if (typeof r.due === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.due))
+    topic.due = r.due;
+  const image = r.image as Raw | undefined;
+  if (
+    isObject(image) &&
+    typeof image.src === "string" &&
+    /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(
+      image.src,
+    ) &&
+    image.src.length <= MAX_IMAGE_CHARS &&
+    typeof image.width === "number" &&
+    typeof image.height === "number" &&
+    image.width > 0 &&
+    image.height > 0
+  ) {
+    topic.image = {
+      src: image.src,
+      width: Math.min(image.width, 480),
+      height: Math.min(image.height, 480),
+    };
+  }
+  if (isObject(r.boundary)) {
+    const boundary: Topic["boundary"] = {};
+    const label = str(r.boundary.label);
+    const color = hex(r.boundary.color);
+    if (label) boundary.label = label;
+    if (color) boundary.color = color;
+    topic.boundary = boundary;
+  }
   return topic;
 }
 
@@ -206,6 +260,10 @@ function cleanRelations(
     ) {
       rel.style = item.style as Relation["style"];
     }
+    const color = hex(item.color);
+    if (color) rel.color = color;
+    if (item.arrows === "both" || item.arrows === "none")
+      rel.arrows = item.arrows;
     out.push(rel);
   }
   return out;
@@ -235,7 +293,7 @@ function parseV2(raw: Raw): MapDoc {
   const theme = THEME_IDS.includes(raw.theme as ThemeId)
     ? (raw.theme as ThemeId)
     : "flowy";
-  return {
+  const doc: MapDoc = {
     version: 2,
     layout,
     theme,
@@ -243,6 +301,12 @@ function parseV2(raw: Raw): MapDoc {
     floating,
     relations: cleanRelations(raw.relations, alive, new Set()),
   };
+  if (
+    BRANCH_STYLES.includes(raw.branchStyle as BranchStyle) &&
+    raw.branchStyle !== "curve"
+  )
+    doc.branchStyle = raw.branchStyle as BranchStyle;
+  return doc;
 }
 
 function elixirTopic(raw: Raw, used: Set<string>, depth: number): Topic {
@@ -259,8 +323,8 @@ function elixirTopic(raw: Raw, used: Set<string>, depth: number): Topic {
   if (raw.expanded === false) topic.collapsed = true;
   if (isObject(raw.style)) {
     const style: TopicStyle = {};
-    const background = str(raw.style.background);
-    const color = str(raw.style.color);
+    const background = hex(raw.style.background);
+    const color = hex(raw.style.color);
     if (background) style.fill = background;
     if (color) style.color = color;
     const weight = raw.style.fontWeight;

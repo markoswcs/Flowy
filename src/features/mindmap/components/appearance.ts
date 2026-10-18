@@ -11,6 +11,7 @@ export interface TopicAppearance {
   fill: string;
   color: string;
   border: string;
+  dashed: boolean;
 }
 
 const TRANSPARENT = "transparent";
@@ -63,10 +64,12 @@ export function topicAppearance(
     fill,
     color: topic.style?.color ?? autoColor,
     border:
-      shape === "underline"
+      topic.style?.border ??
+      (shape === "underline"
         ? branch
         : depth >= 2
           ? theme.topic.border
-          : TRANSPARENT,
+          : TRANSPARENT),
+    dashed: Boolean(topic.style?.dashed),
   };
 }

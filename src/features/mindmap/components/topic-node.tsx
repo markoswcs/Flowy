@@ -8,6 +8,8 @@ import type { TopicAppearance } from "@/features/mindmap/components/appearance";
 import { isSafeUrl } from "@/features/mindmap/components/constants";
 import {
   fontString,
+  LABEL_GAP,
+  LABEL_HEIGHT,
   type TopicBox,
 } from "@/features/mindmap/components/measure";
 import { cn } from "@/lib/utils";
@@ -26,10 +28,73 @@ interface TopicNodeProps {
   selected: boolean;
   dropping: boolean;
   hidden: boolean;
+  matched: boolean;
   handlers: TopicNodeHandlers;
 }
 
 const PRIORITY_COLORS = ["", "#DC2626", "#EA580C", "#2563EB"] as const;
+const PROGRESS_COLOR = "#16A34A";
+
+/** SVG path of a pie slice filled to `value`% (XMind task progress). */
+export function progressPath(cx: number, cy: number, r: number, value: number) {
+  const angle = (value / 100) * Math.PI * 2;
+  const x = cx + r * Math.sin(angle);
+  const y = cy - r * Math.cos(angle);
+  return `M${cx} ${cy} L${cx} ${cy - r} A${r} ${r} 0 ${value > 50 ? 1 : 0} 1 ${x} ${y} Z`;
+}
+
+function ProgressPie({ value }: { value: number }) {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 18 18"
+      className="shrink-0"
+      role="img"
+      aria-label={`Progresso ${value}%`}
+    >
+      <circle
+        cx={9}
+        cy={9}
+        r={8}
+        fill="#fff"
+        stroke={PROGRESS_COLOR}
+        strokeWidth={1.5}
+      />
+      {value >= 100 ? (
+        <>
+          <circle cx={9} cy={9} r={7} fill={PROGRESS_COLOR} />
+          <path
+            d="M5.5 9.2 L8 11.5 L12.5 6.8"
+            fill="none"
+            stroke="#fff"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      ) : value > 0 ? (
+        <path d={progressPath(9, 9, 7, value)} fill={PROGRESS_COLOR} />
+      ) : null}
+    </svg>
+  );
+}
+
+export function todayIso(): string {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${today.getFullYear()}-${month}-${day}`;
+}
+
+export function isOverdue(topic: Topic): boolean {
+  return Boolean(
+    topic.due &&
+    topic.due < todayIso() &&
+    !topic.done &&
+    topic.progress !== 100,
+  );
+}
 
 function countDescendants(topic: Topic): number {
   return topic.children.reduce(
@@ -76,6 +141,7 @@ function ShapeBackground({
           fill={look.fill}
           stroke={look.border === "transparent" ? look.fill : look.border}
           strokeWidth={1.5}
+          strokeDasharray={look.dashed ? "6 4" : undefined}
           strokeLinejoin="round"
         />
       </svg>
@@ -97,6 +163,8 @@ function ShapeBackground({
         borderBottomColor: look.border,
         borderBottomWidth: underline ? 2.5 : undefined,
         borderBottomStyle: underline ? "solid" : undefined,
+        borderStyle: look.dashed && !underline ? "dashed" : undefined,
+        borderWidth: look.dashed && !underline ? 1.5 : undefined,
         boxShadow:
           look.fill === "transparent"
             ? undefined
@@ -185,6 +253,9 @@ function LeadingBadges({
           {topic.done ? <Check className="size-3" strokeWidth={3.5} /> : null}
         </button>
       ) : null}
+      {topic.progress !== undefined ? (
+        <ProgressPie value={topic.progress} />
+      ) : null}
       {topic.priority ? (
         <span
           className="grid size-[18px] shrink-0 place-items-center rounded-full text-[11px] font-bold text-white"
@@ -205,14 +276,29 @@ function LeadingBadges({
 
 function TrailingBadges({
   topic,
+  box,
   onOpenNote,
 }: {
   topic: Topic;
+  box: TopicBox;
   onOpenNote: () => void;
 }) {
   const safeLink = topic.link && isSafeUrl(topic.link) ? topic.link : null;
+  const overdue = isOverdue(topic);
   return (
     <>
+      {box.dueLabel ? (
+        <span
+          className={cn(
+            "grid h-[18px] shrink-0 place-items-center rounded-full text-[11px] font-semibold not-italic leading-none",
+            overdue ? "bg-red-600 text-white" : "bg-black/10",
+          )}
+          style={{ width: box.dueWidth }}
+          title={overdue ? `Atrasado: ${topic.due}` : `Prazo: ${topic.due}`}
+        >
+          {box.dueLabel}
+        </span>
+      ) : null}
       {topic.note ? (
         <button
           type="button"
@@ -249,6 +335,7 @@ function TopicNodeView({
   selected,
   dropping,
   hidden,
+  matched,
   handlers,
 }: TopicNodeProps) {
   const style: CSSProperties = {
@@ -275,6 +362,12 @@ function TopicNodeView({
         width={placed.width}
         height={placed.height}
       />
+      {matched && !selected ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-[5px] rounded-[14px] border-2 border-amber-400 bg-amber-300/25"
+        />
+      ) : null}
       {selected || dropping ? (
         <div
           aria-hidden="true"
@@ -282,36 +375,76 @@ function TopicNodeView({
             "pointer-events-none absolute -inset-[5px] rounded-[14px] border-2",
             dropping
               ? "border-dashed border-primary bg-primary/10"
-              : "border-primary",
+              : "flowy-glow border-primary/50",
           )}
         />
       ) : null}
       <div
-        className="relative flex h-full items-center justify-center gap-1.5"
+        className="relative flex h-full flex-col items-center justify-center"
         style={{ padding: `0 ${box.metrics.padX}px` }}
       >
-        <LeadingBadges
-          topic={topic}
-          look={look}
-          onToggleDone={() => handlers.toggleDone(topic.id)}
-        />
-        <div
-          className="shrink-0 whitespace-pre text-center"
-          style={{ width: box.textWidth }}
-        >
-          {box.lines.map((line, index) => (
-            <div
-              key={index}
-              className={cn(topic.done && "line-through opacity-70")}
-            >
-              {line || " "}
-            </div>
-          ))}
+        {topic.image ? (
+          // eslint-disable-next-line @next/next/no-img-element -- inline data URL
+          <img
+            src={topic.image.src}
+            alt=""
+            draggable={false}
+            className="pointer-events-none shrink-0 rounded-md object-cover"
+            style={{
+              width: topic.image.width,
+              height: topic.image.height,
+              marginBottom: box.imageHeight - topic.image.height,
+            }}
+          />
+        ) : null}
+        <div className="flex items-center justify-center gap-1.5">
+          <LeadingBadges
+            topic={topic}
+            look={look}
+            onToggleDone={() => handlers.toggleDone(topic.id)}
+          />
+          <div
+            className="shrink-0 whitespace-pre text-center"
+            style={{ width: box.textWidth }}
+          >
+            {box.lines.map((line, index) => (
+              <div
+                key={index}
+                className={cn(
+                  (topic.done || topic.style?.strike) && "line-through",
+                  topic.done && "opacity-70",
+                )}
+              >
+                {line || " "}
+              </div>
+            ))}
+          </div>
+          <TrailingBadges
+            topic={topic}
+            box={box}
+            onOpenNote={() => handlers.openNote(topic.id)}
+          />
         </div>
-        <TrailingBadges
-          topic={topic}
-          onOpenNote={() => handlers.openNote(topic.id)}
-        />
+        {topic.labels?.length ? (
+          <div
+            className="flex shrink-0 items-center justify-center"
+            style={{ gap: LABEL_GAP, marginTop: LABEL_GAP }}
+          >
+            {topic.labels.map((label, index) => (
+              <span
+                key={`${label}-${index}`}
+                className="truncate rounded-full bg-black/10 text-center text-[11px] font-semibold not-italic"
+                style={{
+                  width: box.labelWidths[index],
+                  height: LABEL_HEIGHT,
+                  lineHeight: `${LABEL_HEIGHT}px`,
+                }}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
       {hasChildren && placed.depth > 0 ? (
         <CollapseToggle
@@ -342,7 +475,8 @@ function sameLook(a: TopicAppearance, b: TopicAppearance): boolean {
     a.shape === b.shape &&
     a.fill === b.fill &&
     a.color === b.color &&
-    a.border === b.border
+    a.border === b.border &&
+    a.dashed === b.dashed
   );
 }
 
@@ -353,6 +487,7 @@ export const TopicNode = memo(TopicNodeView, (prev, next) => {
     prev.selected === next.selected &&
     prev.dropping === next.dropping &&
     prev.hidden === next.hidden &&
+    prev.matched === next.matched &&
     prev.handlers === next.handlers &&
     samePlacement(prev.placed, next.placed) &&
     sameLook(prev.look, next.look)

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+
+import { parseSection } from "@/features/notes/note-sections";
 
 import type { NavigationItem } from "@/components/shell/navigation";
 import { cn } from "@/lib/utils";
@@ -16,9 +18,14 @@ export function NavLink({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const active =
-    pathname === item.href ||
-    (item.href !== "/app" && pathname.startsWith(`${item.href}/`));
+  const searchParams = useSearchParams();
+  const [path, query] = item.href.split("?");
+  const section = query ? new URLSearchParams(query).get("tipo") : null;
+  const active = section
+    ? pathname === path &&
+      parseSection(searchParams.get("tipo")) === parseSection(section)
+    : pathname === item.href ||
+      (item.href !== "/app" && pathname.startsWith(`${item.href}/`));
   const Icon = item.icon;
 
   return (
@@ -33,7 +40,7 @@ export function NavLink({
       aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(
-        "theme-sidebar-item flex min-h-[42px] items-center gap-3 rounded-2xl px-4 text-sm font-medium text-muted-foreground transition-all duration-300 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:scale-[1.02]",
+        "theme-sidebar-item flowy-glow-hover flex min-h-[42px] items-center gap-3 rounded-2xl px-4 text-sm font-medium text-muted-foreground transition-all duration-300 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:scale-[1.02]",
         active &&
           "theme-sidebar-active border border-primary/20 bg-primary/15 text-primary shadow-[0_0_20px_hsl(var(--primary)/0.2)]",
         collapsed && "justify-center px-0",

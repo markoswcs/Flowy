@@ -29,7 +29,7 @@ export function FirstUseTip() {
   return (
     <div
       role="note"
-      className="flowy-glass absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+4.75rem)] left-1/2 z-20 flex w-[min(30rem,calc(100%-1rem))] -translate-x-1/2 animate-in fade-in slide-in-from-bottom-2 items-center gap-3 rounded-2xl border py-2 pl-3.5 pr-1.5 text-xs leading-5 text-muted-foreground md:bottom-4 md:left-4 md:translate-x-0"
+      className="flowy-glass absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+7.5rem)] left-1/2 z-20 flex w-[min(30rem,calc(100%-1rem))] -translate-x-1/2 animate-in fade-in slide-in-from-bottom-2 items-center gap-3 rounded-2xl border py-2 pl-3.5 pr-1.5 text-xs leading-5 text-muted-foreground md:bottom-4 md:left-4 md:translate-x-0"
     >
       <Lightbulb className="size-4 shrink-0 text-primary" aria-hidden="true" />
       <p className="flex-1">
