@@ -96,12 +96,6 @@ export const TEMPLATES: {
     layout: TEMPLATE_LAYOUTS.swot,
   },
   {
-    id: "flowchart",
-    label: "Fluxograma",
-    description: "Fluxo de cima para baixo com etapas e decisões.",
-    layout: TEMPLATE_LAYOUTS.flowchart,
-  },
-  {
     id: "org",
     label: "Organograma",
     description: "Estrutura hierárquica de áreas e pessoas.",
@@ -214,7 +208,9 @@ function cleanTopic(raw: unknown, used: Set<string>, depth: number): Topic {
   if (
     isObject(image) &&
     typeof image.src === "string" &&
-    /^data:image\/(png|jpeg|webp|gif);base64,/.test(image.src) &&
+    /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(
+      image.src,
+    ) &&
     image.src.length <= MAX_IMAGE_CHARS &&
     typeof image.width === "number" &&
     typeof image.height === "number" &&
@@ -310,7 +306,6 @@ function parseV2(raw: Raw): MapDoc {
     raw.branchStyle !== "curve"
   )
     doc.branchStyle = raw.branchStyle as BranchStyle;
-  if (raw.sketch === true) doc.sketch = true;
   return doc;
 }
 

@@ -14,37 +14,13 @@ import { relationGeometry } from "@/features/mindmap/components/relation-geometr
 const PATH_TRANSITION = { transition: "d 250ms ease-out" } as const;
 const SELECTED = "hsl(var(--primary))";
 
-/** Wobbly displacement that gives lines and shapes a hand-drawn look. */
-export function SketchFilter() {
-  return (
-    <defs>
-      <filter id="flowy-sketch" x="-5%" y="-5%" width="110%" height="110%">
-        <feTurbulence
-          type="fractalNoise"
-          baseFrequency="0.035"
-          numOctaves="2"
-          seed="7"
-        />
-        <feDisplacementMap in="SourceGraphic" scale="3.5" />
-      </filter>
-    </defs>
-  );
-}
-
 export const ConnectorPaths = memo(function ConnectorPaths({
   connectors,
-  sketch,
 }: {
   connectors: Connector[];
-  sketch: boolean;
 }) {
   return (
-    <g
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      filter={sketch ? "url(#flowy-sketch)" : undefined}
-    >
+    <g fill="none" strokeLinecap="round" strokeLinejoin="round">
       {connectors.map((connector) => (
         <path
           key={`${connector.from}-${connector.to}`}
@@ -61,13 +37,11 @@ export const ConnectorPaths = memo(function ConnectorPaths({
 
 export const BoundaryShapes = memo(function BoundaryShapes({
   boundaries,
-  sketch,
 }: {
   boundaries: BoundaryRect[];
-  sketch: boolean;
 }) {
   return (
-    <g filter={sketch ? "url(#flowy-sketch)" : undefined}>
+    <g>
       {boundaries.map((b) => (
         <g key={b.id}>
           <rect
@@ -105,7 +79,6 @@ interface RelationLayerProps {
   layoutKind: LayoutKind;
   selectedId: string | null;
   color: string;
-  sketch: boolean;
 }
 
 export function markerId(color: string): string {
@@ -134,7 +107,6 @@ export const RelationPaths = memo(function RelationPaths({
   layoutKind,
   selectedId,
   color,
-  sketch,
 }: RelationLayerProps) {
   const colors = new Set([color, SELECTED]);
   relations.forEach((r) => r.color && colors.add(r.color));
@@ -173,7 +145,6 @@ export const RelationPaths = memo(function RelationPaths({
               strokeDasharray={geometry.dashed ? "6 5" : undefined}
               markerEnd={arrows === "none" ? undefined : marker}
               markerStart={arrows === "both" ? marker : undefined}
-              filter={sketch ? "url(#flowy-sketch)" : undefined}
               pointerEvents="none"
             />
             {relation.label ? (

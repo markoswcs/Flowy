@@ -33,8 +33,14 @@ export const LAYOUT_OPTIONS: { id: LayoutKind; label: string }[] = [
   { id: "org", label: "Organograma" },
   { id: "tree", label: "Árvore" },
   { id: "timeline", label: "Linha do tempo" },
-  { id: "flow", label: "Fluxograma" },
 ];
+
+/** Old maps may still use the retired flowchart layout; offer it only to them. */
+export function layoutOptionsFor(current: LayoutKind) {
+  return current === "flow"
+    ? [...LAYOUT_OPTIONS, { id: "flow" as const, label: "Fluxograma" }]
+    : LAYOUT_OPTIONS;
+}
 
 export const SHAPE_OPTIONS: { id: TopicShape; label: string }[] = [
   { id: "rounded", label: "Arredondado" },

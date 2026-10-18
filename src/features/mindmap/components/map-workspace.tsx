@@ -11,7 +11,6 @@ import {
 } from "@/features/mindmap/model";
 import { layoutMap } from "@/features/mindmap/layout";
 import type { MapDoc, TemplateId } from "@/features/mindmap/types";
-import type { ExcalidrawScene } from "@/features/mindmap/interop/excalidraw";
 import {
   IMPORT_ACCEPT,
   importMapFile,
@@ -68,8 +67,6 @@ const KEEP_FOCUS_TOOLS = new Set<ToolId>([
   "export-opml",
   "export-json",
   "export-txt",
-  "export-excalidraw",
-  "open-excalidraw",
 ]);
 
 const NO_MATCHES: ReadonlySet<string> = new Set();
@@ -83,7 +80,6 @@ export interface MapWorkspaceProps {
   undo: () => void;
   redo: () => void;
   onTrash: () => void;
-  onOpenExcalidraw?: (scene: ExcalidrawScene) => Promise<void> | void;
 }
 
 function useLayout(doc: MapDoc) {
@@ -118,7 +114,8 @@ function useFocus(doc: MapDoc, commit: (doc: MapDoc) => void) {
     );
     return {
       ...doc,
-      root: focusTopic,
+      // A collapsed branch would show only its root; open it while focused.
+      root: { ...focusTopic, collapsed: undefined },
       floating: [],
       relations: doc.relations.filter(
         (r) => inside.has(r.from) && inside.has(r.to),
@@ -129,13 +126,18 @@ function useFocus(doc: MapDoc, commit: (doc: MapDoc) => void) {
   function commitView(next: MapDoc) {
     if (!focusTopic) return commit(next);
     const outside = doc.relations.filter((r) => !viewDoc.relations.includes(r));
-    commit({
+    const merged: MapDoc = {
       ...replaceTopic(doc, focusTopic.id, next.root),
       layout: next.layout,
       theme: next.theme,
       branchStyle: next.branchStyle,
-      sketch: next.sketch,
-      relations: [...outside, ...next.relations],
+    };
+    const alive = new Set(topicsInOrder(merged).map((t) => t.id));
+    commit({
+      ...merged,
+      relations: [...outside, ...next.relations].filter(
+        (r) => alive.has(r.from) && alive.has(r.to),
+      ),
     });
   }
 
@@ -171,6 +173,7 @@ export function MapWorkspace(props: MapWorkspaceProps) {
   const actions = useMapActions({
     ...props,
     doc,
+    exportDoc: props.doc,
     commit,
     layout,
     view,
@@ -200,7 +203,8 @@ export function MapWorkspace(props: MapWorkspaceProps) {
 
   function stepSearch(delta: 1 | -1) {
     if (!search || !matches.length) return;
-    const index = (search.index + delta + matches.length) % matches.length;
+    const current = Math.min(search.index, matches.length - 1);
+    const index = (current + delta + matches.length) % matches.length;
     setSearch({ ...search, index });
     const id = matches[index];
     if (id) actions.goToTopic(id);
@@ -335,7 +339,7 @@ export function MapWorkspace(props: MapWorkspaceProps) {
   const slideId = presenting ? slides[slide] : undefined;
   const slideTopic = slideId ? findTopic(doc, slideId) : null;
   const topBanner = presenting ? null : ui.linking ? (
-    <div className="flowy-glass absolute left-1/2 top-3 z-30 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-primary/40 py-1.5 pl-4 pr-1.5 text-xs font-medium md:top-[4.5rem]">
+    <div className="flowy-glass absolute left-1/2 top-[4.25rem] z-30 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-primary/40 py-1.5 pl-4 pr-1.5 text-xs font-medium md:top-[4.5rem]">
       <Spline className="size-4 text-primary" aria-hidden="true" />
       {ui.linking.from
         ? "Escolha o tópico de destino"
@@ -352,11 +356,15 @@ export function MapWorkspace(props: MapWorkspaceProps) {
   ) : search ? (
     <SearchBar
       query={search.query}
-      index={search.index}
+      index={Math.min(search.index, Math.max(matches.length - 1, 0))}
       count={matches.length}
       onQuery={(query) => {
         setSearch({ query, index: 0 });
-        const first = searchTopics(doc, query)[0];
+        // Typing only jumps to visible matches; Enter/arrows also expand
+        // collapsed branches (one undo step each, like XMind).
+        const first = searchTopics(doc, query).find((id) =>
+          layout.topics.has(id),
+        );
         if (first) actions.goToTopic(first);
       }}
       onStep={stepSearch}
@@ -368,7 +376,7 @@ export function MapWorkspace(props: MapWorkspaceProps) {
   ) : ui.hint ? (
     <div
       role="status"
-      className="flowy-glass pointer-events-none absolute left-1/2 top-3 z-30 max-w-[calc(100%-2rem)] -translate-x-1/2 animate-in fade-in slide-in-from-top-2 rounded-full border px-4 py-2 text-center text-xs font-medium md:top-[4.5rem]"
+      className="flowy-glass pointer-events-none absolute left-1/2 top-[4.25rem] z-30 max-w-[calc(100%-2rem)] -translate-x-1/2 animate-in fade-in slide-in-from-top-2 rounded-full border px-4 py-2 text-center text-xs font-medium md:top-[4.5rem]"
     >
       {ui.hint}
     </div>
@@ -388,6 +396,7 @@ export function MapWorkspace(props: MapWorkspaceProps) {
         darkCanvas={darkCanvas}
         linking={Boolean(ui.linking)}
         matches={matchSet}
+        manySelected={actions.selectionSet.size > 30}
         handlers={canvasHandlers}
       />
 
@@ -407,7 +416,7 @@ export function MapWorkspace(props: MapWorkspaceProps) {
       )}
 
       {focus.focusId && !presenting ? (
-        <div className="flowy-glass absolute left-3 top-3 z-20 flex max-w-[calc(100%-1.5rem)] items-center gap-1 rounded-full border py-1 pl-3 pr-1 text-xs md:top-[4.5rem]">
+        <div className="flowy-glass absolute left-3 top-3 z-20 flex max-w-[calc(100%-8rem)] md:max-w-[calc(100%-1.5rem)] items-center gap-1 rounded-full border py-1 pl-3 pr-1 text-xs md:top-[7.75rem]">
           <Focus
             className="size-3.5 shrink-0 text-primary"
             aria-hidden="true"

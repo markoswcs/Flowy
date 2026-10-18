@@ -10,10 +10,8 @@ import {
   ListTree,
   PaintRoller,
   Paintbrush,
-  PenTool,
   Presentation,
   Search,
-  Shapes,
   SquareDashed,
   SquareDashedMousePointer,
   SquarePlus,
@@ -85,8 +83,6 @@ export type ToolId =
   | "export-opml"
   | "export-json"
   | "export-txt"
-  | "export-excalidraw"
-  | "open-excalidraw"
   | "expand-1"
   | "expand-2"
   | "expand-3";
@@ -108,7 +104,6 @@ export const TOOLS: Record<ToolId, ToolDef> = {
     short: "Subtópico",
     shortcut: "Tab",
     icon: GitBranchPlus,
-    needsTopic: true,
   },
   sibling: {
     label: "Adicionar tópico irmão",
@@ -284,16 +279,6 @@ export const TOOLS: Record<ToolId, ToolDef> = {
     short: "Texto",
     icon: FileType,
   },
-  "export-excalidraw": {
-    label: "Exportar Excalidraw (.excalidraw)",
-    short: "Excalidraw",
-    icon: PenTool,
-  },
-  "open-excalidraw": {
-    label: "Abrir como quadro Excalidraw",
-    short: "Quadro",
-    icon: Shapes,
-  },
   "expand-1": {
     label: "Expandir até o nível 1",
     short: "Nível 1",
@@ -316,7 +301,6 @@ export const EXPORT_TOOLS: ToolId[] = [
   "export-svg",
   "export-xmind",
   "export-mm",
-  "export-excalidraw",
   "export-opml",
   "export-md",
   "export-txt",

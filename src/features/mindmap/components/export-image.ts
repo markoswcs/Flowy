@@ -32,22 +32,15 @@ function escapeXml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 }
 
-const SKETCH_FILTER = `<filter id="sketch" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3.5"/></filter>`;
-
 function markerFor(color: string): string {
   return `arrow-${color.replace(/[^a-z0-9]/gi, "")}`;
 }
 
-function shapeSvg(
-  p: PlacedTopic,
-  look: TopicAppearance,
-  sketch: boolean,
-): string {
+function shapeSvg(p: PlacedTopic, look: TopicAppearance): string {
   const { x, y, width: w, height: h } = p;
   const stroke = look.border === "transparent" ? "none" : look.border;
   const dash = look.dashed ? ` stroke-dasharray="6 4"` : "";
-  const filter = sketch ? ` filter="url(#sketch)"` : "";
-  const attrs = `fill="${look.fill === "transparent" ? "none" : look.fill}" stroke="${stroke}" stroke-width="1.2"${dash}${filter}`;
+  const attrs = `fill="${look.fill === "transparent" ? "none" : look.fill}" stroke="${stroke}" stroke-width="1.2"${dash}`;
   switch (look.shape) {
     case "diamond":
       return `<polygon points="${x + w / 2},${y} ${x + w},${y + h / 2} ${x + w / 2},${y + h} ${x},${y + h / 2}" ${attrs}/>`;
@@ -133,7 +126,6 @@ function topicSvg(
   p: PlacedTopic,
   box: TopicBox,
   look: TopicAppearance,
-  sketch: boolean,
 ): string {
   const { metrics } = box;
   const contentWidth = box.leading + box.textWidth + box.trailing;
@@ -158,7 +150,7 @@ function topicSvg(
     topic.done || topic.style?.strike ? ' text-decoration="line-through"' : "";
   const italic = metrics.italic ? ' font-style="italic"' : "";
   const image = topic.image
-    ? `<image href="${topic.image.src}" x="${p.x + (p.width - topic.image.width) / 2}" y="${contentTop}" width="${topic.image.width}" height="${topic.image.height}"/>`
+    ? `<image href="${escapeXml(topic.image.src)}" x="${p.x + (p.width - topic.image.width) / 2}" y="${contentTop}" width="${topic.image.width}" height="${topic.image.height}"/>`
     : "";
   let due = "";
   if (box.dueLabel) {
@@ -167,7 +159,7 @@ function topicSvg(
     due = `<rect x="${dueX}" y="${centerY - 9}" width="${box.dueWidth}" height="18" rx="9" fill="${overdue ? "#DC2626" : look.color}" fill-opacity="${overdue ? 1 : 0.12}"/><text x="${dueX + box.dueWidth / 2}" y="${centerY + 4}" font-size="11" font-weight="600" fill="${overdue ? "#fff" : look.color}" text-anchor="middle">${escapeXml(box.dueLabel)}</text>`;
   }
   return [
-    shapeSvg(p, look, sketch),
+    shapeSvg(p, look),
     image,
     badgesSvg(topic, box, look, startX, centerY),
     `<text font-size="${metrics.fontSize}" font-weight="${metrics.fontWeight}" fill="${look.color}" text-anchor="middle"${decoration}${italic}>${lines}</text>`,
@@ -191,18 +183,16 @@ export function buildMapSvg(
   const topics = new Map(flatten(doc).map((t) => [t.id, t]));
   const floating = floatingTopicIds(doc);
 
-  const sketch = Boolean(doc.sketch);
-  const filter = sketch ? ` filter="url(#sketch)"` : "";
   const connectors = layout.connectors
     .map(
       (c) =>
-        `<path d="${c.path}" stroke="${c.color}" stroke-width="${c.width}" fill="none" stroke-linecap="round"${filter}/>`,
+        `<path d="${c.path}" stroke="${c.color}" stroke-width="${c.width}" fill="none" stroke-linecap="round"/>`,
     )
     .join("");
   const boundaries = boundaryRects(doc, layout)
     .map(
       (b) =>
-        `<rect x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}" rx="14" fill="${b.color}" fill-opacity="0.07" stroke="${b.color}" stroke-width="1.5" stroke-dasharray="7 5"${filter}/>` +
+        `<rect x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}" rx="14" fill="${b.color}" fill-opacity="0.07" stroke="${b.color}" stroke-width="1.5" stroke-dasharray="7 5"/>` +
         (b.label
           ? `<text x="${b.x + 12}" y="${b.y + 15}" font-size="12" font-weight="700" fill="${b.color}">${escapeXml(b.label)}</text>`
           : ""),
@@ -226,7 +216,7 @@ export function buildMapSvg(
       const label = relation.label
         ? `<text x="${g.labelX}" y="${g.labelY - 6}" font-size="12" font-weight="600" fill="${color}" text-anchor="middle" stroke="${background}" stroke-width="4" paint-order="stroke">${escapeXml(relation.label)}</text>`
         : "";
-      return `<path d="${g.path}" stroke="${color}" stroke-width="1.75" fill="none"${dash}${ends}${filter}/>${label}`;
+      return `<path d="${g.path}" stroke="${color}" stroke-width="1.75" fill="none"${dash}${ends}/>${label}`;
     })
     .join("");
   const nodes = Array.from(layout.topics.values())
@@ -243,13 +233,13 @@ export function buildMapSvg(
         doc.layout,
         dark,
       );
-      return topicSvg(topic, p, box, look, sketch);
+      return topicSvg(topic, p, box, look);
     })
     .join("");
 
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${bounds.x - PADDING} ${bounds.y - PADDING} ${width} ${height}" font-family='${FONT_STACK}'>`,
-    `<defs>${[...markerColors].map((color) => `<marker id="${markerFor(color)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join("")}${sketch ? SKETCH_FILTER : ""}</defs>`,
+    `<defs>${[...markerColors].map((color) => `<marker id="${markerFor(color)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join("")}</defs>`,
     `<rect x="${bounds.x - PADDING}" y="${bounds.y - PADDING}" width="${width}" height="${height}" fill="${background}"/>`,
     boundaries,
     connectors,

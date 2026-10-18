@@ -29,7 +29,6 @@ interface TopicNodeProps {
   dropping: boolean;
   hidden: boolean;
   matched: boolean;
-  sketch: boolean;
   handlers: TopicNodeHandlers;
 }
 
@@ -124,14 +123,11 @@ function ShapeBackground({
   look,
   width,
   height,
-  sketch,
 }: {
   look: TopicAppearance;
   width: number;
   height: number;
-  sketch: boolean;
 }) {
-  const filter = sketch ? "url(#flowy-sketch)" : undefined;
   if (look.shape === "diamond") {
     return (
       <svg
@@ -139,7 +135,6 @@ function ShapeBackground({
         width={width}
         height={height}
         aria-hidden="true"
-        style={{ filter }}
       >
         <polygon
           points={`${width / 2},1 ${width - 1},${height / 2} ${width / 2},${height - 1} 1,${height / 2}`}
@@ -171,10 +166,9 @@ function ShapeBackground({
         borderStyle: look.dashed && !underline ? "dashed" : undefined,
         borderWidth: look.dashed && !underline ? 1.5 : undefined,
         boxShadow:
-          look.fill === "transparent" || sketch
+          look.fill === "transparent"
             ? undefined
             : "0 1px 2px rgb(0 0 0 / 0.12)",
-        filter,
       }}
     />
   );
@@ -342,7 +336,6 @@ function TopicNodeView({
   dropping,
   hidden,
   matched,
-  sketch,
   handlers,
 }: TopicNodeProps) {
   const style: CSSProperties = {
@@ -368,7 +361,6 @@ function TopicNodeView({
         look={look}
         width={placed.width}
         height={placed.height}
-        sketch={sketch}
       />
       {matched && !selected ? (
         <div
@@ -383,7 +375,7 @@ function TopicNodeView({
             "pointer-events-none absolute -inset-[5px] rounded-[14px] border-2",
             dropping
               ? "border-dashed border-primary bg-primary/10"
-              : "border-primary",
+              : "flowy-glow border-primary/50",
           )}
         />
       ) : null}
@@ -496,7 +488,6 @@ export const TopicNode = memo(TopicNodeView, (prev, next) => {
     prev.dropping === next.dropping &&
     prev.hidden === next.hidden &&
     prev.matched === next.matched &&
-    prev.sketch === next.sketch &&
     prev.handlers === next.handlers &&
     samePlacement(prev.placed, next.placed) &&
     sameLook(prev.look, next.look)

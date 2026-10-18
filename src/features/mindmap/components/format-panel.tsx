@@ -30,7 +30,7 @@ import {
   BRANCH_STYLE_OPTIONS,
   FONT_SIZE_OPTIONS,
   isSafeUrl,
-  LAYOUT_OPTIONS,
+  layoutOptionsFor,
   SHAPE_OPTIONS,
   TOPIC_ICONS,
   TOPIC_IMAGE_MAX,
@@ -55,7 +55,6 @@ export interface FormatActions {
   setLayout: (layout: LayoutKind) => void;
   setTheme: (theme: ThemeId) => void;
   setBranchStyle: (style: BranchStyle) => void;
-  setSketch: (sketch: boolean) => void;
   updateRelation: (patch: Partial<Omit<Relation, "id">>) => void;
   deleteRelation: () => void;
 }
@@ -707,7 +706,7 @@ function MapFormat({ doc, actions }: { doc: MapDoc; actions: FormatActions }) {
     <>
       <PanelSection title="Layout">
         <div className="grid grid-cols-2 gap-1.5">
-          {LAYOUT_OPTIONS.map((option) => (
+          {layoutOptionsFor(doc.layout).map((option) => (
             <button
               key={option.id}
               type="button"
@@ -735,11 +734,6 @@ function MapFormat({ doc, actions }: { doc: MapDoc; actions: FormatActions }) {
             content: option.label,
           }))}
           onChange={actions.setBranchStyle}
-        />
-        <SwitchRow
-          label="Traço à mão (estilo Excalidraw)"
-          checked={Boolean(doc.sketch)}
-          onChange={actions.setSketch}
         />
       </PanelSection>
       <PanelSection title="Tema">

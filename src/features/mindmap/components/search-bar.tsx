@@ -50,7 +50,7 @@ export function SearchBar({
   return (
     <div
       role="search"
-      className="flowy-glass flowy-glass-strong absolute left-1/2 top-3 z-30 flex w-[min(26rem,calc(100%-1.5rem))] -translate-x-1/2 animate-in fade-in slide-in-from-top-2 items-center gap-1 rounded-2xl border p-1.5 md:top-[4.5rem]"
+      className="flowy-glass flowy-glass-strong absolute left-1/2 top-[4.25rem] z-30 flex w-[min(26rem,calc(100%-1.5rem))] -translate-x-1/2 animate-in fade-in slide-in-from-top-2 items-center gap-1 rounded-2xl border p-1.5 md:top-[4.5rem]"
     >
       <Search className="ml-2 size-4 shrink-0 text-muted-foreground" />
       <input

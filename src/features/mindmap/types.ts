@@ -176,8 +176,6 @@ export interface MapDoc {
   relations: Relation[];
   /** Unset = "curve". */
   branchStyle?: BranchStyle;
-  /** Hand-drawn look, like Excalidraw. */
-  sketch?: boolean;
 }
 
 export interface Size {

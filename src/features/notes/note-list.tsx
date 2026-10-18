@@ -34,7 +34,6 @@ import type { NoteKind } from "@/types/content";
 import { holdOverlay } from "@/lib/overlay";
 
 const MAP_TITLES: Partial<Record<TemplateId, string>> = {
-  flowchart: "Fluxograma sem título",
   org: "Organograma sem título",
 };
 
@@ -48,8 +47,14 @@ const creationOptions = [
   {
     kind: "mindmap",
     icon: Network,
-    title: "Mapa ou fluxograma",
-    description: "Mapa mental, organograma, linha do tempo e fluxograma.",
+    title: "Mapa mental",
+    description: "Ideias em ramos, organograma e linha do tempo. Estilo XMind.",
+  },
+  {
+    kind: "excalidraw",
+    icon: Workflow,
+    title: "Desenho",
+    description: "Quadro livre para fluxogramas, esboços e diagramas à mão.",
   },
 ] as const satisfies ReadonlyArray<{
   kind: NoteKind;
@@ -85,13 +90,13 @@ export function NoteList() {
   const pageCopy = isDiagramView
     ? {
         eyebrow: "Espaço visual",
-        title: "Fluxogramas e mapas",
+        title: "Mapas e desenhos",
         description:
-          "Desenhe processos, diagramas e mapas mentais com ideias interligadas.",
-        create: "Novo diagrama",
-        empty: "Seu primeiro diagrama começa aqui",
+          "Mapas mentais para organizar ideias e desenhos livres para fluxogramas.",
+        create: "Novo",
+        empty: "Seu primeiro mapa ou desenho começa aqui",
         emptyHint:
-          "Crie um fluxograma ou um mapa mental para organizar suas ideias.",
+          "Crie um mapa mental ou um desenho para organizar suas ideias.",
         search: "Pesquisar diagramas",
       }
     : {
@@ -153,7 +158,9 @@ export function NoteList() {
         title:
           kind === "mindmap"
             ? ((template && MAP_TITLES[template]) ?? "Mapa mental sem título")
-            : undefined,
+            : kind === "excalidraw"
+              ? "Desenho sem título"
+              : undefined,
       });
       setCreationOpen(false);
       setTemplatePickerOpen(false);
@@ -317,7 +324,7 @@ export function NoteList() {
                   </h2>
                   <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground sm:mt-3 sm:text-sm sm:leading-6">
                     {note.kind === "excalidraw"
-                      ? "Fluxograma interativo"
+                      ? "Desenho"
                       : note.kind === "mindmap"
                         ? note.plain_text || "Mapa mental"
                         : note.plain_text || "Nota vazia"}
@@ -452,7 +459,7 @@ export function NoteList() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   Escolha o formato. Você pode mudar o título e a pasta depois.
                 </p>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
                   {creationOptions.map((option) => {
                     const Icon = option.icon;
                     const highlighted = isDiagramView
@@ -499,7 +506,7 @@ export function NoteList() {
         : null}
       {templatePickerOpen ? (
         <TemplatePicker
-          title="Novo mapa ou fluxograma"
+          title="Novo mapa mental"
           busy={create.isPending}
           onPick={(template) => void handleCreate("mindmap", template)}
           onClose={() => setTemplatePickerOpen(false)}

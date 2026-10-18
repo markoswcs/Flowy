@@ -704,7 +704,13 @@ function fromJson(text: string, title: string): MapDoc | null {
 }
 
 function fromText(text: string, title: string): MapDoc | null {
-  const topics = fromOutline(text.replace(/^#+\s*/gm, "- "));
+  // "#", "##"… become nested bullets so headings keep their hierarchy.
+  const topics = fromOutline(
+    text.replace(
+      /^(#+)\s*/gm,
+      (_, hashes: string) => `${"  ".repeat(hashes.length - 1)}- `,
+    ),
+  );
   if (!topics.length) return null;
   const toRaw = (t: Topic): Raw => JSON.parse(JSON.stringify(t)) as Raw;
   return fromTopLevel(topics.map(toRaw), title);

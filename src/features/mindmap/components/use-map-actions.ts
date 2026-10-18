@@ -42,10 +42,6 @@ import {
 } from "@/features/mindmap/components/constants";
 import type { DropTarget } from "@/features/mindmap/components/drop-target";
 import {
-  mapToExcalidraw,
-  type ExcalidrawScene,
-} from "@/features/mindmap/interop/excalidraw";
-import {
   toFlowyJson,
   toFreeMind,
   toIndentedText,
@@ -91,6 +87,8 @@ interface UiState {
 
 interface ActionDeps {
   doc: MapDoc;
+  /** Whole map (differs from `doc` in focus mode); used for file exports. */
+  exportDoc: MapDoc;
   title: string;
   commit: (doc: MapDoc) => void;
   undo: () => void;
@@ -101,7 +99,6 @@ interface ActionDeps {
   viewportRef: RefObject<HTMLDivElement | null>;
   darkCanvas: boolean;
   isDesktop: boolean;
-  onOpenExcalidraw?: (scene: ExcalidrawScene) => Promise<void> | void;
 }
 
 interface Clip {
@@ -190,8 +187,8 @@ export function useMapActions(deps: ActionDeps) {
     return primary;
   }
 
-  function addChildTopic(base = doc, parentId = primary) {
-    if (!parentId) return requireTopic();
+  /** With nothing selected the new topic goes under the central one. */
+  function addChildTopic(base = doc, parentId = primary ?? base.root.id) {
     const result = addChild(base, parentId, NEW_CHILD_TEXT);
     selectAndEdit(result.doc, result.id, NEW_CHILD_TEXT);
   }
@@ -392,16 +389,7 @@ export function useMapActions(deps: ActionDeps) {
 
   async function exportAs(
     kind:
-      | "png"
-      | "svg"
-      | "md"
-      | "copy"
-      | "xmind"
-      | "mm"
-      | "opml"
-      | "json"
-      | "txt"
-      | "excalidraw",
+      "png" | "svg" | "md" | "copy" | "xmind" | "mm" | "opml" | "json" | "txt",
   ) {
     const name = safeFilename(deps.title);
     const text = (content: string, type: string, ext: string) =>
@@ -410,30 +398,24 @@ export function useMapActions(deps: ActionDeps) {
         `${name}.${ext}`,
       );
     try {
-      if (kind === "md") return text(toMarkdown(doc), "text/markdown", "md");
-      if (kind === "txt") return text(toIndentedText(doc), "text/plain", "txt");
-      if (kind === "mm") return text(toFreeMind(doc), "application/xml", "mm");
+      const full = deps.exportDoc;
+      if (kind === "md") return text(toMarkdown(full), "text/markdown", "md");
+      if (kind === "txt")
+        return text(toIndentedText(full), "text/plain", "txt");
+      if (kind === "mm") return text(toFreeMind(full), "application/xml", "mm");
       if (kind === "opml")
-        return text(toOpml(doc, deps.title), "text/x-opml", "opml");
+        return text(toOpml(full, deps.title), "text/x-opml", "opml");
       if (kind === "json")
-        return text(toFlowyJson(doc), "application/json", "flowy.json");
+        return text(toFlowyJson(full), "application/json", "flowy.json");
       if (kind === "xmind")
         return downloadBlob(
-          new Blob([toXmindFile(doc, deps.title) as BlobPart], {
+          new Blob([toXmindFile(full, deps.title) as BlobPart], {
             type: "application/vnd.xmind.workbook",
           }),
           `${name}.xmind`,
         );
-      if (kind === "excalidraw") {
-        const scene = await mapToExcalidraw(doc, layout, deps.darkCanvas);
-        return text(
-          JSON.stringify(scene),
-          "application/vnd.excalidraw+json",
-          "excalidraw",
-        );
-      }
       if (kind === "copy") {
-        await navigator.clipboard.writeText(toMarkdown(doc));
+        await navigator.clipboard.writeText(toMarkdown(full));
         return showHint("Tópicos copiados para a área de transferência.");
       }
       const { svg, width, height } = buildMapSvg(doc, layout, deps.darkCanvas);
@@ -444,19 +426,6 @@ export function useMapActions(deps: ActionDeps) {
       downloadBlob(blob, `${name}.${kind}`);
     } catch {
       showHint("Não foi possível exportar o mapa.");
-    }
-  }
-
-  async function openInExcalidraw() {
-    if (!deps.onOpenExcalidraw)
-      return showHint("Conecte-se à internet para criar o quadro.");
-    try {
-      showHint("Criando quadro Excalidraw…");
-      await deps.onOpenExcalidraw(
-        await mapToExcalidraw(doc, layout, deps.darkCanvas),
-      );
-    } catch {
-      showHint("Não foi possível criar o quadro.");
     }
   }
 
@@ -578,10 +547,6 @@ export function useMapActions(deps: ActionDeps) {
         return void exportAs("json");
       case "export-txt":
         return void exportAs("txt");
-      case "export-excalidraw":
-        return void exportAs("excalidraw");
-      case "open-excalidraw":
-        return void openInExcalidraw();
       case "expand-1":
         return commit(expandToLevel(doc, 1));
       case "expand-2":
@@ -681,11 +646,6 @@ export function useMapActions(deps: ActionDeps) {
       if (next === "curve") delete updated.branchStyle;
       commit(updated);
     },
-    setSketch: (sketch) => {
-      const updated: MapDoc = { ...doc, sketch };
-      if (!sketch) delete updated.sketch;
-      commit(updated);
-    },
     updateRelation: (patch) =>
       relation && commit(updateRelation(doc, relation.id, patch)),
     deleteRelation: () => {
@@ -713,7 +673,14 @@ export function useMapActions(deps: ActionDeps) {
     select,
     renameTopic: (id: string, text: string) =>
       commit(updateTopic(doc, id, { text })),
-    addChildTo: (id: string) => addChildTopic(doc, id),
+    /** Saves the row's text and adds a child in one undo step. */
+    addChildTo: (id: string, text?: string) =>
+      addChildTopic(
+        text !== undefined && text !== findTopic(doc, id)?.text
+          ? updateTopic(doc, id, { text })
+          : doc,
+        id,
+      ),
     toggleTopic,
     clearSelection: () => select([]),
     cancelLinking: () => patchUi({ linking: null }),

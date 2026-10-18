@@ -142,7 +142,8 @@ describe("parseMapData", () => {
 
 describe("TEMPLATES", () => {
   it("describes every template with its real layout", () => {
-    expect(TEMPLATES).toHaveLength(8);
+    expect(TEMPLATES).toHaveLength(7);
+    expect(TEMPLATES.map((t) => t.id)).not.toContain("flowchart");
     for (const t of TEMPLATES) {
       expect(t.label).not.toBe("");
       expect(t.description).not.toBe("");

@@ -12,7 +12,7 @@ interface OutlinePanelProps {
   onSelect: (id: string) => void;
   onRename: (id: string, text: string) => void;
   onToggle: (id: string) => void;
-  onAddChild: (id: string) => void;
+  onAddChild: (id: string, text: string) => void;
   onClose: () => void;
 }
 
@@ -76,9 +76,13 @@ function OutlineRow({
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
-              save();
-              if (event.ctrlKey || event.metaKey) props.onAddChild(topic.id);
-              else event.currentTarget.blur();
+              if (event.ctrlKey || event.metaKey) {
+                setSeen(draft);
+                props.onAddChild(topic.id, draft);
+              } else {
+                save();
+                event.currentTarget.blur();
+              }
             } else if (event.key === "Escape") {
               setDraft(topic.text);
               event.currentTarget.blur();

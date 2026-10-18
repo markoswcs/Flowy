@@ -1021,3 +1021,85 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ------------------------------------------------------------------------
+   Rotating border glow (ARC Raiders-style selection highlight).
+   A thin static border with a soft light travelling around it: only the
+   gradient angle animates, the element itself never rotates. Applies to
+   every selected/pressed/current control across the app.
+   ------------------------------------------------------------------------ */
+@property --flowy-glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@layer base {
+  /* Base layer so positioning utilities (absolute, fixed…) still win. */
+  :where(
+    [aria-pressed="true"],
+    [role="radio"][aria-checked="true"],
+    [role="tab"][aria-selected="true"],
+    [aria-current="page"],
+    .flowy-glow
+  ) {
+    position: relative;
+  }
+}
+
+:where(
+  [aria-pressed="true"],
+  [role="radio"][aria-checked="true"],
+  [role="tab"][aria-selected="true"],
+  [aria-current="page"],
+  .flowy-glow
+)::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--flowy-glow-angle),
+    hsl(var(--primary) / 0.18) 0deg,
+    hsl(var(--primary) / 0.18) 250deg,
+    hsl(var(--primary) / 0.7) 300deg,
+    hsl(0 0% 100% / 0.95) 330deg,
+    hsl(var(--primary) / 0.7) 345deg,
+    hsl(var(--primary) / 0.18) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  filter: drop-shadow(0 0 3px hsl(var(--primary) / 0.55));
+  animation: flowy-glow-spin 3.2s linear infinite;
+}
+
+@keyframes flowy-glow-spin {
+  to {
+    --flowy-glow-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(
+    [aria-pressed="true"],
+    [role="radio"][aria-checked="true"],
+    [role="tab"][aria-selected="true"],
+    [aria-current="page"],
+    .flowy-glow
+  )::after {
+    animation: none;
+    background: hsl(var(--primary) / 0.6);
+  }
+}
+
+/* Large selections (Ctrl+A) keep a static border to stay smooth. */
+[data-many-selected] .flowy-glow::after {
+  animation: none;
+}

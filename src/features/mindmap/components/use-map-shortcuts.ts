@@ -92,6 +92,8 @@ export function useMapShortcuts(
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if (!enabled || event.defaultPrevented || event.isComposing) return;
     if (!isMapTarget(event.target, canvasRef.current)) return;
+    // AltGr (pt-BR "/" and others) reports Ctrl+Alt: that is typing.
+    if (event.getModifierState?.("AltGraph")) return;
     const modified = event.ctrlKey || event.metaKey;
     const handled = modified
       ? handleModified(event, actions)

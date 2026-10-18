@@ -23,7 +23,6 @@ import {
   BoundaryShapes,
   ConnectorPaths,
   RelationPaths,
-  SketchFilter,
 } from "@/features/mindmap/components/connector-layer";
 import {
   findDropTarget,
@@ -77,6 +76,8 @@ interface MapCanvasProps {
   darkCanvas: boolean;
   linking: boolean;
   matches: ReadonlySet<string>;
+  /** Large selections skip the animated glow to keep panning smooth. */
+  manySelected: boolean;
   handlers: CanvasHandlers;
 }
 
@@ -146,7 +147,6 @@ export function MapCanvas(props: MapCanvasProps) {
   const [drag, setDrag] = useState<DragState | null>(null);
   const [marquee, setMarquee] = useState<MarqueeRect | null>(null);
   const boundaries = useMemo(() => boundaryRects(doc, layout), [doc, layout]);
-  const sketch = Boolean(doc.sketch);
   const topicIndex = useTopicIndex(doc);
   const theme = THEMES[doc.theme] ?? THEMES.flowy;
   const canvasColor = darkCanvas ? theme.canvas.dark : theme.canvas.light;
@@ -222,7 +222,6 @@ export function MapCanvas(props: MapCanvasProps) {
         dropping={placed.id === dropParent}
         hidden={!ghost && drag?.id === placed.id}
         matched={!ghost && props.matches.has(placed.id)}
-        sketch={sketch}
         handlers={handlers}
       />
     );
@@ -236,6 +235,7 @@ export function MapCanvas(props: MapCanvasProps) {
       role="tree"
       aria-label="Mapa"
       aria-multiselectable="true"
+      data-many-selected={props.manySelected ? "" : undefined}
       tabIndex={-1}
       className={cn(
         "relative h-full w-full touch-none select-none overflow-hidden outline-none [-webkit-touch-callout:none]",
@@ -271,16 +271,14 @@ export function MapCanvas(props: MapCanvasProps) {
           height={1}
           aria-hidden="true"
         >
-          <SketchFilter />
-          <BoundaryShapes boundaries={boundaries} sketch={sketch} />
-          <ConnectorPaths connectors={layout.connectors} sketch={sketch} />
+          <BoundaryShapes boundaries={boundaries} />
+          <ConnectorPaths connectors={layout.connectors} />
           <RelationPaths
             relations={doc.relations}
             layout={layout}
             layoutKind={doc.layout}
             selectedId={props.selectedRelationId}
             color={darkCanvas ? "#CBD5E1" : "#475569"}
-            sketch={sketch}
           />
         </svg>
         {Array.from(layout.topics.values(), (placed) => renderTopic(placed))}

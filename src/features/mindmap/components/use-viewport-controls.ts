@@ -37,10 +37,15 @@ export function useViewportControls(
         (height - FIT_PADDING * 2) / Math.max(b.height, 1),
       ),
     );
-    // Text that small is unreadable: keep a floor and centre on the root
-    // (placed around 0,0) so the person can pan out from there.
+    // Text that small is unreadable: keep a zoom floor, still centred on the
+    // whole map so the person can pan from there.
     if (k < minZoom) {
-      store.set({ x: width / 2, y: height / 2, k: clampZoom(minZoom) });
+      const floor = clampZoom(minZoom);
+      store.set({
+        x: width / 2 - (b.x + b.width / 2) * floor,
+        y: height / 2 - (b.y + b.height / 2) * floor,
+        k: floor,
+      });
       return true;
     }
     store.set({
@@ -95,7 +100,7 @@ export function useViewportControls(
 
   const afterLayout = useEffectEvent(() => {
     const phone = size().width < 640;
-    if (pendingFit.current && fit(1, phone ? 0.9 : 0))
+    if (pendingFit.current && fit(1, phone ? 0.5 : 0))
       pendingFit.current = false;
     if (pendingReveal.current) {
       reveal(pendingReveal.current);

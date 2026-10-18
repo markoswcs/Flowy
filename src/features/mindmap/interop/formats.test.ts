@@ -214,6 +214,36 @@ describe("other formats", () => {
 });
 
 describe("loader hardening", () => {
+  it("rejects image data URLs that could break out of an attribute", () => {
+    const doc = parseMapData(
+      JSON.stringify({
+        version: 2,
+        root: {
+          id: "r",
+          text: "R",
+          children: [],
+          image: {
+            src: 'data:image/png;base64,"onload="alert(1)',
+            width: 10,
+            height: 10,
+          },
+        },
+      }),
+      "T",
+    );
+    expect(doc.root.image).toBeUndefined();
+  });
+
+  it("keeps Markdown heading levels as nesting", async () => {
+    const doc = await importMapFile(
+      "t.md",
+      encoder.encode("# Projeto\n## Fase 1\n### Tarefa\n## Fase 2\n"),
+    );
+    expect(doc.root.text).toBe("Projeto");
+    expect(doc.root.children.map((c) => c.text)).toEqual(["Fase 1", "Fase 2"]);
+    expect(doc.root.children[0]?.children[0]?.text).toBe("Tarefa");
+  });
+
   it("refuses XML with DOCTYPE or entity declarations", async () => {
     const bomb = `<?xml version="1.0"?><!DOCTYPE map [<!ENTITY a "aaaa">]><map><node TEXT="&a;"/></map>`;
     await expect(
@@ -239,7 +269,6 @@ describe("loader hardening", () => {
         floating: [],
         relations: [],
         branchStyle: "elbow",
-        sketch: true,
       }),
       "T",
     );
@@ -248,6 +277,5 @@ describe("loader hardening", () => {
     expect(doc.root.labels).toEqual(["a"]);
     expect(doc.root.due).toBeUndefined();
     expect(doc.branchStyle).toBe("elbow");
-    expect(doc.sketch).toBe(true);
   });
 });
