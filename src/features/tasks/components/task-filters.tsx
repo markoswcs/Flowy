@@ -47,7 +47,7 @@ export function TaskFilters({
           <CustomSelect
             value={value.priority ?? "all"}
             onChange={(val) => onChange({ ...value, priority: val as TaskPriority | "all" })}
-            triggerIcon={<Flag className="size-3.5 transition-transform group-hover:scale-110 group-hover:text-primary" />}
+            triggerIcon={<Flag className="size-3.5 transition-transform group-hover:scale-110 group-hover:flowy-ink" />}
             options={[
               { value: "all", label: "Prioridade" },
               { value: "low", label: "Baixa" },
@@ -63,7 +63,7 @@ export function TaskFilters({
           <CustomSelect
             value={value.status ?? "all"}
             onChange={(val) => onChange({ ...value, status: val as TaskStatus | "all" })}
-            triggerIcon={<CircleDashed className="size-3.5 transition-transform group-hover:scale-110 group-hover:text-primary" />}
+            triggerIcon={<CircleDashed className="size-3.5 transition-transform group-hover:scale-110 group-hover:flowy-ink" />}
             options={[
               { value: "all", label: "Status" },
               { value: "todo", label: "A fazer" },
@@ -79,7 +79,7 @@ export function TaskFilters({
           <CustomSelect
             value={value.folderId ?? "all"}
             onChange={(val) => onChange({ ...value, folderId: val })}
-            triggerIcon={<FolderIcon className="size-3.5 transition-transform group-hover:scale-110 group-hover:text-primary" />}
+            triggerIcon={<FolderIcon className="size-3.5 transition-transform group-hover:scale-110 group-hover:flowy-ink" />}
             options={[
               { value: "all", label: "Pastas" },
               ...folders.map(f => ({ value: f.id, label: f.name, color: f.color }))
@@ -93,7 +93,7 @@ export function TaskFilters({
           <CustomSelect
             value={value.categoryId ?? "all"}
             onChange={(val) => onChange({ ...value, categoryId: val })}
-            triggerIcon={<Tag className="size-3.5 transition-transform group-hover:scale-110 group-hover:text-primary" />}
+            triggerIcon={<Tag className="size-3.5 transition-transform group-hover:scale-110 group-hover:flowy-ink" />}
             options={[
               { value: "all", label: "Etiquetas" },
               ...categories.map(c => ({ value: c.id, label: c.name, color: c.color }))

@@ -102,7 +102,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform group-active:scale-95">
               <CheckSquare className="size-4" />
             </div>
-            <span className="text-foreground transition-colors group-hover:text-primary">
+            <span className="text-foreground transition-colors group-hover:flowy-ink">
               Criar Tarefa
             </span>
           </button>

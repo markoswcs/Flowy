@@ -487,7 +487,7 @@ export default function ExcalidrawNoteEditor({ note }: { note: Note }) {
           type="button"
           onClick={() => setPenOnly((current) => !current)}
           className={`hidden size-11 place-items-center rounded-full transition-colors hover:bg-accent hover:text-foreground sm:grid ${
-            penOnly ? "bg-primary/15 text-primary" : "text-muted-foreground"
+            penOnly ? "flowy-active" : "text-muted-foreground"
           }`}
           aria-label={
             penOnly

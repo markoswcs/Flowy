@@ -51,7 +51,7 @@ export function SmartSuggestionChips({
       aria-live="polite"
     >
       {inferred ? (
-        <span className="flex items-center gap-1 text-[11px] font-medium text-primary">
+        <span className="flex items-center gap-1 text-[11px] font-medium flowy-ink">
           <Sparkles className="size-3.5" aria-hidden="true" />
           Sugerido
         </span>

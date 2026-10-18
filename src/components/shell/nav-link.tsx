@@ -46,7 +46,7 @@ export function NavLink({
       )}
     >
       <Icon
-        className={cn("size-[18px] shrink-0", active && "text-primary")}
+        className={cn("size-[18px] shrink-0", active && "flowy-ink")}
         aria-hidden="true"
       />
       {collapsed ? (

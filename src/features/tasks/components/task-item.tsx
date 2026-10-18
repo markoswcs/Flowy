@@ -192,7 +192,7 @@ export function TaskEditor({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Flag className={`size-3 ${isSelected && p === "high" ? "text-destructive" : isSelected && p === "low" ? "text-blue-500" : isSelected ? "text-primary" : ""}`} />
+                <Flag className={`size-3 ${isSelected && p === "high" ? "text-destructive" : isSelected && p === "low" ? "text-blue-500" : isSelected ? "flowy-ink" : ""}`} />
                 {priorityLabels[p]}
               </button>
             );
@@ -224,17 +224,17 @@ export function TaskEditor({
             value: val,
             label,
             icon: val === "completed"
-              ? <Check className="size-3.5 text-primary" />
+              ? <Check className="size-3.5 flowy-ink" />
               : val === "in_progress"
                 ? <Clock3 className="size-3.5 text-amber-500" />
                 : <CircleDashed className="size-3.5 text-muted-foreground" />
           }))}
           triggerIcon={
              status === "completed"
-              ? <Check className="size-3.5 text-primary" />
+              ? <Check className="size-3.5 flowy-ink" />
               : status === "in_progress"
                 ? <Clock3 className="size-3.5 text-amber-500" />
-                : <CircleDashed className="size-3.5 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                : <CircleDashed className="size-3.5 text-muted-foreground transition-colors group-focus-within:flowy-ink" />
           }
           className="h-10 min-w-0"
           containerClassName="min-w-0"
@@ -248,7 +248,7 @@ export function TaskEditor({
             { value: "", label: "Sem pasta" },
             ...folders.map(f => ({ value: f.id, label: f.name, icon: <FolderIcon className="size-3.5 text-blue-500" /> }))
           ]}
-          triggerIcon={<FolderIcon className="size-3.5 text-muted-foreground transition-colors group-focus-within:text-primary" />}
+          triggerIcon={<FolderIcon className="size-3.5 text-muted-foreground transition-colors group-focus-within:flowy-ink" />}
           className="h-10 min-w-0"
           containerClassName="col-span-2 min-w-0 sm:col-span-1"
         />
@@ -425,7 +425,7 @@ export function TaskItem({
       : when.tone === "overdue"
         ? "bg-destructive/15 text-destructive"
         : when.tone === "today"
-          ? "bg-violet-500/15 text-violet-400"
+          ? "flowy-active"
           : "text-muted-foreground";
 
   return (

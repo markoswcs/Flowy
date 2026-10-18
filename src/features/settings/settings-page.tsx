@@ -149,7 +149,8 @@ export function SettingsPage() {
     
     notify("Otimizando e enviando foto...");
     try {
-      const optimizedFile = await optimizeImage(file);
+      // Shown at most ~80px (160px on retina): 192px at 70% stays ~10-25 KB.
+      const optimizedFile = await optimizeImage(file, 192, 192, 0.7);
       await uploadAvatar.mutateAsync(optimizedFile);
       notify("Foto atualizada com sucesso!");
     } catch {
@@ -281,7 +282,7 @@ export function SettingsPage() {
                 Alterar foto
               </button>
               <p className="mt-1 text-xs text-muted-foreground">
-                Qualquer imagem até 5 MB (será otimizada).
+                Qualquer imagem até 5 MB. Ela é reduzida automaticamente para ficar leve.
               </p>
             </div>
           </div>

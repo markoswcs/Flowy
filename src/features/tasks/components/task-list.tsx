@@ -29,7 +29,7 @@ function sectionsFor(tasks: Task[]): Section[] {
   const today = localDateKey();
   const buckets: Section[] = [
     { key: "overdue", label: "Atrasadas", tone: "text-destructive", tasks: [] },
-    { key: "today", label: "Hoje", tone: "text-violet-400", tasks: [] },
+    { key: "today", label: "Hoje", tone: "flowy-ink", tasks: [] },
     { key: "upcoming", label: "Próximas", tone: "text-muted-foreground", tasks: [] },
     { key: "undated", label: "Sem data", tone: "text-muted-foreground", tasks: [] },
     { key: "done", label: "Concluídas", tone: "text-emerald-400", tasks: [] },

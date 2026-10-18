@@ -36,7 +36,7 @@ export function SwitchRow({
       <span
         className={cn(
           "grid size-11 shrink-0 place-items-center rounded-2xl transition-colors",
-          checked ? "bg-violet-500/15 text-violet-400" : "bg-muted text-muted-foreground",
+          checked ? "flowy-active" : "bg-muted text-muted-foreground",
         )}
         aria-hidden="true"
       >

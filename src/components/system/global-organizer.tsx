@@ -95,9 +95,9 @@ export function GlobalOrganizer() {
         </div>
         <div className="flex items-start gap-3 border-b border-border/60 bg-muted/30 px-4 py-3 text-xs leading-5 text-muted-foreground sm:px-6">
           {target === "categories" ? (
-            <Tag className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <Tag className="mt-0.5 size-4 shrink-0 flowy-ink" aria-hidden="true" />
           ) : (
-            <Folder className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <Folder className="mt-0.5 size-4 shrink-0 flowy-ink" aria-hidden="true" />
           )}
           <p>
             {target === "categories" ? (

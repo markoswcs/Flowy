@@ -95,7 +95,7 @@ function ToolButton({
       className={cn(
         "flex h-10 min-w-10 shrink-0 items-center justify-center gap-1.5 rounded-xl text-muted-foreground transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-90 disabled:pointer-events-none disabled:opacity-35 motion-reduce:transform-none",
         labelled && "2xl:px-2.5",
-        active && "bg-primary/15 text-primary",
+        active && "flowy-active",
         tool.danger && "hover:bg-destructive/10 hover:text-destructive",
       )}
     >
@@ -334,7 +334,7 @@ function DockButton({
       className={cn(
         "flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-[10.5px] font-medium leading-none transition-[transform,background-color,color] duration-200 active:scale-90 disabled:opacity-35 motion-reduce:transform-none",
         active
-          ? "bg-primary/15 text-primary"
+          ? "flowy-active"
           : "text-foreground/80 [@media(hover:hover)]:hover:bg-accent",
         tool.danger && !active && "text-destructive/90",
       )}
@@ -396,7 +396,7 @@ function SheetButton({
       aria-pressed={TOGGLE_TOOLS.has(id) ? active : undefined}
       className={cn(
         "flex min-h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-2xl bg-muted/40 px-1 py-2 text-[11px] font-medium text-foreground/80 transition-[transform,background-color] active:scale-95 disabled:opacity-35 motion-reduce:transform-none",
-        active && "bg-primary/15 text-primary",
+        active && "flowy-active",
         tool.danger && "text-destructive",
       )}
     >
@@ -458,7 +458,7 @@ export function MobileToolbar({
                 onClick={() => onLayout(option.id)}
                 className={cn(
                   "flex min-h-[4.25rem] flex-col items-center justify-center gap-1.5 rounded-2xl bg-muted/40 px-1 text-[11px] font-medium text-foreground/80",
-                  layout === option.id && "bg-primary/15 text-primary",
+                  layout === option.id && "flowy-active",
                 )}
               >
                 <LayoutIcon layout={option.id} className="size-5" />
@@ -472,7 +472,7 @@ export function MobileToolbar({
             <div key={group.title} className="mb-4">
               <p className={SHEET_TITLE}>{group.title}</p>
               {group.title === "Tópico" && !state.hasTopic ? (
-                <p className="rounded-2xl bg-primary/10 px-3 py-2.5 text-xs font-medium text-primary">
+                <p className="rounded-2xl bg-primary/10 px-3 py-2.5 text-xs font-medium flowy-ink">
                   Toque em um tópico do mapa para ver as ações dele.
                 </p>
               ) : (
@@ -518,7 +518,7 @@ export function MobileToolbar({
           className={cn(
             "flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-[10.5px] font-medium leading-none transition-[transform,background-color] active:scale-90 motion-reduce:transform-none",
             sheetOpen
-              ? "bg-primary/15 text-primary"
+              ? "flowy-active"
               : "text-foreground/80 [@media(hover:hover)]:hover:bg-accent",
           )}
         >

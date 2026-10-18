@@ -101,7 +101,7 @@ export function TemplatePicker({
                     : "border-border",
                 )}
               >
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl flowy-active transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                   <LayoutIcon layout={template.layout} className="size-5" />
                 </span>
                 <span className="min-w-0">

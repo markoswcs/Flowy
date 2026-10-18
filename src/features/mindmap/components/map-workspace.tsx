@@ -341,7 +341,7 @@ export function MapWorkspace(props: MapWorkspaceProps) {
   const slideTopic = slideId ? findTopic(doc, slideId) : null;
   const topBanner = presenting ? null : ui.linking ? (
     <div className="flowy-glass absolute left-1/2 top-[4.25rem] z-30 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-primary/40 py-1.5 pl-4 pr-1.5 text-xs font-medium md:top-[4.5rem]">
-      <Spline className="size-4 text-primary" aria-hidden="true" />
+      <Spline className="size-4 flowy-ink" aria-hidden="true" />
       {ui.linking.from
         ? "Escolha o tópico de destino"
         : "Escolha o tópico de origem"}
@@ -435,7 +435,7 @@ export function MapWorkspace(props: MapWorkspaceProps) {
       {focus.focusId && !presenting ? (
         <div className="flowy-glass absolute left-3 top-3 z-20 flex max-w-[calc(100%-8rem)] md:max-w-[calc(100%-1.5rem)] items-center gap-1 rounded-full border py-1 pl-3 pr-1 text-xs md:top-[7.75rem]">
           <Focus
-            className="size-3.5 shrink-0 text-primary"
+            className="size-3.5 shrink-0 flowy-ink"
             aria-hidden="true"
           />
           <nav

@@ -13,7 +13,7 @@ export default function RecoveryPage() {
       description="Enviaremos um link seguro para criar uma nova senha."
       footer={
         <Link
-          className="font-medium text-primary underline-offset-4 hover:underline"
+          className="font-medium flowy-ink underline-offset-4 hover:underline"
           href="/login"
         >
           Voltar para entrar

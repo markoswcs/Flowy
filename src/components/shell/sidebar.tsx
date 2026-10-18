@@ -230,7 +230,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => openOrganizer("folders")}
-                  className="flex size-7 items-center justify-center rounded-full bg-white/5 text-muted-foreground hover:bg-primary/20 hover:text-primary transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="flex size-7 items-center justify-center rounded-full bg-white/5 text-muted-foreground hover:bg-primary/20 hover:flowy-ink transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   aria-label="Nova pasta"
                   title="Nova pasta"
                 >
@@ -272,7 +272,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => openOrganizer("categories")}
-                  className="flex size-7 items-center justify-center rounded-full bg-white/5 text-muted-foreground hover:bg-primary/20 hover:text-primary transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="flex size-7 items-center justify-center rounded-full bg-white/5 text-muted-foreground hover:bg-primary/20 hover:flowy-ink transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_hsl(var(--primary)/0.3)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   aria-label="Nova etiqueta"
                   title="Nova etiqueta"
                 >

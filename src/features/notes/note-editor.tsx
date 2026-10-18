@@ -148,7 +148,7 @@ export function NoteEditor({ noteId }: { noteId: string }) {
         </p>
         <button
           onClick={() => note.refetch()}
-          className="mt-3 text-sm font-medium text-primary hover:underline"
+          className="mt-3 text-sm font-medium flowy-ink hover:underline"
         >
           Tentar novamente
         </button>

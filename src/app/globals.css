@@ -1329,3 +1329,208 @@
   pointer-events: none;
   color: hsl(var(--muted-foreground) / 0.6);
 }
+
+/* ------------------------------------------------------------------------
+   Tutorial scenes: short looping illustrations (see tutorial-scenes.tsx).
+   Every animation stops on its final frame with reduced motion.
+   ------------------------------------------------------------------------ */
+.tut-scene * {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.tut-grow-x {
+  transform-origin: left center;
+  animation: tut-grow-x 3.6s ease-out infinite both;
+}
+.tut-pop,
+.tut-pop-in {
+  animation: tut-pop 3.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite both;
+}
+.tut-pop-in {
+  animation-duration: 3s;
+}
+.tut-dim {
+  animation: tut-dim 3.6s ease infinite both;
+}
+.tut-draw {
+  animation: tut-draw 3.6s ease-in-out infinite both;
+}
+.tut-blink {
+  animation: tut-blink 1s steps(1) infinite;
+}
+.tut-hop {
+  animation: tut-hop 4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+.tut-pulse {
+  animation: tut-pulse 1.6s ease-in-out infinite;
+}
+.tut-drop-in {
+  animation: tut-drop-in 3.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite both;
+}
+.tut-ripple {
+  animation: tut-ripple 1.4s ease-out infinite;
+}
+.tut-ghost {
+  stroke-dasharray: 4 3;
+  animation: tut-ghost 3.2s ease infinite;
+}
+.tut-slide-x {
+  animation: tut-slide-x 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+.tut-colors {
+  fill: #8b5cf6;
+  animation: tut-colors 5s steps(1) infinite;
+}
+.tut-flash {
+  animation: tut-flash 3.6s ease infinite;
+}
+.tut-lens {
+  transform-box: view-box;
+  transform: translate(100px, 86px);
+  animation: tut-lens 3.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+.tut-slide-down {
+  animation: tut-slide-down 3.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite both;
+}
+.tut-swing {
+  transform-box: view-box;
+  animation: tut-swing 3.2s ease-in-out infinite;
+}
+
+@keyframes tut-grow-x {
+  0% { transform: scaleX(0); opacity: 1; }
+  25%, 88% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+@keyframes tut-pop {
+  0% { transform: scale(0); opacity: 0; }
+  14% { transform: scale(1.12); opacity: 1; }
+  22%, 88% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+@keyframes tut-dim {
+  0%, 12% { opacity: 1; }
+  24%, 88% { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+@keyframes tut-draw {
+  0% { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 1; }
+  35%, 88% { stroke-dasharray: 1; stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dasharray: 1; stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes tut-blink {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes tut-hop {
+  0%, 12% { transform: translateX(0); }
+  22%, 32% { transform: translateX(24px); }
+  42%, 52% { transform: translateX(48px); }
+  62%, 72% { transform: translateX(72px); }
+  82%, 100% { transform: translateX(96px); }
+}
+@keyframes tut-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes tut-drop-in {
+  0% { transform: translateY(-30px); opacity: 0; }
+  20%, 88% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes tut-ripple {
+  0% { transform: scale(0.6); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@keyframes tut-ghost {
+  0%, 15% { opacity: 0; }
+  30%, 75% { opacity: 0.6; }
+  90%, 100% { opacity: 0; }
+}
+@keyframes tut-slide-x {
+  0%, 15% { transform: translateX(0); }
+  55%, 80% { transform: translateX(80px); }
+  100% { transform: translateX(0); }
+}
+@keyframes tut-colors {
+  0% { fill: #8b5cf6; }
+  20% { fill: #f43f5e; }
+  40% { fill: #f59e0b; }
+  60% { fill: #22c55e; }
+  80% { fill: #3b82f6; }
+}
+@keyframes tut-flash {
+  0%, 60% { stroke: hsl(var(--foreground) / 0.18); stroke-width: 1; }
+  70%, 92% { stroke: hsl(var(--primary)); stroke-width: 3; }
+  100% { stroke: hsl(var(--foreground) / 0.18); stroke-width: 1; }
+}
+@keyframes tut-lens {
+  0%, 10% { transform: translate(60px, 36px); }
+  35%, 45% { transform: translate(140px, 36px); }
+  65%, 100% { transform: translate(100px, 86px); }
+}
+@keyframes tut-slide-down {
+  0%, 10% { transform: translateY(-34px); opacity: 0; }
+  28%, 88% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes tut-swing {
+  0%, 30%, 100% { transform: rotate(0); }
+  36% { transform: rotate(14deg); }
+  44% { transform: rotate(-12deg); }
+  52% { transform: rotate(8deg); }
+  60% { transform: rotate(-4deg); }
+}
+
+.reduce-motion .tut-scene *,
+.reduce-motion .tut-scene *::after {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tut-scene * {
+    animation: none !important;
+  }
+}
+
+.tut-swing-icon {
+  transform-origin: 50% 10%;
+  animation: tut-swing 3.2s ease-in-out infinite;
+}
+
+.reduce-motion .tut-swing-icon {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tut-swing-icon {
+    animation: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------------
+   Readable accents. Never paint text in the raw primary colour on a primary
+   tint (purple on purple): text stays close to the foreground, icons carry
+   a touch of the theme colour. Mixed from each theme's own tokens, so it
+   works on every theme (purple, white, black, oled…).
+   ------------------------------------------------------------------------ */
+:root {
+  --flowy-ink: color-mix(in oklab, hsl(var(--primary)) 45%, hsl(var(--foreground)));
+  --flowy-active-bg: color-mix(in oklab, hsl(var(--primary)) 18%, transparent);
+}
+
+@layer utilities {
+  .flowy-ink {
+    color: var(--flowy-ink);
+  }
+
+  .flowy-active {
+    background-color: var(--flowy-active-bg);
+    color: hsl(var(--foreground));
+  }
+
+  .flowy-active svg {
+    color: var(--flowy-ink);
+  }
+}

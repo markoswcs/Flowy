@@ -69,7 +69,7 @@ function ScheduleTile({
       <span
         className={cn(
           "grid size-8 shrink-0 place-items-center rounded-xl transition-colors",
-          empty ? "bg-muted/40 text-muted-foreground" : "bg-primary/15 text-primary",
+          empty ? "bg-muted/40 text-muted-foreground" : "flowy-active",
         )}
         aria-hidden="true"
       >
@@ -183,7 +183,7 @@ export function TaskScheduleFields({
             className={cn(
               "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
               dueDate === option.value
-                ? "border-primary/40 bg-primary/15 text-primary"
+                ? "flowy-active"
                 : "border-border/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
             )}
           >
@@ -192,7 +192,7 @@ export function TaskScheduleFields({
         ))}
         {dueTime ? (
           <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <BellRing className="size-3.5 text-primary" aria-hidden="true" />
+            <BellRing className="size-3.5 flowy-ink" aria-hidden="true" />
             Lembrete às {dueTime}
           </span>
         ) : null}
