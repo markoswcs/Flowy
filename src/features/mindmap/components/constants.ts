@@ -1,4 +1,9 @@
-import type { LayoutKind, TopicShape } from "@/features/mindmap/types";
+import type {
+  BranchStyle,
+  LayoutKind,
+  TopicFontSize,
+  TopicShape,
+} from "@/features/mindmap/types";
 
 export const FONT_STACK =
   'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
@@ -65,7 +70,51 @@ export const TOPIC_ICONS = [
   "📈",
   "🧠",
   "🏁",
+  "🚩",
+  "✏️",
+  "📝",
+  "🔍",
+  "🧩",
+  "⚙️",
+  "🔗",
+  "📊",
+  "💬",
+  "🎉",
+  "😀",
+  "😐",
+  "😟",
+  "❌",
+  "⛔",
+  "➡️",
+  "🔴",
+  "🟠",
+  "🟡",
+  "🟢",
+  "🔵",
+  "🟣",
+  "⚫",
+  "🏆",
 ];
+
+export const BRANCH_STYLE_OPTIONS: { id: BranchStyle; label: string }[] = [
+  { id: "curve", label: "Curva" },
+  { id: "straight", label: "Reta" },
+  { id: "elbow", label: "Cotovelo" },
+];
+
+export const FONT_SIZE_OPTIONS: {
+  id: TopicFontSize;
+  label: string;
+  short: string;
+}[] = [
+  { id: "sm", label: "Pequeno", short: "P" },
+  { id: "md", label: "Médio", short: "M" },
+  { id: "lg", label: "Grande", short: "G" },
+  { id: "xl", label: "Muito grande", short: "GG" },
+];
+
+/** Longest side of a topic picture, in map units. */
+export const TOPIC_IMAGE_MAX = 200;
 
 export function isSafeUrl(value: string): boolean {
   try {

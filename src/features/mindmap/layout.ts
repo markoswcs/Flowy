@@ -308,6 +308,38 @@ function bezier(x1: number, y1: number, x2: number, y2: number): string {
   return `M${round(x1)} ${round(y1)}C${round(mx)} ${round(y1)} ${round(mx)} ${round(y2)} ${round(x2)} ${round(y2)}`;
 }
 
+function elbowSide(x1: number, y1: number, x2: number, y2: number): string {
+  if (Math.abs(y2 - y1) < 0.5)
+    return `M${round(x1)} ${round(y1)}L${round(x2)} ${round(y2)}`;
+  const mx = x1 + (x2 - x1) / 2;
+  const dx = x2 > x1 ? 1 : -1;
+  const dy = y2 > y1 ? 1 : -1;
+  const r = Math.max(
+    0,
+    Math.min(10, Math.abs(x2 - x1) / 4, Math.abs(y2 - y1) / 2),
+  );
+  return (
+    `M${round(x1)} ${round(y1)}L${round(mx - dx * r)} ${round(y1)}` +
+    `Q${round(mx)} ${round(y1)} ${round(mx)} ${round(y1 + dy * r)}` +
+    `L${round(mx)} ${round(y2 - dy * r)}` +
+    `Q${round(mx)} ${round(y2)} ${round(mx + dx * r)} ${round(y2)}` +
+    `L${round(x2)} ${round(y2)}`
+  );
+}
+
+function sideConnector(
+  style: MapDoc["branchStyle"],
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): string {
+  if (style === "straight")
+    return `M${round(x1)} ${round(y1)}L${round(x2)} ${round(y2)}`;
+  if (style === "elbow") return elbowSide(x1, y1, x2, y2);
+  return bezier(x1, y1, x2, y2);
+}
+
 function elbowDown(x1: number, y1: number, x2: number, y2: number): string {
   if (Math.abs(x2 - x1) < 0.5)
     return `M${round(x1)} ${round(y1)}L${round(x2)} ${round(y2)}`;
@@ -366,8 +398,8 @@ function buildConnectors(
       const py = p.y + p.height / 2;
       path =
         c.side === "left"
-          ? bezier(p.x, py, c.x + c.width, cy)
-          : bezier(p.x + p.width, py, c.x, cy);
+          ? sideConnector(doc.branchStyle, p.x, py, c.x + c.width, cy)
+          : sideConnector(doc.branchStyle, p.x + p.width, py, c.x, cy);
     } else if (doc.layout === "org" || doc.layout === "flow") {
       path = elbowDown(
         p.x + p.width / 2,

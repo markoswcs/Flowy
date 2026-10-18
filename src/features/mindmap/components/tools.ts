@@ -1,4 +1,22 @@
 import {
+  Braces,
+  Expand,
+  FileArchive,
+  FileType,
+  FileUp,
+  Focus,
+  Keyboard,
+  Layers,
+  ListTree,
+  PaintRoller,
+  Paintbrush,
+  PenTool,
+  Presentation,
+  Search,
+  Shapes,
+  SquareDashed,
+  SquareDashedMousePointer,
+  SquarePlus,
   ChevronsDownUp,
   ChevronsUpDown,
   ClipboardCopy,
@@ -49,7 +67,29 @@ export type ToolId =
   | "export-svg"
   | "export-md"
   | "copy-outline"
-  | "trash";
+  | "trash"
+  | "search"
+  | "outline"
+  | "focus"
+  | "present"
+  | "boundary"
+  | "floating"
+  | "select-all"
+  | "copy-style"
+  | "paste-style"
+  | "fullscreen"
+  | "shortcuts"
+  | "import"
+  | "export-xmind"
+  | "export-mm"
+  | "export-opml"
+  | "export-json"
+  | "export-txt"
+  | "export-excalidraw"
+  | "open-excalidraw"
+  | "expand-1"
+  | "expand-2"
+  | "expand-3";
 
 export interface ToolDef {
   label: string;
@@ -155,13 +195,141 @@ export const TOOLS: Record<ToolId, ToolDef> = {
     icon: Trash2,
     danger: true,
   },
+  search: {
+    label: "Buscar no mapa",
+    short: "Buscar",
+    shortcut: "Ctrl+F",
+    icon: Search,
+  },
+  outline: {
+    label: "Estrutura em tópicos",
+    short: "Estrutura",
+    shortcut: "Ctrl+Shift+O",
+    icon: ListTree,
+  },
+  focus: {
+    label: "Focar no ramo",
+    short: "Focar",
+    shortcut: "Ctrl+Shift+F",
+    icon: Focus,
+    needsTopic: true,
+  },
+  present: {
+    label: "Apresentar",
+    shortcut: "F5",
+    icon: Presentation,
+  },
+  boundary: {
+    label: "Limite em volta do ramo",
+    short: "Limite",
+    shortcut: "Ctrl+Shift+B",
+    icon: SquareDashed,
+    needsTopic: true,
+  },
+  floating: {
+    label: "Tópico flutuante",
+    short: "Flutuante",
+    icon: SquarePlus,
+  },
+  "select-all": {
+    label: "Selecionar tudo",
+    short: "Tudo",
+    shortcut: "Ctrl+A",
+    icon: SquareDashedMousePointer,
+  },
+  "copy-style": {
+    label: "Copiar estilo",
+    short: "Copiar estilo",
+    shortcut: "Ctrl+Alt+C",
+    icon: Paintbrush,
+    needsTopic: true,
+  },
+  "paste-style": {
+    label: "Colar estilo",
+    short: "Colar estilo",
+    shortcut: "Ctrl+Alt+V",
+    icon: PaintRoller,
+    needsTopic: true,
+  },
+  fullscreen: { label: "Tela cheia", icon: Expand },
+  shortcuts: {
+    label: "Atalhos de teclado",
+    short: "Atalhos",
+    shortcut: "Ctrl+/",
+    icon: Keyboard,
+  },
+  import: {
+    label: "Importar (XMind, MindMeister, FreeMind, OPML, Markdown)",
+    short: "Importar",
+    icon: FileUp,
+  },
+  "export-xmind": {
+    label: "Exportar XMind (.xmind)",
+    short: "XMind",
+    icon: FileArchive,
+  },
+  "export-mm": {
+    label: "Exportar FreeMind / MindMeister (.mm)",
+    short: "FreeMind",
+    icon: FileCode2,
+  },
+  "export-opml": { label: "Exportar OPML", short: "OPML", icon: ListTree },
+  "export-json": {
+    label: "Exportar Flowy (.json)",
+    short: "JSON",
+    icon: Braces,
+  },
+  "export-txt": {
+    label: "Exportar texto com recuo",
+    short: "Texto",
+    icon: FileType,
+  },
+  "export-excalidraw": {
+    label: "Exportar Excalidraw (.excalidraw)",
+    short: "Excalidraw",
+    icon: PenTool,
+  },
+  "open-excalidraw": {
+    label: "Abrir como quadro Excalidraw",
+    short: "Quadro",
+    icon: Shapes,
+  },
+  "expand-1": {
+    label: "Expandir até o nível 1",
+    short: "Nível 1",
+    icon: Layers,
+  },
+  "expand-2": {
+    label: "Expandir até o nível 2",
+    short: "Nível 2",
+    icon: Layers,
+  },
+  "expand-3": {
+    label: "Expandir até o nível 3",
+    short: "Nível 3",
+    icon: Layers,
+  },
 };
 
 export const EXPORT_TOOLS: ToolId[] = [
   "export-png",
   "export-svg",
+  "export-xmind",
+  "export-mm",
+  "export-excalidraw",
+  "export-opml",
   "export-md",
+  "export-txt",
+  "export-json",
   "copy-outline",
+];
+
+export const EXPAND_TOOLS: ToolId[] = [
+  "collapse-all",
+  "expand-1",
+  "expand-2",
+  "expand-3",
+  "expand-all",
 ];
 
 export interface ToolState {
@@ -170,16 +338,26 @@ export interface ToolState {
   hasTopic: boolean;
   linking: boolean;
   formatOpen: boolean;
+  outlineOpen?: boolean;
+  searchOpen?: boolean;
+  focused?: boolean;
+  hasStyleClip?: boolean;
 }
 
 export function isToolDisabled(id: ToolId, state: ToolState): boolean {
   if (id === "undo") return !state.canUndo;
   if (id === "redo") return !state.canRedo;
+  if (id === "paste-style") return !state.hasTopic || !state.hasStyleClip;
+  if (id === "focus" && state.focused) return false;
   return Boolean(TOOLS[id].needsTopic) && !state.hasTopic;
 }
 
 export function isToolActive(id: ToolId, state: ToolState): boolean {
   return (
-    (id === "link" && state.linking) || (id === "format" && state.formatOpen)
+    (id === "link" && state.linking) ||
+    (id === "format" && state.formatOpen) ||
+    (id === "outline" && Boolean(state.outlineOpen)) ||
+    (id === "search" && Boolean(state.searchOpen)) ||
+    (id === "focus" && Boolean(state.focused))
   );
 }

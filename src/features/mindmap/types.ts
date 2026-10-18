@@ -61,7 +61,23 @@ export type LayoutKind =
   | "flow"; // top-down flowchart; shapes + relations act as flow arrows
 
 export type ThemeId =
-  "flowy" | "classic" | "ocean" | "sunset" | "forest" | "mono";
+  | "flowy"
+  | "classic"
+  | "ocean"
+  | "sunset"
+  | "forest"
+  | "mono"
+  | "pastel"
+  | "midnight"
+  | "candy";
+
+/** How parent→child lines are drawn in the radial and logic layouts. */
+export type BranchStyle = "curve" | "straight" | "elbow";
+
+export type TopicFontSize = "sm" | "md" | "lg" | "xl";
+
+/** XMind task progress markers. */
+export type TopicProgress = 0 | 25 | 50 | 75 | 100;
 
 export type TopicShape =
   "rounded" | "rect" | "pill" | "ellipse" | "diamond" | "underline" | "none";
@@ -85,6 +101,26 @@ export interface TopicStyle {
   bold?: boolean;
   /** Branch line colour for this topic and its descendants. */
   branch?: string;
+  italic?: boolean;
+  strike?: boolean;
+  /** Unset = "md", the size for the topic's depth. */
+  size?: TopicFontSize;
+  /** Hex border colour. */
+  border?: string;
+  dashed?: boolean;
+}
+
+/** XMind "boundary": a frame drawn around a topic and its subtree. */
+export interface Boundary {
+  label?: string;
+  color?: string;
+}
+
+/** Small picture shown above the topic text (data URL, already resized). */
+export interface TopicImage {
+  src: string;
+  width: number;
+  height: number;
 }
 
 export interface Topic {
@@ -108,6 +144,13 @@ export interface Topic {
    * topic onto empty canvas. Moves its whole subtree; cleared by "Reorganizar".
    */
   offset?: { x: number; y: number };
+  /** Short tags shown under the text (XMind "labels"). */
+  labels?: string[];
+  progress?: TopicProgress;
+  /** Due date, YYYY-MM-DD (MindMeister tasks). */
+  due?: string;
+  image?: TopicImage;
+  boundary?: Boundary;
 }
 
 export interface Relation {
@@ -117,6 +160,10 @@ export interface Relation {
   label?: string;
   /** Flowcharts draw relations as straight arrows; maps as curves. */
   style?: "curve" | "straight" | "dashed";
+  /** Hex line colour. */
+  color?: string;
+  /** Arrow heads; unset = "end". */
+  arrows?: "end" | "both" | "none";
 }
 
 export interface MapDoc {
@@ -127,6 +174,10 @@ export interface MapDoc {
   /** Free topics not attached to the root (XMind "floating topics"). */
   floating: Array<Topic & { x: number; y: number }>;
   relations: Relation[];
+  /** Unset = "curve". */
+  branchStyle?: BranchStyle;
+  /** Hand-drawn look, like Excalidraw. */
+  sketch?: boolean;
 }
 
 export interface Size {

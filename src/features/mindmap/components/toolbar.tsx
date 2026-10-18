@@ -1,6 +1,12 @@
 "use client";
 
-import { Download, LayoutGrid, Palette, X } from "lucide-react";
+import {
+  ChevronsUpDown,
+  FolderOpen,
+  LayoutGrid,
+  Palette,
+  X,
+} from "lucide-react";
 import { useSyncExternalStore, type ReactNode } from "react";
 
 import type { LayoutKind, ThemeId } from "@/features/mindmap/types";
@@ -9,6 +15,7 @@ import { ThemeList } from "@/features/mindmap/components/format-panel";
 import { LayoutIcon } from "@/features/mindmap/components/layout-icon";
 import { MenuItem, Popover } from "@/features/mindmap/components/popover";
 import {
+  EXPAND_TOOLS,
   EXPORT_TOOLS,
   isToolActive,
   isToolDisabled,
@@ -49,7 +56,11 @@ function ToolButton({
       onClick={() => onRun(id)}
       disabled={isToolDisabled(id, state)}
       aria-label={tool.label}
-      aria-pressed={id === "link" || id === "format" ? active : undefined}
+      aria-pressed={
+        ["link", "format", "outline", "search", "focus"].includes(id)
+          ? active
+          : undefined
+      }
       title={title}
       className={cn(
         "grid shrink-0 place-items-center rounded-xl text-muted-foreground transition-[transform,background-color,color] duration-150 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-90 disabled:pointer-events-none disabled:opacity-40 motion-reduce:transform-none",
@@ -127,21 +138,23 @@ function ThemeMenu({
   );
 }
 
-function ExportMenu({
+function ToolMenu({
+  label,
+  icon,
+  tools,
   onRun,
   align = "start",
 }: {
+  label: string;
+  icon: ReactNode;
+  tools: ToolId[];
   onRun: (id: ToolId) => void;
   align?: "start" | "end";
 }) {
   return (
-    <Popover
-      label="Exportar"
-      icon={<Download className="size-[18px]" />}
-      align={align}
-    >
+    <Popover label={label} icon={icon} align={align}>
       {(close) =>
-        EXPORT_TOOLS.map((id) => {
+        tools.map((id) => {
           const Icon = TOOLS[id].icon;
           return (
             <MenuItem
@@ -159,6 +172,8 @@ function ExportMenu({
     </Popover>
   );
 }
+
+const FILE_TOOLS: ToolId[] = ["import", "open-excalidraw", ...EXPORT_TOOLS];
 
 export function DesktopToolbar({
   state,
@@ -181,12 +196,26 @@ export function DesktopToolbar({
       <Divider />
       {group(["child", "sibling", "parent", "delete"])}
       <Divider />
-      {group(["collapse-all", "expand-all", "auto-arrange", "link"])}
+      {group(["link", "boundary", "floating"])}
+      <ToolMenu
+        label="Expandir e recolher"
+        icon={<ChevronsUpDown className="size-[18px]" />}
+        tools={EXPAND_TOOLS}
+        onRun={onRun}
+      />
+      {group(["auto-arrange"])}
       <Divider />
       <LayoutMenu layout={layout} onLayout={onLayout} />
       <ThemeMenu theme={theme} onTheme={onTheme} />
       {group(["template"])}
-      <ExportMenu onRun={onRun} />
+      <ToolMenu
+        label="Arquivo: importar e exportar"
+        icon={<FolderOpen className="size-[18px]" />}
+        tools={FILE_TOOLS}
+        onRun={onRun}
+      />
+      <Divider />
+      {group(["search", "outline", "focus", "present"])}
       <Divider />
       {group(["format"])}
     </nav>
@@ -225,6 +254,9 @@ export function ZoomControls({
       <Divider />
       <ToolButton id="fit" state={state} onRun={onRun} />
       <ToolButton id="center" state={state} onRun={onRun} />
+      <Divider />
+      <ToolButton id="fullscreen" state={state} onRun={onRun} />
+      <ToolButton id="shortcuts" state={state} onRun={onRun} />
     </div>
   );
 }
@@ -271,20 +303,35 @@ function BarButton({
 const SHEET_GROUPS: { title: string; tools: ToolId[] }[] = [
   {
     title: "Tópico",
-    tools: ["edit", "parent", "duplicate", "delete", "format", "note"],
+    tools: [
+      "edit",
+      "parent",
+      "duplicate",
+      "delete",
+      "format",
+      "note",
+      "boundary",
+      "link",
+      "copy-style",
+      "paste-style",
+      "focus",
+      "floating",
+    ],
   },
   {
     title: "Mapa",
     tools: [
+      "search",
+      "outline",
+      "present",
       "auto-arrange",
-      "collapse-all",
-      "expand-all",
+      ...EXPAND_TOOLS,
       "template",
       "fit",
       "center",
     ],
   },
-  { title: "Exportar", tools: [...EXPORT_TOOLS, "trash"] },
+  { title: "Arquivo", tools: [...FILE_TOOLS, "trash"] },
 ];
 
 interface MobileToolbarProps extends ToolbarProps {

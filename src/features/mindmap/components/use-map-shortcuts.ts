@@ -13,6 +13,7 @@ export interface ShortcutActions {
   reorder: (delta: -1 | 1) => void;
   toggleCollapse: () => void;
   toggleBold: () => void;
+  toggleItalic: () => void;
   startTyping: (text: string) => void;
   escape: () => void;
   copy: (event: ClipboardEvent, cut: boolean) => void;
@@ -44,7 +45,16 @@ function handleModified(
   actions: ShortcutActions,
 ): boolean {
   const key = event.key.toLowerCase();
-  if (key === "z") actions.run(event.shiftKey ? "redo" : "undo");
+  if (event.altKey && (key === "c" || key === "v"))
+    actions.run(key === "c" ? "copy-style" : "paste-style");
+  else if (event.shiftKey && key === "b") actions.run("boundary");
+  else if (event.shiftKey && key === "o") actions.run("outline");
+  else if (event.shiftKey && key === "f") actions.run("focus");
+  else if (key === "f") actions.run("search");
+  else if (key === "a") actions.run("select-all");
+  else if (key === "i") actions.toggleItalic();
+  else if (key === "/") actions.run("shortcuts");
+  else if (key === "z") actions.run(event.shiftKey ? "redo" : "undo");
   else if (key === "y") actions.run("redo");
   else if (key === "d") actions.run("duplicate");
   else if (key === "b") actions.toggleBold();
@@ -64,6 +74,8 @@ function handlePlain(event: KeyboardEvent, actions: ShortcutActions): boolean {
   else if (event.key === "Delete" || event.key === "Backspace")
     actions.run("delete");
   else if (event.key === "F2") actions.run("edit");
+  else if (event.key === "F5") actions.run("present");
+  else if (event.key === "F1") actions.run("shortcuts");
   else if (event.key === " ") actions.toggleCollapse();
   else if (event.key === "Escape") actions.escape();
   else if (event.key.length === 1 && !event.altKey)

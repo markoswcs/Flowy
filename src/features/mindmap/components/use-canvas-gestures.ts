@@ -40,6 +40,17 @@ export interface GestureCallbacks {
     dx: number,
     dy: number,
   ) => void;
+  /** Shift+drag on empty canvas: live rectangle in screen space (null = done). */
+  onMarquee: (rect: MarqueeRect | null) => void;
+  /** Final rectangle in map coordinates. */
+  onMarqueeEnd: (rect: MarqueeRect, additive: boolean) => void;
+}
+
+export interface MarqueeRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 interface Point {
@@ -50,6 +61,7 @@ interface Point {
 type Gesture =
   | { type: "idle" }
   | { type: "pan"; last: Point; moved: boolean; relationId: string | null }
+  | { type: "marquee"; start: Point; additive: boolean }
   | {
       type: "topic";
       id: string;
@@ -75,6 +87,15 @@ function distance(a: Point, b: Point): number {
 
 function midpoint(a: Point, b: Point): Point {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function rectOf(a: Point, b: Point): MarqueeRect {
+  return {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    width: Math.abs(a.x - b.x),
+    height: Math.abs(a.y - b.y),
+  };
 }
 
 export function useCanvasGestures(
@@ -147,6 +168,14 @@ export function useCanvasGestures(
     if (pointers.current.size > 2) return;
     const topicId =
       target.closest<HTMLElement>("[data-topic-id]")?.dataset.topicId;
+    if (!topicId && event.shiftKey && event.pointerType === "mouse") {
+      gesture.current = {
+        type: "marquee",
+        start: point,
+        additive: event.ctrlKey || event.metaKey,
+      };
+      return;
+    }
     if (!topicId) {
       const relationId =
         target.closest<SVGElement>("[data-relation-id]")?.dataset.relationId ??
@@ -208,6 +237,7 @@ export function useCanvasGestures(
     pointers.current.set(event.pointerId, point);
     const g = gesture.current;
     if (g.type === "pinch") movePinch();
+    else if (g.type === "marquee") cb.onMarquee(rectOf(g.start, point));
     else if (g.type === "topic") moveTopic(g, point);
     else if (g.type === "pan") {
       const view = store.get();
@@ -253,7 +283,13 @@ export function useCanvasGestures(
       return;
     }
     gesture.current = { type: "idle" };
-    if (g.type === "topic") finishTopic(g, point, event);
+    if (g.type === "marquee") {
+      cb.onMarquee(null);
+      const a = toMap(g.start);
+      const b = toMap(point);
+      if (distance(g.start, point) < 4) cb.onBackgroundTap();
+      else cb.onMarqueeEnd(rectOf(a, b), g.additive);
+    } else if (g.type === "topic") finishTopic(g, point, event);
     else if (g.type === "pan" && !g.moved) {
       if (g.relationId) cb.onRelationTap(g.relationId);
       else cb.onBackgroundTap();
@@ -265,6 +301,7 @@ export function useCanvasGestures(
     clearPressTimer();
     const g = gesture.current;
     if (g.type === "topic" && g.dragging) cb.onDragEnd(g.id, NaN, NaN, 0, 0);
+    if (g.type === "marquee") cb.onMarquee(null);
     if (pointers.current.size === 0) gesture.current = { type: "idle" };
   }
 

@@ -27,9 +27,8 @@ export function useViewportControls(
   }
 
   /** Returns false while the canvas has no size yet. */
-  function fit(maxZoom = 1, minZoom = 0): boolean {
+  function fit(maxZoom = 1, minZoom = 0, b = layout.bounds): boolean {
     const { width, height } = size();
-    const b = layout.bounds;
     if (!width || !height) return false;
     const k = clampZoom(
       Math.min(
@@ -108,8 +107,38 @@ export function useViewportControls(
     afterLayout();
   }, [layout]);
 
+  /** Frames a topic and its visible children (presentation steps). */
+  function frame(id: string) {
+    const placed = layout.topics.get(id);
+    if (!placed) return;
+    let minX = placed.x;
+    let minY = placed.y;
+    let maxX = placed.x + placed.width;
+    let maxY = placed.y + placed.height;
+    for (const p of layout.topics.values()) {
+      if (p.parentId !== id) continue;
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x + p.width);
+      maxY = Math.max(maxY, p.y + p.height);
+    }
+    fit(1.6, 0, { x: minX, y: minY, width: maxX - minX, height: maxY - minY });
+  }
+
+  /** Map coordinates of the middle of the canvas. */
+  function centerPoint() {
+    const { width, height } = size();
+    const view = store.get();
+    return {
+      x: (width / 2 - view.x) / view.k,
+      y: (height / 2 - view.y) / view.k,
+    };
+  }
+
   return {
     fit,
+    frame,
+    centerPoint,
     center,
     zoomBy,
     reveal,

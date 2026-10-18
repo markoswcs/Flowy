@@ -14,7 +14,15 @@ import {
   useMapDocument,
   type SaveStatus,
 } from "@/features/mindmap/components/use-map-document";
-import { useTrashNote } from "@/features/notes/use-notes";
+import type { ExcalidrawScene } from "@/features/mindmap/interop/excalidraw";
+import {
+  noteKeys,
+  useCreateNote,
+  useTrashNote,
+} from "@/features/notes/use-notes";
+import { useQueryClient } from "@tanstack/react-query";
+import { createClient } from "@/lib/supabase/client";
+import { updateNote } from "@/services/notes";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -62,6 +70,8 @@ export default function MapEditor({ note }: { note: Note }) {
   const searchParams = useSearchParams();
   const online = useOnlineStatus();
   const trash = useTrashNote();
+  const createNote = useCreateNote();
+  const queryClient = useQueryClient();
   const [initial] = useState(() =>
     loadInitialDoc(note, searchParams.get(TEMPLATE_PARAM)),
   );
@@ -94,6 +104,22 @@ export default function MapEditor({ note }: { note: Note }) {
     } catch {
       toast.error("Não foi possível excluir o mapa.");
     }
+  }
+
+  /** Copies the map into a new Excalidraw board note and opens it. */
+  async function openExcalidraw(scene: ExcalidrawScene) {
+    const title = `${map.title || UNTITLED_MAP} (quadro)`;
+    const board = await createNote.mutateAsync({
+      title,
+      kind: "excalidraw",
+      folderId: note.folder_id,
+    });
+    const saved = await updateNote(createClient(), board.id, {
+      excalidraw_data: JSON.stringify(scene),
+    });
+    queryClient.setQueryData(noteKeys.detail(board.id), saved);
+    await saveNow();
+    router.push(`/app/notes/${board.id}`);
   }
 
   const status: SaveStatus = online ? map.status : "offline";
@@ -155,6 +181,7 @@ export default function MapEditor({ note }: { note: Note }) {
           undo={map.undo}
           redo={map.redo}
           onTrash={() => void handleTrash()}
+          onOpenExcalidraw={online ? openExcalidraw : undefined}
         />
       </div>
     </div>

@@ -70,7 +70,7 @@ export function Popover({
         <div
           role="menu"
           className={cn(
-            "flowy-glass flowy-glass-strong absolute z-50 min-w-56 animate-scale-in rounded-2xl border p-1.5",
+            "flowy-glass flowy-glass-strong absolute z-50 max-h-[min(70vh,34rem)] min-w-56 animate-scale-in overflow-y-auto overscroll-contain rounded-2xl border p-1.5",
             side === "bottom"
               ? "top-[calc(100%+8px)]"
               : "bottom-[calc(100%+8px)]",
