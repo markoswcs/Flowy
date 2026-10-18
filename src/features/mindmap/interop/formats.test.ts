@@ -214,6 +214,13 @@ describe("other formats", () => {
 });
 
 describe("loader hardening", () => {
+  it("refuses XML with DOCTYPE or entity declarations", async () => {
+    const bomb = `<?xml version="1.0"?><!DOCTYPE map [<!ENTITY a "aaaa">]><map><node TEXT="&a;"/></map>`;
+    await expect(
+      importMapFile("bomba.mm", encoder.encode(bomb)),
+    ).rejects.toThrow();
+  });
+
   it("drops non-hex colours and unsafe images from imported data", () => {
     const doc = parseMapData(
       JSON.stringify({

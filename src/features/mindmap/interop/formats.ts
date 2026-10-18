@@ -392,7 +392,14 @@ function fromXmindJson(json: unknown, title: string): MapDoc | null {
 
 // ------------------------------------------------------- XML helpers
 
+/**
+ * Parses an imported file into an inert XML document (never rendered).
+ * DOCTYPE/ENTITY declarations are refused: map files never need them and
+ * they enable entity-expansion attacks.
+ */
 function parseXml(text: string): Document {
+  if (/<!(?:DOCTYPE|ENTITY)/i.test(text))
+    throw new Error("XML com DOCTYPE não é aceito.");
   const xml = new DOMParser().parseFromString(text, "application/xml");
   if (xml.getElementsByTagName("parsererror").length)
     throw new Error("XML inválido.");
