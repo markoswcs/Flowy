@@ -21,6 +21,7 @@ export type SceneId =
   | "pen"
   | "install"
   | "bell"
+  | "devices"
   | "done";
 
 const P = "hsl(var(--primary))";
@@ -537,6 +538,56 @@ const SCENES: Record<SceneId, () => ReactNode> = {
         <circle cx="100" cy="92" r="3" fill={P} />
       </g>
     </Phone>
+  ),
+  devices: () => (
+    <>
+      <rect
+        x="14"
+        y="16"
+        width="112"
+        height="72"
+        rx="8"
+        fill={CARD}
+        stroke={LINE}
+        strokeWidth="2"
+      />
+      <path
+        d="M58 96 h24 M70 88 v8"
+        stroke={LINE}
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <g className="tut-slide-down">
+        <rect x="64" y="24" width="56" height="18" rx="5" fill={P} />
+        <rect x="69" y="29" width="28" height="3" rx="1.5" fill="#fff" />
+        <rect
+          x="69"
+          y="35"
+          width="40"
+          height="3"
+          rx="1.5"
+          fill="#fff"
+          opacity="0.7"
+        />
+      </g>
+      <rect
+        x="136"
+        y="30"
+        width="48"
+        height="80"
+        rx="10"
+        fill={CARD}
+        stroke={LINE}
+        strokeWidth="2"
+      />
+      <g className="tut-slide-down" style={d(0.5)}>
+        <rect x="140" y="40" width="40" height="15" rx="4" fill={P} />
+        <rect x="144" y="45" width="22" height="2.5" rx="1.25" fill="#fff" />
+      </g>
+      <g className="tut-swing" style={{ transformOrigin: "160px 70px" }}>
+        <path d="M152 92 v-9 a8 8 0 0 1 16 0 v9 l3 3 h-22 z" fill={P} />
+      </g>
+    </>
   ),
   done: () => (
     <>

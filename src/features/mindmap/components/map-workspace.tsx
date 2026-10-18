@@ -29,7 +29,6 @@ import {
   searchTopics,
 } from "@/features/mindmap/components/search-bar";
 import { ShortcutsDialog } from "@/features/mindmap/components/shortcuts-dialog";
-import { TopicQuickBar } from "@/features/mindmap/components/topic-quick-bar";
 import { SidePanel } from "@/features/mindmap/components/side-panel";
 import { TemplatePicker } from "@/features/mindmap/components/template-picker";
 import { FirstUseTip } from "@/features/mindmap/components/first-use-tip";
@@ -401,22 +400,6 @@ export function MapWorkspace(props: MapWorkspaceProps) {
         handlers={canvasHandlers}
       />
 
-      {!presenting &&
-      !ui.editing &&
-      !ui.linking &&
-      !ui.actionSheet &&
-      actions.selectionSet.size === 1 &&
-      actions.primary &&
-      layout.topics.get(actions.primary) ? (
-        <TopicQuickBar
-          key={actions.primary}
-          placed={layout.topics.get(actions.primary)!}
-          store={store}
-          isRoot={actions.primary === doc.root.id}
-          onRun={runTool}
-        />
-      ) : null}
-
       {presenting ? null : (
         <>
           <DesktopToolbar {...toolbarProps} />
@@ -434,10 +417,7 @@ export function MapWorkspace(props: MapWorkspaceProps) {
 
       {focus.focusId && !presenting ? (
         <div className="flowy-glass absolute left-3 top-3 z-20 flex max-w-[calc(100%-8rem)] md:max-w-[calc(100%-1.5rem)] items-center gap-1 rounded-full border py-1 pl-3 pr-1 text-xs md:top-[7.75rem]">
-          <Focus
-            className="size-3.5 shrink-0 flowy-ink"
-            aria-hidden="true"
-          />
+          <Focus className="size-3.5 shrink-0 flowy-ink" aria-hidden="true" />
           <nav
             aria-label="Caminho do foco"
             className="flex min-w-0 items-center gap-1"

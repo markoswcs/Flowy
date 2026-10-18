@@ -15,6 +15,10 @@ const DISMISS_KEY = "flowy:reminder-setup-dismissed";
 /** A "Depois" hides the offer for a few days, then it comes back once more. */
 const SNOOZE_MS = 3 * 24 * 60 * 60 * 1000;
 
+function isDesktop() {
+  return !/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+}
+
 function isIos() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
@@ -78,6 +82,7 @@ function SetupDialog({
 }) {
   const install = useInstallApp();
   const [ios] = useState(isIos);
+  const [desktop] = useState(isDesktop);
   const installed = install.isInstalled;
   const [index, setIndex] = useState(installed ? 1 : 0);
   const enabled = push.status === "enabled";
@@ -130,6 +135,16 @@ function SetupDialog({
             Escolha <strong>Adicionar à Tela de Início</strong>
           </Hint>
         </ol>
+      ) : desktop ? (
+        <ol className="space-y-2">
+          <Hint icon={<Download className="size-4" />}>
+            Na barra de endereço, clique no ícone <strong>Instalar</strong> (⊕)
+          </Hint>
+          <Hint icon={<SquarePlus className="size-4" />}>
+            Ou no menu ⋮ › <strong>Instalar Flowy</strong>. Vira um atalho na
+            área de trabalho.
+          </Hint>
+        </ol>
       ) : (
         <ol className="space-y-2">
           <Hint icon={<Download className="size-4" />}>
@@ -139,7 +154,7 @@ function SetupDialog({
       ),
     },
     {
-      scene: "bell" as const,
+      scene: "devices" as const,
       title: "2. Ative os lembretes",
       body: enabled ? (
         <p className="flex items-center justify-center gap-2 text-sm font-medium text-emerald-500">
@@ -174,7 +189,8 @@ function SetupDialog({
       title: "Pronto!",
       body: (
         <p className="text-sm text-muted-foreground">
-          Os lembretes das tarefas chegam no seu celular.
+          Os lembretes chegam neste aparelho. Repita no celular ou no computador
+          para receber nos dois.
         </p>
       ),
     },
@@ -208,7 +224,7 @@ function SetupDialog({
           <X className="size-4" />
         </button>
         <p className="text-xs font-semibold uppercase tracking-widest flowy-ink">
-          Lembretes no celular
+          Lembretes no celular e no computador
         </p>
         <div
           key={index}
@@ -276,10 +292,10 @@ export function ReminderSetupCard() {
           </span>
           <p className="min-w-0 flex-1 text-sm leading-5">
             <strong className="font-semibold">
-              Receba os lembretes no celular
+              Receba lembretes no celular e no PC
             </strong>
             <span className="block text-muted-foreground">
-              2 passos: instalar e ativar.
+              2 passos em cada aparelho: instalar e ativar.
             </span>
           </p>
           <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">

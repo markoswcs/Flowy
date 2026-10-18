@@ -162,7 +162,7 @@ export const TOOLS: Record<ToolId, ToolDef> = {
     short: "Expandir",
     icon: ChevronsUpDown,
   },
-  link: { label: "Ligar tópicos", short: "Ligar", icon: Spline },
+  link: { label: "Relação entre tópicos", short: "Relação", icon: Spline },
   template: {
     label: "Novo a partir de modelo",
     short: "Modelo",

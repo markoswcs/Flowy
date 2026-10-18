@@ -63,6 +63,8 @@ const LABELLED_TOOLS = new Set<ToolId>([
   "sibling",
   "link",
   "boundary",
+  "note",
+  "delete",
   "search",
   "outline",
   "present",
@@ -94,14 +96,14 @@ function ToolButton({
       title={title}
       className={cn(
         "flex h-10 min-w-10 shrink-0 items-center justify-center gap-1.5 rounded-xl text-muted-foreground transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-90 disabled:pointer-events-none disabled:opacity-35 motion-reduce:transform-none",
-        labelled && "2xl:px-2.5",
+        labelled && "lg:h-12 lg:min-w-[3.25rem] lg:flex-col lg:gap-1 lg:px-2",
         active && "flowy-active",
         tool.danger && "hover:bg-destructive/10 hover:text-destructive",
       )}
     >
       <Icon className="size-[18px] shrink-0" />
       {labelled ? (
-        <span className="hidden whitespace-nowrap pr-1 text-[13px] font-medium 2xl:inline">
+        <span className="hidden whitespace-nowrap text-[11px] font-medium leading-none lg:block">
           {tool.short ?? tool.label}
         </span>
       ) : null}
@@ -239,9 +241,11 @@ export function DesktopToolbar({
     >
       {group(["undo", "redo"])}
       <Divider />
-      {group(["child", "sibling", "delete"])}
+      {group(["child", "sibling"])}
       <Divider />
-      {group(["link", "boundary"])}
+      {group(["link", "boundary", "note"])}
+      <Divider />
+      {group(["delete"])}
       <Divider />
       <LayoutMenu layout={layout} onLayout={onLayout} />
       <ThemeMenu theme={theme} onTheme={onTheme} />

@@ -1030,6 +1030,33 @@
    - Buttons and cards under the mouse: the same light, a little softer.
    Excalidraw's own UI and tiny in-topic controls are left alone.
    ------------------------------------------------------------------------ */
+/* Glow palette: vivid on dark themes, deeper (higher contrast) on white. */
+:root,
+.purple {
+  --glow-1: 268 100% 70%;
+  --glow-2: 316 100% 68%;
+  --glow-3: 190 100% 62%;
+  --glow-rail: hsl(0 0% 100% / 0.12);
+  --glow-bloom: 0.85;
+}
+
+.black,
+.oled {
+  --glow-1: 265 100% 74%;
+  --glow-2: 318 100% 72%;
+  --glow-3: 188 100% 64%;
+  --glow-rail: hsl(0 0% 100% / 0.16);
+  --glow-bloom: 1;
+}
+
+.white {
+  --glow-1: 262 88% 56%;
+  --glow-2: 322 88% 52%;
+  --glow-3: 196 95% 44%;
+  --glow-rail: hsl(240 10% 20% / 0.12);
+  --glow-bloom: 0.55;
+}
+
 @property --flowy-glow-angle {
   syntax: "<angle>";
   initial-value: 0deg;
@@ -1068,22 +1095,26 @@
   ):hover::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: -1.5px;
   z-index: 1;
   border-radius: inherit;
-  padding: 1.5px;
+  padding: 1.75px;
   pointer-events: none;
-  /* Faint neutral rail with one soft light travelling along it. */
+  /* Rail + a comet of light with a long tail, a white-hot core and a faint
+     second glint on the opposite side. Colours come from --glow-* (per theme). */
   background: conic-gradient(
     from var(--flowy-glow-angle),
-    hsl(0 0% 100% / 0.1) 0deg,
-    hsl(0 0% 100% / 0.1) 220deg,
-    hsl(var(--primary) / 0.55) 270deg,
-    hsl(280 100% 80%) 305deg,
-    hsl(0 0% 100%) 322deg,
-    hsl(200 100% 78%) 336deg,
-    hsl(var(--primary) / 0.4) 350deg,
-    hsl(0 0% 100% / 0.1) 360deg
+    var(--glow-rail) 0deg,
+    hsl(var(--glow-3) / 0.55) 150deg,
+    var(--glow-rail) 175deg,
+    var(--glow-rail) 200deg,
+    hsl(var(--glow-1) / 0.35) 235deg,
+    hsl(var(--glow-1) / 0.9) 275deg,
+    hsl(var(--glow-2)) 305deg,
+    hsl(0 0% 100%) 324deg,
+    hsl(var(--glow-3)) 338deg,
+    hsl(var(--glow-1) / 0.5) 350deg,
+    var(--glow-rail) 360deg
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -1092,8 +1123,9 @@
   mask:
     linear-gradient(#000 0 0) content-box exclude,
     linear-gradient(#000 0 0);
-  filter: drop-shadow(0 0 3px hsl(280 100% 80% / 0.7))
-    drop-shadow(0 0 10px hsl(var(--primary) / 0.45));
+  filter: drop-shadow(0 0 3px hsl(var(--glow-2) / var(--glow-bloom)))
+    drop-shadow(0 0 10px hsl(var(--glow-1) / calc(var(--glow-bloom) * 0.75)))
+    drop-shadow(0 0 22px hsl(var(--glow-3) / calc(var(--glow-bloom) * 0.35)));
   animation:
     flowy-glow-spin 3s linear infinite,
     flowy-glow-in 220ms ease-out;
@@ -1146,7 +1178,7 @@
     .flowy-glow-hover
   )::after {
   animation: none !important;
-  background: hsl(var(--primary) / 0.55) !important;
+  background: hsl(var(--glow-1) / 0.7) !important;
   filter: none !important;
 }
 
@@ -1163,7 +1195,7 @@
       .flowy-glow-hover
     )::after {
     animation: none !important;
-    background: hsl(var(--primary) / 0.55) !important;
+    background: hsl(var(--glow-1) / 0.7) !important;
     filter: none !important;
   }
 }

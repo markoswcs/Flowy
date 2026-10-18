@@ -125,7 +125,8 @@ export function useMapActions(deps: ActionDeps) {
     editing: null,
     linking: null,
     // Only start open when there is room beside the map; otherwise it hides it.
-    panel: isDesktopViewport() && window.innerWidth >= 1280 ? "format" : null,
+    // Docked on the right like XMind whenever there is room beside the map.
+    panel: isDesktopViewport() && window.innerWidth >= 1024 ? "format" : null,
     actionSheet: null,
     hint: null,
   }));
@@ -630,6 +631,7 @@ export function useMapActions(deps: ActionDeps) {
       patchUi({ panel: "note" });
     },
     selectArea,
+    addChild: (id: string) => addChildTopic(doc, id),
   };
 
   const format: FormatActions = {
