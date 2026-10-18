@@ -106,8 +106,8 @@ export const TOOLS: Record<ToolId, ToolDef> = {
     icon: GitBranchPlus,
   },
   sibling: {
-    label: "Adicionar tópico irmão",
-    short: "Irmão",
+    label: "Adicionar tópico no mesmo nível",
+    short: "Tópico",
     shortcut: "Enter",
     icon: ListPlus,
     needsTopic: true,

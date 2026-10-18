@@ -57,14 +57,28 @@ const MORE_TOOLS: ToolId[] = [
   "template",
 ];
 
+/** Main actions show their name next to the icon on wide screens. */
+const LABELLED_TOOLS = new Set<ToolId>([
+  "child",
+  "sibling",
+  "link",
+  "boundary",
+  "search",
+  "outline",
+  "present",
+  "format",
+]);
+
 function ToolButton({
   id,
   state,
   onRun,
+  labelled = false,
 }: {
   id: ToolId;
   state: ToolState;
   onRun: (id: ToolId) => void;
+  labelled?: boolean;
 }) {
   const tool = TOOLS[id];
   const Icon = tool.icon;
@@ -79,12 +93,18 @@ function ToolButton({
       aria-pressed={TOGGLE_TOOLS.has(id) ? active : undefined}
       title={title}
       className={cn(
-        "grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-90 disabled:pointer-events-none disabled:opacity-35 motion-reduce:transform-none",
+        "flex h-10 min-w-10 shrink-0 items-center justify-center gap-1.5 rounded-xl text-muted-foreground transition-[transform,background-color,color] duration-150 hover:-translate-y-px hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-90 disabled:pointer-events-none disabled:opacity-35 motion-reduce:transform-none",
+        labelled && "2xl:px-2.5",
         active && "bg-primary/15 text-primary",
         tool.danger && "hover:bg-destructive/10 hover:text-destructive",
       )}
     >
-      <Icon className="size-[18px]" />
+      <Icon className="size-[18px] shrink-0" />
+      {labelled ? (
+        <span className="hidden whitespace-nowrap pr-1 text-[13px] font-medium 2xl:inline">
+          {tool.short ?? tool.label}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -204,7 +224,13 @@ export function DesktopToolbar({
 }: ToolbarProps) {
   const group = (ids: ToolId[]) =>
     ids.map((id) => (
-      <ToolButton key={id} id={id} state={state} onRun={onRun} />
+      <ToolButton
+        key={id}
+        id={id}
+        state={state}
+        onRun={onRun}
+        labelled={LABELLED_TOOLS.has(id)}
+      />
     ));
   return (
     <nav
