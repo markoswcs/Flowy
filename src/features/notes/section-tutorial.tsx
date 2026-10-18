@@ -1,38 +1,19 @@
 "use client";
 
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckSquare,
-  Focus,
-  FolderOpen,
-  GraduationCap,
-  Hand,
-  ImagePlus,
-  LayoutTemplate,
-  MousePointer2,
-  Network,
-  Palette,
-  PenLine,
-  PenTool,
-  Pencil,
-  Plus,
-  Search,
-  Shapes,
-  Spline,
-  Type,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, GraduationCap, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import {
+  TutorialScene,
+  type SceneId,
+} from "@/components/system/tutorial-scenes";
 import type { NoteSection } from "@/features/notes/note-sections";
 import { holdOverlay } from "@/lib/overlay";
 import { cn } from "@/lib/utils";
 
 interface Step {
-  icon: LucideIcon;
+  scene: SceneId;
   title: string;
   text: string;
 }
@@ -46,99 +27,76 @@ const LABEL: Record<NoteSection, string> = {
 const STEPS: Record<NoteSection, Step[]> = {
   nota: [
     {
-      icon: Type,
-      title: "Escreva à vontade",
-      text: "Toque em Nova nota e comece pelo título. O texto salva sozinho enquanto você escreve, até sem internet.",
+      scene: "typing",
+      title: "Escreva",
+      text: "Salva sozinho, até sem internet.",
     },
     {
-      icon: PenLine,
-      title: "Formate pela barra",
-      text: "Negrito, títulos, listas e citações ficam na barra do editor. No celular ela aparece logo acima do teclado.",
+      scene: "toolbar",
+      title: "Formate",
+      text: "A barra fica acima do teclado.",
     },
     {
-      icon: CheckSquare,
-      title: "Listas de tarefas",
-      text: "Use a caixa de seleção para criar uma checklist e marque cada item ao terminar.",
+      scene: "checklist",
+      title: "Checklists",
+      text: "Marque cada item ao terminar.",
     },
     {
-      icon: ImagePlus,
+      scene: "image",
       title: "Imagens e desenho",
-      text: "Adicione fotos, links e um desenho à mão dentro da própria nota.",
+      text: "Fotos e rabiscos dentro da nota.",
     },
     {
-      icon: FolderOpen,
-      title: "Organize do seu jeito",
-      text: "Favorite com a estrela e use pastas, etiquetas e cores para achar tudo depois. A busca procura no título e no texto.",
+      scene: "organize",
+      title: "Organize",
+      text: "Favoritos, pastas, etiquetas e cores.",
     },
   ],
   mapa: [
     {
-      icon: Network,
-      title: "Tudo parte de uma ideia",
-      text: "O mapa começa com a ideia central. Escolha um modelo pronto ou comece do zero.",
-    },
-    {
-      icon: Plus,
+      scene: "branches",
       title: "Crie ramos",
-      text: "Toque num tópico e use o botão + para criar um subtópico. No teclado: Tab cria um subtópico e Enter cria um tópico irmão.",
+      text: "Toque num tópico e no botão +.",
     },
     {
-      icon: Pencil,
-      title: "Edite o texto",
-      text: "Toque duas vezes no tópico, ou selecione e comece a digitar. F2 também abre a edição.",
+      scene: "tap",
+      title: "Edite",
+      text: "Toque duas vezes ou comece a digitar.",
     },
     {
-      icon: Hand,
-      title: "Arraste para organizar",
-      text: "Arraste um tópico para outro para mudar de ramo, ou solte no espaço vazio para posicionar à mão. Pince ou use Ctrl+roda para dar zoom.",
+      scene: "drag",
+      title: "Arraste",
+      text: "Mude de ramo ou posicione onde quiser.",
     },
     {
-      icon: Palette,
-      title: "Deixe com a sua cara",
-      text: "Em Formatar você muda forma, cores, ícones, prioridade, prazo e etiquetas do tópico, e também o layout e o tema do mapa.",
+      scene: "palette",
+      title: "Estilo",
+      text: "Cores, formas, ícones e prazos.",
     },
     {
-      icon: Spline,
+      scene: "link",
       title: "Ligue ideias",
-      text: "Use Ligar para criar uma seta entre dois tópicos de ramos diferentes, e Limite para emoldurar um grupo.",
+      text: "Setas entre ramos diferentes.",
     },
     {
-      icon: Search,
-      title: "Encontre e apresente",
-      text: "Buscar acha qualquer tópico, Estrutura mostra o mapa como lista e Apresentar passa tópico por tópico em tela cheia.",
-    },
-    {
-      icon: Focus,
-      title: "Foque e compartilhe",
-      text: "Focar mostra só um ramo. Em Arquivo você importa e exporta XMind, MindMeister (FreeMind), OPML, imagem e texto.",
+      scene: "search",
+      title: "Busque e apresente",
+      text: "Ache qualquer tópico e apresente em tela cheia.",
     },
   ],
   desenho: [
     {
-      icon: MousePointer2,
-      title: "Ferramentas no topo",
-      text: "Escolha seleção, retângulo, losango, elipse, seta, linha, lápis e texto na barra de ferramentas.",
+      scene: "shapes",
+      title: "Formas e setas",
+      text: "As setas grudam nas formas.",
     },
+    { scene: "toolbar", title: "Ferramentas", text: "Tudo na barra do topo." },
     {
-      icon: Shapes,
-      title: "Monte fluxogramas",
-      text: "Desenhe as caixas e ligue com setas: a seta gruda na forma e acompanha quando você a move. Toque duas vezes numa forma para escrever dentro.",
+      scene: "organize",
+      title: "Modelos prontos",
+      text: "Menu ☰ › Modelos prontos.",
     },
-    {
-      icon: LayoutTemplate,
-      title: "Comece por um modelo",
-      text: "No menu (☰), em Modelos prontos, há fluxo de processo, decisão sim/não, organograma e linha do tempo.",
-    },
-    {
-      icon: PenTool,
-      title: "Desenho livre",
-      text: "Use o lápis para escrever ou rabiscar à mão. Com caneta stylus, ative o modo caneta para desenhar sem mover a tela.",
-    },
-    {
-      icon: Palette,
-      title: "Estilo e exportação",
-      text: "Mude cor, traço e preenchimento no painel da forma. Pelo menu você exporta imagem e salva no Flowy.",
-    },
+    { scene: "pen", title: "Mão livre", text: "Lápis ou caneta stylus." },
   ],
 };
 
@@ -188,7 +146,6 @@ function TutorialDialog({
   }, [onClose, steps.length]);
 
   if (!step) return null;
-  const Icon = step.icon;
 
   return createPortal(
     <div
@@ -215,20 +172,20 @@ function TutorialDialog({
         >
           <X className="size-4" />
         </button>
-        <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+        <p className="text-xs font-semibold uppercase tracking-widest flowy-ink">
           Como usar {LABEL[section]} · {index + 1} de {steps.length}
         </p>
         <div
           key={index}
           className="mt-5 flex animate-in flex-col items-center text-center fade-in slide-in-from-right-4"
         >
-          <span className="grid size-20 place-items-center rounded-3xl bg-gradient-to-br from-primary/25 to-fuchsia-500/20 text-primary ring-1 ring-primary/30">
-            <Icon className="size-9" aria-hidden="true" />
-          </span>
+          <div className="grid w-full place-items-center rounded-3xl bg-gradient-to-br from-primary/15 to-fuchsia-500/10 py-3 ring-1 ring-primary/20">
+            <TutorialScene id={step.scene} />
+          </div>
           <h2 id="tutorial-title" className="mt-5 text-xl font-semibold">
             {step.title}
           </h2>
-          <p className="mt-2 min-h-[4.5rem] text-sm leading-6 text-muted-foreground">
+          <p className="mt-1.5 min-h-[3rem] text-sm leading-6 text-muted-foreground">
             {step.text}
           </p>
         </div>
@@ -304,7 +261,7 @@ export function SectionTutorial({ section }: { section: NoteSection }) {
       {offered ? (
         <div className="flex animate-in items-center gap-3 rounded-2xl border border-primary/30 bg-primary/[0.07] p-3 pl-4 fade-in slide-in-from-top-2 sm:p-4">
           <GraduationCap
-            className="size-6 shrink-0 text-primary"
+            className="size-6 shrink-0 flowy-ink"
             aria-hidden="true"
           />
           <p className="min-w-0 flex-1 text-sm leading-5">

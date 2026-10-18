@@ -93,7 +93,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             key={item.id}
             className="pointer-events-auto flex w-full max-w-md items-center gap-3 flowy-glass flowy-glass-strong rounded-2xl border py-2.5 pl-3 pr-1.5 text-card-foreground animate-in fade-in slide-in-from-top-3 duration-300"
           >
-            <span className="grid size-7 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+            <span className="grid size-7 shrink-0 place-items-center rounded-xl flowy-active">
               <Info className="size-3.5" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
@@ -109,7 +109,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                   item.action?.onClick();
                   dismiss(item.id);
                 }}
-                className="shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                className="shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold flowy-ink transition-colors hover:bg-primary/10"
               >
                 {item.action.label}
               </button>

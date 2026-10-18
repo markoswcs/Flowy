@@ -34,19 +34,33 @@ export async function optimizeImage(
       
       ctx.drawImage(img, 0, 0, width, height);
       
+      const baseName = file.name.replace(/\.[^/.]+$/, "");
+      const finish = (blob: Blob | null) => {
+        if (!blob) {
+          return reject(new Error("Falha ao otimizar a imagem."));
+        }
+        const ext = blob.type === "image/webp" ? "webp" : "jpg";
+        resolve(
+          new File([blob], `${baseName}.${ext}`, {
+            type: blob.type,
+            lastModified: Date.now(),
+          }),
+        );
+      };
+
+      // Safari cannot encode WebP and silently returns a much larger PNG;
+      // fall back to JPEG there so the file really is small.
       canvas.toBlob(
         (blob) => {
-          if (!blob) {
-            return reject(new Error("Falha ao otimizar a imagem."));
-          }
-          const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
-            type: "image/webp",
-            lastModified: Date.now(),
-          });
-          resolve(optimizedFile);
+          if (blob && blob.type === "image/webp") return finish(blob);
+          // JPEG has no transparency: paint white behind the image first.
+          ctx.globalCompositeOperation = "destination-over";
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
+          canvas.toBlob(finish, "image/jpeg", quality);
         },
         "image/webp",
-        quality
+        quality,
       );
     };
 

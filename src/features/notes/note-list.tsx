@@ -228,7 +228,7 @@ export function NoteList() {
     <div className="mx-auto w-full max-w-6xl space-y-8">
       <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-primary">{pageCopy.eyebrow}</p>
+          <p className="text-sm font-medium flowy-ink">{pageCopy.eyebrow}</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
             {pageCopy.title}
           </h1>
@@ -335,12 +335,12 @@ export function NoteList() {
                   <h2 className="line-clamp-2 text-base font-semibold leading-5 sm:text-lg sm:leading-6">
                     {note.kind === "excalidraw" ? (
                       <PenTool
-                        className="mr-1 inline size-4 text-primary"
+                        className="mr-1 inline size-4 flowy-ink"
                         aria-hidden="true"
                       />
                     ) : note.kind === "mindmap" ? (
                       <Network
-                        className="mr-1 inline size-4 text-primary"
+                        className="mr-1 inline size-4 flowy-ink"
                         aria-hidden="true"
                       />
                     ) : null}
@@ -375,11 +375,11 @@ export function NoteList() {
                   <button
                     type="button"
                     onClick={() => handleFavorite(note.id, !note.is_favorite)}
-                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-105 hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
+                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-105 hover:bg-accent hover:flowy-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
                     aria-label={`${note.is_favorite ? "Remover" : "Adicionar"} ${note.title || "nota"} dos favoritos`}
                   >
                     <Star
-                      className={`size-4 ${note.is_favorite ? "fill-primary text-primary" : ""}`}
+                      className={`size-4 ${note.is_favorite ? "fill-primary flowy-ink" : ""}`}
                       aria-hidden="true"
                     />
                   </button>

@@ -238,7 +238,7 @@ export function BulkActionBar({
           className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-sm font-semibold tabular-nums hover:bg-accent"
           aria-label={allSelected ? "Desmarcar todas" : "Selecionar todas"}
         >
-          <CheckSquare className="size-4 text-violet-400" />
+          <CheckSquare className="size-4 flowy-ink" />
           {count}
           <span className="hidden text-xs font-normal text-muted-foreground sm:inline">
             {allSelected ? "· desmarcar" : "· todas"}
@@ -304,7 +304,7 @@ function BarButton({
       aria-expanded={active}
       className={cn(
         "flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-xl text-sm font-medium text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:scale-90 disabled:opacity-40 sm:w-auto sm:px-3",
-        active && "bg-violet-500/15 text-violet-400",
+        active && "flowy-active",
         danger && "hover:bg-destructive/10 hover:text-destructive",
       )}
     >

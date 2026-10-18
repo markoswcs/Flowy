@@ -146,7 +146,7 @@ function ToggleButton({
       onClick={onClick}
       className={cn(
         "grid size-10 shrink-0 place-items-center rounded-xl border border-border text-muted-foreground hover:bg-accent hover:text-foreground",
-        pressed && "border-primary bg-primary/15 text-primary",
+        pressed && "flowy-active",
       )}
     >
       <Icon className="size-4" />
@@ -215,7 +215,7 @@ function LabelsField({
           {labels.map((label) => (
             <span
               key={label}
-              className="flex items-center gap-1 rounded-full bg-primary/10 py-1 pl-2.5 pr-1 text-xs font-medium text-primary"
+              className="flex items-center gap-1 rounded-full bg-primary/10 py-1 pl-2.5 pr-1 text-xs font-medium flowy-ink"
             >
               {label}
               <button
@@ -723,7 +723,7 @@ function MapFormat({ doc, actions }: { doc: MapDoc; actions: FormatActions }) {
               className={cn(
                 "flex min-h-11 items-center gap-2 rounded-xl border border-border px-2.5 text-left text-xs font-medium hover:bg-accent",
                 doc.layout === option.id &&
-                  "border-primary bg-primary/10 text-primary",
+                  "flowy-active",
               )}
             >
               <LayoutIcon layout={option.id} />

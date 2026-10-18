@@ -141,7 +141,7 @@ export function TaskTagSelector({
           type="button"
           onClick={() => setCreating(true)}
           className={cn(
-            "inline-flex items-center gap-1 rounded-full border border-dashed border-border/70 px-2 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-primary",
+            "inline-flex items-center gap-1 rounded-full border border-dashed border-border/70 px-2 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:flowy-ink",
             !compact && "px-2.5 py-1.5 text-[11px]",
           )}
         >

@@ -58,7 +58,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <>
           Ainda não tem conta?{" "}
           <Link
-            className="font-medium text-primary underline-offset-4 hover:underline"
+            className="font-medium flowy-ink underline-offset-4 hover:underline"
             href="/cadastro"
           >
             Criar conta

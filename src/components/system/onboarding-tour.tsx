@@ -253,7 +253,7 @@ export function OnboardingTour({ name, replay = false, onClose }: OnboardingTour
         >
           <TourCard>
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest flowy-ink">
                 {step.icon}
                 {spotIndex + 1} de {spotSteps.length}
               </span>
@@ -335,7 +335,7 @@ function WelcomeStep({ name, onStart, onSkip }: { name: string; onStart: () => v
             className="flex animate-in items-center gap-3 rounded-2xl border border-border/60 bg-background/40 px-3 py-2.5 text-sm fade-in slide-in-from-bottom-2"
             style={{ animationDelay: `${180 + index * 110}ms` }}
           >
-            <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+            <span className="grid size-8 shrink-0 place-items-center rounded-xl flowy-active">
               {perk.icon}
             </span>
             {perk.text}
@@ -402,7 +402,7 @@ function ThemeStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void 
               </span>
               <span className="mt-2 flex items-center justify-between px-1 text-sm font-medium">
                 {option.label}
-                {selected ? <Check className="size-4 animate-in text-primary zoom-in" /> : null}
+                {selected ? <Check className="size-4 animate-in flowy-ink zoom-in" /> : null}
               </span>
             </button>
           );
@@ -476,7 +476,7 @@ function OrganizeStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => vo
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs leading-5">
         <div className="rounded-2xl border border-border/60 bg-background/40 p-3">
           <p className="flex items-center gap-1.5 font-semibold text-foreground">
-            <Folder className="size-3.5 text-primary" /> Pasta
+            <Folder className="size-3.5 flowy-ink" /> Pasta
           </p>
           <p className="mt-0.5 text-muted-foreground">
             <strong className="text-foreground">Onde</strong> a tarefa mora. Uma por tarefa.
@@ -484,7 +484,7 @@ function OrganizeStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => vo
         </div>
         <div className="rounded-2xl border border-border/60 bg-background/40 p-3">
           <p className="flex items-center gap-1.5 font-semibold text-foreground">
-            <Tag className="size-3.5 text-primary" /> Etiqueta
+            <Tag className="size-3.5 flowy-ink" /> Etiqueta
           </p>
           <p className="mt-0.5 text-muted-foreground">
             <strong className="text-foreground">Como</strong> ela é. Pode ter várias.
@@ -756,7 +756,7 @@ function TaskStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }
           className="h-12 text-base"
         />
         <div className="flex flex-wrap items-center gap-1.5 text-xs" aria-live="polite">
-          <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 font-medium text-primary">
+          <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 font-medium flowy-ink">
             <CalendarDays className="size-3.5" /> {when}
           </span>
           {parsed.title && parsed.title !== title.trim() ? (
@@ -802,7 +802,7 @@ function TaskStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }
         ) : null}
 
         <p className="flex items-start gap-2 rounded-2xl border border-dashed border-border/80 px-3 py-2 text-xs leading-5 text-muted-foreground">
-          <Hash className="mt-0.5 size-3.5 shrink-0 text-primary" />
+          <Hash className="mt-0.5 size-3.5 shrink-0 flowy-ink" />
           <span>
             Atalho: <code className="rounded bg-muted px-1 text-foreground">#urgente</code> põe etiqueta e{" "}
             <code className="rounded bg-muted px-1 text-foreground">/trabalho</code> escolhe a pasta.
@@ -915,7 +915,7 @@ function DoneStep({ onFinish }: { onFinish: () => void }) {
             className="flex animate-in items-center gap-3 rounded-2xl border border-border/60 bg-background/40 px-3 py-2.5 text-sm fade-in slide-in-from-bottom-2"
             style={{ animationDelay: `${300 + index * 110}ms` }}
           >
-            <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+            <span className="grid size-8 shrink-0 place-items-center rounded-xl flowy-active">
               {tip.icon}
             </span>
             {tip.text}
@@ -945,7 +945,7 @@ function StepHeader({ phase, label, onSkip }: { phase: Phase; label: string; onS
         ))}
       </div>
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+        <span className="text-xs font-semibold uppercase tracking-widest flowy-ink">
           {current + 1}/{progressPhases.length} · {label}
         </span>
         <SkipButton onClick={onSkip} />

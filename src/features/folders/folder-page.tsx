@@ -229,7 +229,7 @@ export function FolderPage({ folderId }: { folderId: string }) {
                     href={`/app/notes/${note.id}`}
                     className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                   >
-                    <FileText className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                    <FileText className="size-4 shrink-0 flowy-ink" aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{note.title || "Sem título"}</span>
                       {note.plain_text ? (

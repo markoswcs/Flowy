@@ -31,7 +31,7 @@ export function NotePanel({ topic, onSave, onClose }: NotePanelProps) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center gap-2 px-4 pb-2 pt-3">
-        <StickyNote className="size-4 text-primary" aria-hidden="true" />
+        <StickyNote className="size-4 flowy-ink" aria-hidden="true" />
         <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
           Nota · {topic.text || "Tópico"}
         </h2>

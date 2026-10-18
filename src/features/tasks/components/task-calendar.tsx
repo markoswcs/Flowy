@@ -173,7 +173,7 @@ export function TaskCalendar({
                       "w-full text-left truncate rounded-lg px-1.5 py-1 text-[10px] sm:text-xs font-medium transition-colors hover:opacity-80 active:scale-95",
                       task.status === "completed" 
                         ? "bg-muted text-muted-foreground line-through" 
-                        : "bg-primary/10 text-primary border border-primary/20"
+                        : "flowy-active border border-primary/20"
                     )}
                   >
                     {task.title}

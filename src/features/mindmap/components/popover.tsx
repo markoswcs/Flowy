@@ -109,7 +109,7 @@ export function MenuItem({
       onClick={onSelect}
       className={cn(
         "flex min-h-10 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
-        active && "bg-primary/10 font-semibold text-primary",
+        active && "flowy-active font-semibold ",
         danger && "text-destructive",
       )}
     >

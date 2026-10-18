@@ -103,7 +103,7 @@ function SheetAction({
       <span
         className={cn(
           "grid size-9 place-items-center rounded-xl",
-          danger ? "bg-destructive/10" : "bg-violet-500/15 text-violet-400",
+          danger ? "bg-destructive/10" : "flowy-active",
         )}
       >
         {icon}

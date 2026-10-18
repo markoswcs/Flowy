@@ -118,7 +118,7 @@ export function TaskComposer({
     >
       <div className="absolute inset-0 -z-10 rounded-3xl backdrop-blur-xl" aria-hidden="true" />
       <div className="flex items-center gap-3 rounded-2xl bg-muted/30 px-3 py-1 transition-colors focus-within:bg-muted/50">
-        <Plus className="size-5 text-primary" aria-hidden="true" />
+        <Plus className="size-5 flowy-ink" aria-hidden="true" />
         <Input
           id="mobile-task-input"
           value={title}
@@ -227,7 +227,7 @@ export function TaskComposer({
                         : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                     )}
                   >
-                    <Flag className={cn("size-3", isSelected && p === "high" ? "text-destructive" : isSelected && p === "low" ? "text-blue-500" : isSelected ? "text-primary" : "")} />
+                    <Flag className={cn("size-3", isSelected && p === "high" ? "text-destructive" : isSelected && p === "low" ? "text-blue-500" : isSelected ? "flowy-ink" : "")} />
                     {p === "low" ? "Baixa" : p === "normal" ? "Normal" : "Alta"}
                   </button>
                 );

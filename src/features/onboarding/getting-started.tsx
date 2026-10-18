@@ -191,7 +191,7 @@ export function GettingStarted() {
               <span
                 className={cn(
                   "grid size-7 shrink-0 place-items-center rounded-xl",
-                  step.done ? "bg-success text-success-foreground" : "bg-primary/15 text-primary",
+                  step.done ? "bg-success text-success-foreground" : "flowy-active",
                 )}
               >
                 {step.done ? <Check className="size-4" strokeWidth={3} /> : step.icon}

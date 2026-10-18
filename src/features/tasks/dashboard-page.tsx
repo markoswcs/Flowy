@@ -1,5 +1,6 @@
 "use client";
 
+import { ReminderSetupCard } from "@/components/system/reminder-setup";
 import { useEffect, useState } from "react";
 import { AlertCircle, Calendar, CheckCircle2, Clock, CornerDownLeft, List, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, SlidersHorizontal, ListChecks, X } from "lucide-react";
 
@@ -50,7 +51,7 @@ interface DashboardPageProps {
 
 const scopes = [
   { value: "all", label: "Todas", icon: List, colorClass: "text-muted-foreground", bgClass: "hover:bg-muted/50 hover:text-foreground", activeClass: "bg-muted text-foreground font-medium shadow-sm" },
-  { value: "today", label: "Hoje", icon: Calendar, colorClass: "text-primary", bgClass: "hover:bg-primary/10", activeClass: "bg-primary/15 text-primary font-medium shadow-sm border border-primary/20" },
+  { value: "today", label: "Hoje", icon: Calendar, colorClass: "flowy-ink", bgClass: "hover:bg-primary/10", activeClass: "flowy-active font-medium shadow-sm border border-primary/20" },
   { value: "overdue", label: "Atrasadas", icon: AlertCircle, colorClass: "text-destructive", bgClass: "hover:bg-destructive/10", activeClass: "bg-destructive/15 text-destructive font-medium shadow-sm border border-destructive/20" },
   { value: "upcoming", label: "Próximas", icon: Clock, colorClass: "text-orange-400", bgClass: "hover:bg-orange-400/10", activeClass: "bg-orange-400/15 text-orange-400 font-medium shadow-sm border border-orange-400/20" },
   { value: "completed", label: "Concluídas", icon: CheckCircle2, colorClass: "text-success", bgClass: "hover:bg-success/10", activeClass: "bg-success/15 text-success font-medium shadow-sm border border-success/20" },
@@ -204,6 +205,7 @@ function DashboardContent({
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-6">
+      <ReminderSetupCard />
       <header className="space-y-4 sm:space-y-5">
         <div className="flex items-start justify-between gap-3">
           <div className="group min-w-0 space-y-1">
@@ -221,7 +223,7 @@ function DashboardContent({
               </span>
             </h1>
             <p className="flex min-w-0 items-start gap-2 pl-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-2 duration-700 sm:text-sm">
-              <Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary/60" />
+              <Sparkles className="mt-0.5 size-3.5 shrink-0 flowy-ink" />
               <span className="line-clamp-2">{personalPhrase ?? phrase}</span>
             </p>
           </div>
@@ -268,7 +270,7 @@ function DashboardContent({
             data-tour="quick-add"
             className="group relative flex items-center gap-1 rounded-2xl border border-border/60 bg-card/50 p-1.5 shadow-sm backdrop-blur-xl transition-all duration-300 focus-within:border-primary/50 focus-within:shadow-[0_0_0_4px_hsl(var(--primary)/0.12)]"
           >
-            <Search className="ml-2.5 size-4 shrink-0 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden="true" />
+            <Search className="ml-2.5 size-4 shrink-0 text-muted-foreground transition-colors group-focus-within:flowy-ink" aria-hidden="true" />
             <Input
               value={filters.search ?? ""}
               onChange={(event) => setFilters({ ...filters, search: event.target.value })}
@@ -292,7 +294,7 @@ function DashboardContent({
               className={cn(
                 "relative flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-all active:scale-95",
                 statusBarOpen || activeFilters.length
-                  ? "bg-primary/15 text-primary"
+                  ? "flowy-active"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
             >
@@ -348,7 +350,7 @@ function DashboardContent({
             <div className="flex flex-wrap items-center gap-1.5 animate-in fade-in slide-in-from-top-1" aria-live="polite">
               <span className="mr-1 text-xs font-medium text-muted-foreground">Filtrando por</span>
               {activeFilters.map((filter) => (
-                <span key={filter.key} className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 py-1 pl-3 pr-1 text-xs font-medium text-primary">
+                <span key={filter.key} className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 py-1 pl-3 pr-1 text-xs font-medium flowy-ink">
                   {filter.label}
                   <button
                     type="button"
