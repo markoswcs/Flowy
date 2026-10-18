@@ -41,12 +41,14 @@ export function NavLink({
       title={collapsed ? item.label : undefined}
       className={cn(
         "theme-sidebar-item flowy-glow-hover flex min-h-[42px] items-center gap-3 rounded-2xl px-4 text-sm font-medium text-muted-foreground transition-all duration-300 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:scale-[1.02]",
-        active &&
-          "theme-sidebar-active border border-primary/20 bg-primary/15 text-primary shadow-[0_0_20px_hsl(var(--primary)/0.2)]",
+        active && "theme-sidebar-active bg-foreground/[0.07] text-foreground",
         collapsed && "justify-center px-0",
       )}
     >
-      <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+      <Icon
+        className={cn("size-[18px] shrink-0", active && "text-primary")}
+        aria-hidden="true"
+      />
       {collapsed ? (
         <span className="sr-only">{item.label}</span>
       ) : (

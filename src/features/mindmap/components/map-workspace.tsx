@@ -29,6 +29,7 @@ import {
   searchTopics,
 } from "@/features/mindmap/components/search-bar";
 import { ShortcutsDialog } from "@/features/mindmap/components/shortcuts-dialog";
+import { TopicQuickBar } from "@/features/mindmap/components/topic-quick-bar";
 import { SidePanel } from "@/features/mindmap/components/side-panel";
 import { TemplatePicker } from "@/features/mindmap/components/template-picker";
 import { FirstUseTip } from "@/features/mindmap/components/first-use-tip";
@@ -399,6 +400,22 @@ export function MapWorkspace(props: MapWorkspaceProps) {
         manySelected={actions.selectionSet.size > 30}
         handlers={canvasHandlers}
       />
+
+      {!presenting &&
+      !ui.editing &&
+      !ui.linking &&
+      !ui.actionSheet &&
+      actions.selectionSet.size === 1 &&
+      actions.primary &&
+      layout.topics.get(actions.primary) ? (
+        <TopicQuickBar
+          key={actions.primary}
+          placed={layout.topics.get(actions.primary)!}
+          store={store}
+          isRoot={actions.primary === doc.root.id}
+          onRun={runTool}
+        />
+      ) : null}
 
       {presenting ? null : (
         <>

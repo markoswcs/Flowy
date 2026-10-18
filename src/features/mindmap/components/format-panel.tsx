@@ -386,101 +386,109 @@ function BoundaryField({
   );
 }
 
+type TopicPart = "style" | "content";
+
 function TopicFormat({
   topics,
   primaryDepth,
   doc,
   actions,
-}: Omit<FormatPanelProps, "relation" | "onClose">) {
+  part,
+}: Omit<FormatPanelProps, "relation" | "onClose"> & { part: TopicPart }) {
   const topic = topics[0];
   if (!topic) return null;
   const style = topic.style ?? {};
+  if (part === "style")
+    return (
+      <>
+        <PanelSection title="Forma">
+          <Segmented
+            label="Forma do tópico"
+            value={resolveShape(topic, primaryDepth, doc.layout)}
+            columns={6}
+            options={SHAPE_OPTIONS.map((shape) => ({
+              value: shape.id,
+              label: shape.label,
+              content: <ShapeGlyph shape={shape.id} />,
+            }))}
+            onChange={(shape) => actions.patchStyle({ shape })}
+          />
+        </PanelSection>
+        <PanelSection title="Preenchimento">
+          <Swatches
+            label="Cor de preenchimento"
+            value={style.fill}
+            withNeutrals
+            onChange={(fill) => actions.patchStyle({ fill })}
+          />
+        </PanelSection>
+        <PanelSection title="Borda">
+          <Swatches
+            label="Cor da borda"
+            value={style.border}
+            withNeutrals
+            onChange={(border) => actions.patchStyle({ border })}
+          />
+          <SwitchRow
+            label="Borda tracejada"
+            checked={Boolean(style.dashed)}
+            onChange={(dashed) => actions.patchStyle({ dashed })}
+          />
+        </PanelSection>
+        <PanelSection title="Texto">
+          <div className="flex items-center gap-1.5">
+            <ToggleButton
+              icon={Bold}
+              label="Negrito (Ctrl+B)"
+              pressed={Boolean(style.bold)}
+              onClick={() => actions.patchStyle({ bold: !style.bold })}
+            />
+            <ToggleButton
+              icon={Italic}
+              label="Itálico (Ctrl+I)"
+              pressed={Boolean(style.italic)}
+              onClick={() => actions.patchStyle({ italic: !style.italic })}
+            />
+            <ToggleButton
+              icon={Strikethrough}
+              label="Riscado"
+              pressed={Boolean(style.strike)}
+              onClick={() => actions.patchStyle({ strike: !style.strike })}
+            />
+          </div>
+          <Segmented
+            label="Tamanho do texto"
+            value={style.size ?? "md"}
+            options={FONT_SIZE_OPTIONS.map((size) => ({
+              value: size.id,
+              label: size.label,
+              content: size.short,
+            }))}
+            onChange={(size) =>
+              actions.patchStyle({ size: size === "md" ? undefined : size })
+            }
+          />
+          <span className="block text-xs text-muted-foreground">
+            Cor do texto
+          </span>
+          <Swatches
+            label="Cor do texto"
+            value={style.color}
+            withNeutrals
+            onChange={(color) => actions.patchStyle({ color })}
+          />
+        </PanelSection>
+        <PanelSection title="Cor do ramo">
+          <Swatches
+            label="Cor do ramo"
+            value={style.branch}
+            onChange={(branch) => actions.patchStyle({ branch })}
+          />
+        </PanelSection>
+      </>
+    );
   return (
     <>
-      <PanelSection title="Forma">
-        <Segmented
-          label="Forma do tópico"
-          value={resolveShape(topic, primaryDepth, doc.layout)}
-          columns={6}
-          options={SHAPE_OPTIONS.map((shape) => ({
-            value: shape.id,
-            label: shape.label,
-            content: <ShapeGlyph shape={shape.id} />,
-          }))}
-          onChange={(shape) => actions.patchStyle({ shape })}
-        />
-      </PanelSection>
-      <PanelSection title="Preenchimento">
-        <Swatches
-          label="Cor de preenchimento"
-          value={style.fill}
-          withNeutrals
-          onChange={(fill) => actions.patchStyle({ fill })}
-        />
-      </PanelSection>
-      <PanelSection title="Borda">
-        <Swatches
-          label="Cor da borda"
-          value={style.border}
-          withNeutrals
-          onChange={(border) => actions.patchStyle({ border })}
-        />
-        <SwitchRow
-          label="Borda tracejada"
-          checked={Boolean(style.dashed)}
-          onChange={(dashed) => actions.patchStyle({ dashed })}
-        />
-      </PanelSection>
-      <PanelSection title="Texto">
-        <div className="flex items-center gap-1.5">
-          <ToggleButton
-            icon={Bold}
-            label="Negrito (Ctrl+B)"
-            pressed={Boolean(style.bold)}
-            onClick={() => actions.patchStyle({ bold: !style.bold })}
-          />
-          <ToggleButton
-            icon={Italic}
-            label="Itálico (Ctrl+I)"
-            pressed={Boolean(style.italic)}
-            onClick={() => actions.patchStyle({ italic: !style.italic })}
-          />
-          <ToggleButton
-            icon={Strikethrough}
-            label="Riscado"
-            pressed={Boolean(style.strike)}
-            onClick={() => actions.patchStyle({ strike: !style.strike })}
-          />
-        </div>
-        <Segmented
-          label="Tamanho do texto"
-          value={style.size ?? "md"}
-          options={FONT_SIZE_OPTIONS.map((size) => ({
-            value: size.id,
-            label: size.label,
-            content: size.short,
-          }))}
-          onChange={(size) =>
-            actions.patchStyle({ size: size === "md" ? undefined : size })
-          }
-        />
-        <span className="block text-xs text-muted-foreground">
-          Cor do texto
-        </span>
-        <Swatches
-          label="Cor do texto"
-          value={style.color}
-          withNeutrals
-          onChange={(color) => actions.patchStyle({ color })}
-        />
-      </PanelSection>
-      <PanelSection title="Cor do ramo">
-        <Swatches
-          label="Cor do ramo"
-          value={style.branch}
-          onChange={(branch) => actions.patchStyle({ branch })}
-        />
-      </PanelSection>
       <PanelSection title="Ícone">
         <div className="grid grid-cols-8 gap-1">
           {TOPIC_ICONS.map((icon) => (
@@ -739,10 +747,6 @@ function MapFormat({ doc, actions }: { doc: MapDoc; actions: FormatActions }) {
       <PanelSection title="Tema">
         <ThemeList value={doc.theme} onChange={actions.setTheme} />
       </PanelSection>
-      <p className="rounded-xl bg-muted/40 p-3 text-xs leading-5 text-muted-foreground">
-        Selecione um tópico para mudar forma, cores, borda, texto, ícones,
-        prioridade, progresso, prazo, etiquetas, limite, imagem, link e nota.
-      </p>
     </>
   );
 }
@@ -785,6 +789,14 @@ export function ThemeList({
   );
 }
 
+type Tab = TopicPart | "map";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "style", label: "Estilo" },
+  { id: "content", label: "Conteúdo" },
+  { id: "map", label: "Mapa" },
+];
+
 export function FormatPanel({
   doc,
   topics,
@@ -793,17 +805,20 @@ export function FormatPanel({
   actions,
   onClose,
 }: FormatPanelProps) {
+  const [tab, setTab] = useState<Tab>("style");
+  const hasTopics = topics.length > 0 && !relation;
+  const active: Tab = hasTopics ? tab : "map";
   const heading = relation
     ? "Ligação"
     : topics.length > 1
       ? `${topics.length} tópicos`
       : topics.length
-        ? "Tópico"
+        ? topics[0]?.text.trim() || "Tópico"
         : "Mapa";
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center justify-between gap-2 px-4 pb-2 pt-3">
-        <h2 className="text-sm font-semibold">{heading}</h2>
+        <h2 className="min-w-0 truncate text-sm font-semibold">{heading}</h2>
         <button
           type="button"
           onClick={onClose}
@@ -813,22 +828,57 @@ export function FormatPanel({
           <X className="size-4" />
         </button>
       </header>
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 pb-5">
+      {hasTopics ? (
+        <div
+          role="tablist"
+          aria-label="Seções de formatação"
+          className="mx-4 mb-3 grid grid-cols-3 gap-1 rounded-2xl bg-muted/50 p-1"
+        >
+          {TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={active === item.id}
+              onClick={() => setTab(item.id)}
+              className={cn(
+                "h-9 rounded-xl text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                active === item.id && "bg-card text-foreground shadow-sm",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <div
+        role={hasTopics ? "tabpanel" : undefined}
+        className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 pb-5"
+      >
         {relation ? (
           <RelationFormat
             key={relation.id}
             relation={relation}
             actions={actions}
           />
-        ) : topics.length ? (
+        ) : hasTopics && active !== "map" ? (
           <TopicFormat
             doc={doc}
             topics={topics}
             primaryDepth={primaryDepth}
             actions={actions}
+            part={active}
           />
         ) : (
-          <MapFormat doc={doc} actions={actions} />
+          <>
+            <MapFormat doc={doc} actions={actions} />
+            {!hasTopics ? (
+              <p className="rounded-xl bg-muted/40 p-3 text-xs leading-5 text-muted-foreground">
+                Toque num tópico para mudar a forma, as cores e o texto dele, ou
+                para adicionar ícone, prazo, etiquetas, imagem, link e nota.
+              </p>
+            ) : null}
+          </>
         )}
       </div>
     </div>

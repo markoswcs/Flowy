@@ -35,6 +35,10 @@ import {
   SECTION_KIND,
   type NoteSection,
 } from "@/features/notes/note-sections";
+import {
+  SectionTutorial,
+  TutorialButton,
+} from "@/features/notes/section-tutorial";
 import { TemplatePicker } from "@/features/mindmap/components/template-picker";
 import type { TemplateId } from "@/features/mindmap/types";
 import type { NoteKind } from "@/types/content";
@@ -129,9 +133,10 @@ export function NoteList() {
 
   const filteredNotes = useMemo(() => {
     const term = deferredSearch.trim().toLocaleLowerCase("pt-BR");
-    const notesByType = (notes.data ?? []).filter(
-      (note) => note.kind === SECTION_KIND[section],
-    );
+    // Favourites stay on top, like pinned notes on Samsung and Apple Notes.
+    const notesByType = (notes.data ?? [])
+      .filter((note) => note.kind === SECTION_KIND[section])
+      .sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
     if (!term) return notesByType;
 
     return notesByType.filter((note) =>
@@ -231,11 +236,20 @@ export function NoteList() {
             {pageCopy.description}
           </p>
         </div>
-        <Button type="button" onClick={startCreate} loading={create.isPending}>
-          <Plus className="size-4" aria-hidden="true" />
-          {pageCopy.create}
-        </Button>
+        <div className="flex items-center gap-2">
+          <TutorialButton key={section} section={section} />
+          <Button
+            type="button"
+            onClick={startCreate}
+            loading={create.isPending}
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            {pageCopy.create}
+          </Button>
+        </div>
       </header>
+
+      <SectionTutorial section={section} />
 
       <label className="relative block">
         <span className="sr-only">{pageCopy.search}</span>

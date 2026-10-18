@@ -31,7 +31,7 @@ function NavItem({
         className={cn(
           "grid h-10 w-14 place-items-center rounded-2xl transition-all duration-300",
           active
-            ? "bg-violet-500/15 text-violet-400"
+            ? "bg-foreground/[0.08] text-foreground"
             : "text-muted-foreground hover:text-foreground",
         )}
       >
