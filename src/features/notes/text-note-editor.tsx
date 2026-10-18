@@ -282,7 +282,11 @@ export function TextNoteEditor({ note }: { note: Note }) {
   const toggleFavorite = useToggleNoteFavorite();
   const client = useMemo(() => createClient(), []);
   const draft = useMemo(() => readDraft(note), [note]);
-  const [title, setTitle] = useState(draft?.title ?? note.title);
+  // The default "Sem título" is shown as the placeholder, not as typed text.
+  const [title, setTitle] = useState(() => {
+    const initial = draft?.title ?? note.title;
+    return initial === "Sem título" ? "" : initial;
+  });
   const [folderId, setFolderId] = useState<string | null>(
     draft?.folderId ?? note.folder_id,
   );
@@ -513,11 +517,6 @@ export function TextNoteEditor({ note }: { note: Note }) {
       className="flowy-text-editor relative min-h-full w-full transition-colors duration-500"
       style={noteColor ? { backgroundColor: noteColor } : undefined}
     >
-      {/* Soft wash of the theme colour behind the title, so the page has life. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-primary/[0.12] via-fuchsia-500/[0.04] to-transparent"
-      />
       <div className="relative mx-auto flex min-h-full w-full max-w-3xl flex-col px-5 pb-36 sm:px-10 md:my-6 md:min-h-[calc(100dvh-3rem)] md:rounded-[2rem] md:border md:border-border/60 md:bg-card/40 md:shadow-[0_30px_80px_-40px_rgb(0_0_0/0.5)] md:backdrop-blur-sm">
         <header className="sticky top-0 z-30 -mx-5 flex h-14 items-center gap-1 bg-background/70 px-2 backdrop-blur-xl sm:-mx-10 sm:px-6 md:rounded-t-[2rem] md:bg-transparent">
           <button
