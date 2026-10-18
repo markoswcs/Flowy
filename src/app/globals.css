@@ -1025,8 +1025,10 @@
 /* ------------------------------------------------------------------------
    Rotating border glow (ARC Raiders-style selection highlight).
    A thin static border with a soft light travelling around it: only the
-   gradient angle animates, the element itself never rotates. Applies to
-   every selected/pressed/current control across the app.
+   gradient angle animates, the element itself never rotates.
+   - Selected / pressed / current controls: full glow, always on.
+   - Buttons and cards under the mouse: the same light, a little softer.
+   Excalidraw's own UI and tiny in-topic controls are left alone.
    ------------------------------------------------------------------------ */
 @property --flowy-glow-angle {
   syntax: "<angle>";
@@ -1037,37 +1039,50 @@
 @layer base {
   /* Base layer so positioning utilities (absolute, fixed…) still win. */
   :where(
-    [aria-pressed="true"],
-    [role="radio"][aria-checked="true"],
-    [role="tab"][aria-selected="true"],
-    [aria-current="page"],
-    .flowy-glow
-  ) {
+      [aria-pressed="true"],
+      [role="radio"][aria-checked="true"],
+      [role="tab"][aria-selected="true"],
+      [aria-current="page"],
+      .flowy-glow,
+      button,
+      [role="button"],
+      [role="menuitem"],
+      .flowy-glow-hover
+    ):not(.excalidraw *, [data-topic-control]) {
     position: relative;
   }
 }
 
 :where(
-  [aria-pressed="true"],
-  [role="radio"][aria-checked="true"],
-  [role="tab"][aria-selected="true"],
-  [aria-current="page"],
-  .flowy-glow
-)::after {
+    [aria-pressed="true"],
+    [role="radio"][aria-checked="true"],
+    [role="tab"][aria-selected="true"],
+    [aria-current="page"],
+    .flowy-glow
+  ):not(.excalidraw *, [data-topic-control])::after,
+:where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
+    :disabled,
+    [aria-disabled="true"],
+    .excalidraw *,
+    [data-topic-control]
+  ):hover::after {
   content: "";
   position: absolute;
-  inset: -1px;
+  inset: -1.5px;
+  z-index: 1;
   border-radius: inherit;
-  padding: 1.5px;
+  padding: 2px;
   pointer-events: none;
   background: conic-gradient(
     from var(--flowy-glow-angle),
-    hsl(var(--primary) / 0.18) 0deg,
-    hsl(var(--primary) / 0.18) 250deg,
-    hsl(var(--primary) / 0.7) 300deg,
-    hsl(0 0% 100% / 0.95) 330deg,
-    hsl(var(--primary) / 0.7) 345deg,
-    hsl(var(--primary) / 0.18) 360deg
+    hsl(var(--primary) / 0.35) 0deg,
+    hsl(var(--primary) / 0.35) 170deg,
+    hsl(var(--primary) / 0.8) 230deg,
+    hsl(300 95% 72%) 275deg,
+    hsl(0 0% 100%) 310deg,
+    hsl(190 95% 70%) 335deg,
+    hsl(var(--primary) / 0.8) 350deg,
+    hsl(var(--primary) / 0.35) 360deg
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -1076,8 +1091,26 @@
   mask:
     linear-gradient(#000 0 0) content-box exclude,
     linear-gradient(#000 0 0);
-  filter: drop-shadow(0 0 3px hsl(var(--primary) / 0.55));
-  animation: flowy-glow-spin 3.2s linear infinite;
+  filter: drop-shadow(0 0 5px hsl(var(--primary) / 0.85))
+    drop-shadow(0 0 14px hsl(var(--primary) / 0.45));
+  animation:
+    flowy-glow-spin 3s linear infinite,
+    flowy-glow-in 220ms ease-out;
+}
+
+/* Hover is a lighter touch than a real selection. */
+:where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
+    :disabled,
+    [aria-disabled="true"],
+    [aria-pressed="true"],
+    [aria-checked="true"],
+    [aria-current="page"],
+    .flowy-glow,
+    .excalidraw *,
+    [data-topic-control]
+  ):hover::after {
+  opacity: 0.75;
+  animation-duration: 2.4s, 220ms;
 }
 
 @keyframes flowy-glow-spin {
@@ -1086,20 +1119,30 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  :where(
-    [aria-pressed="true"],
-    [role="radio"][aria-checked="true"],
-    [role="tab"][aria-selected="true"],
-    [aria-current="page"],
-    .flowy-glow
-  )::after {
-    animation: none;
-    background: hsl(var(--primary) / 0.6);
+@keyframes flowy-glow-in {
+  from {
+    opacity: 0;
   }
 }
 
 /* Large selections (Ctrl+A) keep a static border to stay smooth. */
 [data-many-selected] .flowy-glow::after {
   animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(
+      [aria-pressed="true"],
+      [role="radio"][aria-checked="true"],
+      [role="tab"][aria-selected="true"],
+      [aria-current="page"],
+      .flowy-glow,
+      button,
+      [role="button"],
+      [role="menuitem"],
+      .flowy-glow-hover
+    )::after {
+    animation: none !important;
+    background: hsl(var(--primary) / 0.6) !important;
+  }
 }

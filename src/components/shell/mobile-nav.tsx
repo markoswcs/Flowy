@@ -25,7 +25,7 @@ function NavItem({
       aria-label={label}
       title={label}
       aria-current={active ? "page" : undefined}
-      className="relative grid h-full place-items-center rounded-2xl transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+      className="flowy-glow-hover relative grid h-full place-items-center rounded-2xl transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
     >
       <span
         className={cn(

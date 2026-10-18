@@ -309,7 +309,7 @@ export function NoteList() {
           {filteredNotes.map((note) => (
             <li key={note.id}>
               <article
-                className="group relative flex min-h-44 flex-col rounded-2xl border border-border/80 bg-card p-4 pt-12 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/30 hover:shadow-md active:translate-y-0 sm:min-h-48 sm:p-5 sm:pt-12"
+                className="flowy-glow-hover group relative flex min-h-44 flex-col rounded-2xl border border-border/80 bg-card p-4 pt-12 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/30 hover:shadow-md active:translate-y-0 sm:min-h-48 sm:p-5 sm:pt-12"
                 style={note.color ? { backgroundColor: note.color } : undefined}
               >
                 <Link
