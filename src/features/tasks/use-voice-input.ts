@@ -78,6 +78,49 @@ const ERRORS: Record<string, string> = {
 
 const MAX_LISTEN_MS = 60_000;
 
+function comparable(text: string) {
+  return text.toLocaleLowerCase("pt-BR").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Rebuilds what was said from every result the browser holds. Chrome on
+ * Android re-sends the whole list on each event and often returns growing
+ * versions of the same phrase ("revisar", "revisar materiais"...) as separate
+ * final results; a piece contained in the next one is the same speech, so it
+ * is replaced instead of appended.
+ */
+export function transcriptFrom(results: ArrayLike<RecognitionResult>) {
+  const finals: string[] = [];
+  let interim = "";
+  for (let index = 0; index < results.length; index += 1) {
+    const result = results[index]!;
+    const text = result[0].transcript.trim();
+    if (!text) continue;
+    if (!result.isFinal) {
+      interim = interim ? `${interim} ${text}` : text;
+      continue;
+    }
+    const last = finals[finals.length - 1];
+    if (last && comparable(text).startsWith(comparable(last))) {
+      finals[finals.length - 1] = text;
+    } else if (!last || !comparable(last).startsWith(comparable(text))) {
+      finals.push(text);
+    }
+  }
+  const final = finals.join(" ");
+  const full =
+    interim && comparable(interim).startsWith(comparable(final))
+      ? interim
+      : [final, interim].filter(Boolean).join(" ");
+  return { final, full };
+}
+
+// Continuous mode on Android Chrome repeats results and restarts on its own;
+// one utterance at a time (ends on a pause) is the stable mode there.
+function prefersSingleUtterance() {
+  return /Android/i.test(navigator.userAgent);
+}
+
 function recognitionConstructor(): RecognitionConstructor | null {
   if (typeof window === "undefined") return null;
   const scope = window as unknown as {
@@ -141,7 +184,7 @@ export function useVoiceInput({
     recognition.current?.abort();
     const instance = new Constructor();
     instance.lang = "pt-BR";
-    instance.continuous = true;
+    instance.continuous = !prefersSingleUtterance();
     instance.interimResults = true;
     instance.maxAlternatives = 1;
     finalText.current = "";
@@ -150,17 +193,9 @@ export function useVoiceInput({
     setError(null);
 
     instance.onresult = (event) => {
-      let interim = "";
-      for (
-        let index = event.resultIndex;
-        index < event.results.length;
-        index += 1
-      ) {
-        const result = event.results[index]!;
-        if (result.isFinal) finalText.current += `${result[0].transcript} `;
-        else interim += result[0].transcript;
-      }
-      setTranscript(`${finalText.current}${interim}`.trim());
+      const { final, full } = transcriptFrom(event.results);
+      finalText.current = final;
+      setTranscript(full);
     };
     instance.onerror = (event) => {
       if (event.error === "aborted") return;
