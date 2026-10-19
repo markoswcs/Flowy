@@ -145,3 +145,99 @@ describe("interpretTask", () => {
     });
   });
 });
+
+describe("interpretTask with dictation (no punctuation)", () => {
+  it("separates the action from the reason and finds date and client", () => {
+    expect(
+      interpretTask(
+        "crie uma tarefa para amanhã às 10 horas de revisar a proposta do cliente roberto porque ele pediu para mudar os valores e incluir o novo prazo",
+        context,
+        now,
+      ),
+    ).toMatchObject({
+      title: "Revisar a proposta",
+      description: "Ele pediu para mudar os valores e incluir o novo prazo.",
+      due_date: "2026-10-16",
+      due_time: "10:00",
+      folderId: "f-roberto",
+    });
+  });
+
+  it("drops filler words and moves the purpose to the description", () => {
+    expect(
+      interpretTask(
+        "né então preciso ligar para o contador sexta-feira para conferir as notas fiscais de outubro obrigado",
+        context,
+        now,
+      ),
+    ).toMatchObject({
+      title: "Ligar para o contador",
+      description: "Conferir as notas fiscais de outubro.",
+      due_date: "2026-10-16",
+    });
+  });
+
+  it("understands dictated título and descrição", () => {
+    expect(
+      interpretTask(
+        "título reunião de alinhamento descrição levar os números do trimestre prioridade alta",
+        context,
+        now,
+      ),
+    ).toMatchObject({
+      title: "Reunião de alinhamento",
+      description: "Levar os números do trimestre.",
+      priority: "high",
+    });
+  });
+
+  it("keeps a short reminder whole", () => {
+    expect(
+      interpretTask("me lembra de comprar ração para o cachorro", context, now),
+    ).toMatchObject({
+      title: "Comprar ração para o cachorro",
+      description: null,
+    });
+  });
+
+  it("splits on mas and reads meio-dia", () => {
+    expect(
+      interpretTask(
+        "postar os stories hoje ao meio-dia mas antes pedir a aprovação da Ana",
+        context,
+        now,
+      ),
+    ).toMatchObject({
+      title: "Postar os stories",
+      description: "Antes pedir a aprovação da Ana.",
+      due_date: "2026-10-15",
+      due_time: "12:00",
+    });
+  });
+
+  it("takes a date said after the details", () => {
+    expect(
+      interpretTask(
+        "enviar o orçamento porque o cliente cobrou até sexta",
+        context,
+        now,
+      ),
+    ).toMatchObject({
+      title: "Enviar o orçamento",
+      description: "O cliente cobrou.",
+      due_date: "2026-10-16",
+    });
+  });
+  it("shortens a long run without detail words", () => {
+    expect(
+      interpretTask(
+        "fazer o relatório mensal de vendas e enviar para a diretoria com os gráficos atualizados",
+        context,
+        now,
+      ),
+    ).toMatchObject({
+      title: "Fazer o relatório mensal de vendas",
+      description: "Enviar para a diretoria com os gráficos atualizados.",
+    });
+  });
+});
