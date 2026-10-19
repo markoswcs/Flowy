@@ -32,6 +32,26 @@ class FakeRecognition {
   }
 }
 
+function setPermission(state: PermissionState) {
+  vi.stubGlobal("navigator", {
+    ...navigator,
+    permissions: { query: vi.fn(async () => ({ state })) },
+    mediaDevices: {
+      getUserMedia: vi.fn(async () => ({
+        getTracks: () => [{ stop: vi.fn() }],
+      })),
+    },
+  });
+}
+
+async function openVoice() {
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ditar tarefa por voz" }),
+    );
+  });
+}
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -39,14 +59,13 @@ afterEach(() => {
 });
 
 describe("VoiceTaskButton", () => {
-  it("transcribes in pt-BR and hands the text over when finished", () => {
+  it("transcribes in pt-BR and hands the text over when finished", async () => {
     vi.stubGlobal("webkitSpeechRecognition", FakeRecognition);
+    setPermission("granted");
     const onResult = vi.fn();
     render(<VoiceTaskButton onResult={onResult} />);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ditar tarefa por voz" }),
-    );
+    await openVoice();
     const recognition = FakeRecognition.last!;
     expect(recognition.lang).toBe("pt-BR");
     expect(recognition.start).toHaveBeenCalled();
@@ -64,13 +83,12 @@ describe("VoiceTaskButton", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("discards what was heard on cancel", () => {
+  it("discards what was heard on cancel", async () => {
     vi.stubGlobal("webkitSpeechRecognition", FakeRecognition);
+    setPermission("granted");
     const onResult = vi.fn();
     render(<VoiceTaskButton onResult={onResult} />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ditar tarefa por voz" }),
-    );
+    await openVoice();
     act(() => FakeRecognition.last!.say("algo", true));
     fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
     expect(FakeRecognition.last!.abort).toHaveBeenCalled();
@@ -78,26 +96,43 @@ describe("VoiceTaskButton", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("explains a denied microphone permission", () => {
+  it("asks for the microphone with a button before listening", async () => {
     vi.stubGlobal("webkitSpeechRecognition", FakeRecognition);
+    setPermission("prompt");
     render(<VoiceTaskButton onResult={vi.fn()} />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ditar tarefa por voz" }),
-    );
-    act(() => FakeRecognition.last!.onerror?.({ error: "not-allowed" }));
+    await openVoice();
+    expect(screen.getByText("Permitir o microfone")).toBeInTheDocument();
+    expect(FakeRecognition.last).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Permitir microfone" }),
+      );
+    });
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
+      audio: true,
+    });
+    expect(FakeRecognition.last!.start).toHaveBeenCalled();
+    expect(screen.getByText("Ouvindo…")).toBeInTheDocument();
+  });
+
+  it("explains how to unblock a denied microphone", async () => {
+    vi.stubGlobal("webkitSpeechRecognition", FakeRecognition);
+    setPermission("denied");
+    render(<VoiceTaskButton onResult={vi.fn()} />);
+    await openVoice();
+    expect(screen.getByText("Microfone bloqueado")).toBeInTheDocument();
     expect(
-      screen.getByText(/Permissão do microfone negada/),
+      screen.getByText(/Microfone|Permissões/, { selector: "li" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Tentar de novo/ }),
+      screen.getByRole("button", { name: "Já liberei" }),
     ).toBeInTheDocument();
   });
 
-  it("tells when the browser has no speech recognition", () => {
+  it("tells when the browser has no speech recognition", async () => {
     render(<VoiceTaskButton onResult={vi.fn()} />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ditar tarefa por voz" }),
-    );
+    await openVoice();
     expect(
       screen.getByText(/não oferece reconhecimento de voz/),
     ).toBeInTheDocument();
