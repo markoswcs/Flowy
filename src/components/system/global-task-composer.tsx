@@ -11,11 +11,18 @@ import { holdOverlay } from "@/lib/overlay";
 
 export function GlobalTaskComposer() {
   const [open, setOpen] = useState(false);
+  // What opened the composer: text to review and/or start dictating. A new
+  // key per opening gives the composer fresh state.
+  const [launch, setLaunch] = useState<{ key: number; text?: string; voice?: boolean }>({ key: 0 });
   const foldersQuery = useFolders();
   const categoriesQuery = useCategories();
 
   useEffect(() => {
-    const handleOpen = () => setOpen(true);
+    const handleOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ text?: string; voice?: boolean } | undefined>).detail;
+      setLaunch((current) => ({ key: current.key + 1, text: detail?.text, voice: detail?.voice }));
+      setOpen(true);
+    };
     const handleClose = () => setOpen(false);
 
     window.addEventListener("flowy:open-task-composer", handleOpen);
@@ -34,6 +41,7 @@ export function GlobalTaskComposer() {
 
       if (event.key?.toLowerCase() === "n" && modifier && !editing) {
         event.preventDefault();
+        setLaunch((current) => ({ key: current.key + 1 }));
         setOpen(true);
       }
     };
@@ -80,9 +88,12 @@ export function GlobalTaskComposer() {
           </Button>
         </div>
         
-        <TaskComposer 
-          folders={foldersQuery.data ?? []} 
-          categories={categoriesQuery.data ?? []} 
+        <TaskComposer
+          key={launch.key}
+          folders={foldersQuery.data ?? []}
+          categories={categoriesQuery.data ?? []}
+          initialText={launch.text}
+          autoVoice={launch.voice}
         />
       </div>
     </div>

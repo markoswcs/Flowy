@@ -20,12 +20,14 @@ import {
 } from "@/features/mindmap/components/viewport-store";
 
 export interface GestureCallbacks {
-  onTopicTap: (id: string, additive: boolean) => void;
+  onTopicTap: (id: string, additive: boolean, touch: boolean) => void;
   onBackgroundTap: () => void;
   onRelationTap: (id: string) => void;
   onTopicLongPress: (id: string, clientX: number, clientY: number) => void;
   /** Topics that can be dragged; others pan the canvas (the root). */
   canDrag: (id: string) => boolean;
+  /** Touch only moves a topic that was already selected (or long-pressed). */
+  isSelected: (id: string) => boolean;
   onDragMove: (
     id: string,
     mapX: number,
@@ -68,6 +70,7 @@ type Gesture =
       start: Point;
       touch: boolean;
       additive: boolean;
+      wasSelected: boolean;
       lifted: boolean;
       dragging: boolean;
     }
@@ -184,12 +187,16 @@ export function useCanvasGestures(
       return;
     }
     const touch = event.pointerType === "touch";
+    // No emulated mousedown after the tap: it would focus the canvas and
+    // close the text editor a second tap has just opened.
+    if (touch) event.preventDefault();
     gesture.current = {
       type: "topic",
       id: topicId,
       start: point,
       touch,
       additive: event.shiftKey || event.ctrlKey || event.metaKey,
+      wasSelected: cb.isSelected(topicId),
       lifted: false,
       dragging: false,
     };
@@ -207,9 +214,12 @@ export function useCanvasGestures(
   function moveTopic(g: Extract<Gesture, { type: "topic" }>, point: Point) {
     const threshold = g.touch ? DRAG_THRESHOLD_TOUCH : DRAG_THRESHOLD_MOUSE;
     if (!g.dragging && distance(point, g.start) < threshold) return;
-    // Touch drags a topic straight away (like MindMeister); the root and
-    // other fixed topics pan the canvas instead.
-    if (!g.dragging && !cb.canDrag(g.id)) {
+    // On touch, a swipe that starts on a topic pans the map unless that topic
+    // was already selected or lifted with a long press: maps are dense on a
+    // phone and panning must not reorganize them by accident. The root and
+    // other fixed topics always pan.
+    const touchPan = g.touch && !g.lifted && !g.wasSelected;
+    if (!g.dragging && (touchPan || !cb.canDrag(g.id))) {
       clearPressTimer();
       gesture.current = {
         type: "pan",
@@ -268,7 +278,7 @@ export function useCanvasGestures(
     } else if (g.lifted) {
       cb.onTopicLongPress(g.id, event.clientX, event.clientY);
     } else {
-      cb.onTopicTap(g.id, g.additive);
+      cb.onTopicTap(g.id, g.additive, g.touch);
     }
   }
 

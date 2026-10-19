@@ -24,7 +24,7 @@ export const FLOATING_TOPIC_TEXT = "Tópico flutuante";
 /** Query param carrying the template chosen when the note was created. */
 export const TEMPLATE_PARAM = "modelo";
 
-export const TIP_STORAGE_KEY = "flowy-map-tip-dismissed";
+export const TIP_STORAGE_KEY = "flowy-map-tip-dismissed-v2";
 
 export const LAYOUT_OPTIONS: { id: LayoutKind; label: string }[] = [
   { id: "mindmap", label: "Mapa mental" },

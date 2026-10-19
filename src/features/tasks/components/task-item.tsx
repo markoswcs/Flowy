@@ -419,14 +419,13 @@ export function TaskItem({
   }
 
   const when = relativeTaskDate(task.due_date);
-  const dateToneClass =
-    completed || !when
-      ? "text-muted-foreground"
-      : when.tone === "overdue"
-        ? "bg-destructive/15 text-destructive"
-        : when.tone === "today"
-          ? "flowy-active"
-          : "text-muted-foreground";
+  // Overdue and today render as a pill; any other date is plain meta text.
+  const dateChip = !completed && (when?.tone === "overdue" || when?.tone === "today");
+  const dateToneClass = !dateChip
+    ? "text-muted-foreground"
+    : when?.tone === "overdue"
+      ? "bg-destructive/15 text-destructive"
+      : "flowy-active";
 
   return (
     <article
@@ -506,8 +505,14 @@ export function TaskItem({
             {!compact ? (
               <span className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                 {when ? (
-                  <span className={cn("inline-flex items-center gap-1 rounded-full py-0.5", dateToneClass, dateToneClass.includes("bg-") ? "px-2" : "")}>
-                    <CalendarDays className="size-3.5" aria-hidden="true" />
+                  <span
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1 whitespace-nowrap leading-none",
+                      dateChip && "h-6 rounded-full px-2.5",
+                      dateToneClass,
+                    )}
+                  >
+                    <CalendarDays className="size-3.5 shrink-0" aria-hidden="true" />
                     {when.label}
                     {task.due_time ? ` · ${task.due_time.slice(0, 5)}` : ""}
                   </span>
