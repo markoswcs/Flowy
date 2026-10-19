@@ -32,14 +32,15 @@ class FakeRecognition {
   }
 }
 
-function setPermission(state: PermissionState) {
+function setPermission(state: PermissionState, micWorks = state !== "denied") {
   vi.stubGlobal("navigator", {
     ...navigator,
     permissions: { query: vi.fn(async () => ({ state })) },
     mediaDevices: {
-      getUserMedia: vi.fn(async () => ({
-        getTracks: () => [{ stop: vi.fn() }],
-      })),
+      getUserMedia: vi.fn(async () => {
+        if (!micWorks) throw new DOMException("blocked", "NotAllowedError");
+        return { getTracks: () => [{ stop: vi.fn() }] };
+      }),
     },
   });
 }
@@ -128,6 +129,41 @@ describe("VoiceTaskButton", () => {
     expect(
       screen.getByRole("button", { name: "Já liberei" }),
     ).toBeInTheDocument();
+  });
+
+  it("says so when tapping Já liberei while still blocked", async () => {
+    vi.stubGlobal("webkitSpeechRecognition", FakeRecognition);
+    setPermission("denied");
+    render(<VoiceTaskButton onResult={vi.fn()} />);
+    await openVoice();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Já liberei" }));
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Ainda está bloqueado",
+    );
+  });
+
+  it("offers keyboard dictation when the speech service refuses with the mic allowed", async () => {
+    vi.stubGlobal("webkitSpeechRecognition", FakeRecognition);
+    setPermission("granted");
+    render(
+      <>
+        <input id="task-field" aria-label="Campo" />
+        <VoiceTaskButton onResult={vi.fn()} inputId="task-field" />
+      </>,
+    );
+    await openVoice();
+    await act(async () => {
+      FakeRecognition.last!.onerror?.({ error: "not-allowed" });
+    });
+    expect(screen.getByText("Ditado indisponível aqui")).toBeInTheDocument();
+    expect(
+      screen.getByText(/not-allowed · microfone: granted/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Usar teclado" }));
+    expect(screen.getByLabelText("Campo")).toHaveFocus();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("tells when the browser has no speech recognition", async () => {

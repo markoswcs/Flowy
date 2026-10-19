@@ -185,7 +185,11 @@ export function TaskComposer({
           disabled={createMutation.isPending}
         />
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          <VoiceTaskButton onResult={handleVoice} autoStart={autoVoice} />
+          <VoiceTaskButton
+            onResult={handleVoice}
+            inputId="mobile-task-input"
+            autoStart={autoVoice}
+          />
           <Button
             type="button"
             variant="ghost"
