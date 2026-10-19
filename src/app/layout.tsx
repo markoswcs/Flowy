@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "@/app/globals.css";
+import { LaunchScreen } from "@/components/system/launch-screen";
 import { AppProviders } from "@/providers/app-providers";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body suppressHydrationWarning>
+        <LaunchScreen />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
