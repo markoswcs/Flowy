@@ -4,9 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Speech-to-text through the browser's own Web Speech API (pt-BR). No audio is
- * recorded or stored by Flowy: the browser asks for microphone permission,
- * transcribes and hands back text. Listening stops on silence, on `stop()` or
- * after a minute at most.
+ * recorded or stored by Flowy: the browser transcribes and hands back text.
+ * Listening stops on silence, on `stop()` or after a minute at most.
+ *
+ * Microphone access is asked for explicitly first: while the permission is
+ * still undecided the hook waits in "asking" until the person taps Permitir,
+ * which opens the system prompt. A permission blocked earlier cannot be
+ * re-asked by a page, so "blocked" tells the interface to explain how to
+ * unblock it in the settings.
  */
 
 interface RecognitionResult {
@@ -34,11 +39,9 @@ interface Recognition {
 
 type RecognitionConstructor = new () => Recognition;
 
-export type VoiceStatus = "idle" | "listening" | "error";
+export type VoiceStatus = "idle" | "asking" | "listening" | "blocked" | "error";
 
 const ERRORS: Record<string, string> = {
-  "not-allowed":
-    "Permissão do microfone negada. Libere o acesso nas configurações do navegador.",
   "service-not-allowed":
     "O reconhecimento de voz está bloqueado neste navegador.",
   "audio-capture": "Nenhum microfone encontrado.",
@@ -61,6 +64,18 @@ function recognitionConstructor(): RecognitionConstructor | null {
 
 export function isVoiceInputSupported() {
   return recognitionConstructor() !== null;
+}
+
+/** "unknown" when the browser cannot tell; recognition then asks by itself. */
+async function microphonePermission(): Promise<PermissionState | "unknown"> {
+  try {
+    const status = await navigator.permissions?.query({
+      name: "microphone" as PermissionName,
+    });
+    return status?.state ?? "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 export function useVoiceInput({
@@ -86,15 +101,14 @@ export function useVoiceInput({
     timer.current = null;
   };
 
-  const start = useCallback(() => {
+  const fail = (message: string) => {
+    setStatus("error");
+    setError(message);
+  };
+
+  const listen = useCallback(() => {
     const Constructor = recognitionConstructor();
-    if (!Constructor) {
-      setStatus("error");
-      setError(
-        "Seu navegador não oferece reconhecimento de voz. Experimente o Chrome ou o Edge.",
-      );
-      return;
-    }
+    if (!Constructor) return;
     recognition.current?.abort();
     const instance = new Constructor();
     instance.lang = "pt-BR";
@@ -122,10 +136,12 @@ export function useVoiceInput({
     instance.onerror = (event) => {
       if (event.error === "aborted") return;
       cancelled.current = true;
-      setStatus("error");
-      setError(
-        ERRORS[event.error] ?? "Não foi possível usar o microfone agora.",
-      );
+      if (event.error === "not-allowed") {
+        setStatus("blocked");
+        setError(null);
+        return;
+      }
+      fail(ERRORS[event.error] ?? "Não foi possível usar o microfone agora.");
     };
     instance.onend = () => {
       clearTimer();
@@ -142,10 +158,44 @@ export function useVoiceInput({
       setStatus("listening");
       timer.current = window.setTimeout(() => instance.stop(), MAX_LISTEN_MS);
     } catch {
-      setStatus("error");
-      setError("Não foi possível iniciar o microfone.");
+      fail("Não foi possível iniciar o microfone.");
     }
   }, []);
+
+  /** Opens the voice sheet: asks for the microphone first when needed. */
+  const start = useCallback(async () => {
+    if (!recognitionConstructor()) {
+      fail(
+        "Seu navegador não oferece reconhecimento de voz. Experimente o Chrome ou o Edge.",
+      );
+      return;
+    }
+    setError(null);
+    const permission = await microphonePermission();
+    if (permission === "denied") return setStatus("blocked");
+    if (permission === "prompt") return setStatus("asking");
+    listen();
+  }, [listen]);
+
+  /** Shows the system microphone prompt, then starts listening once allowed. */
+  const allow = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) return listen();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Only the permission was needed; recognition opens its own stream.
+      stream.getTracks().forEach((track) => track.stop());
+      listen();
+    } catch (reason) {
+      const name = reason instanceof DOMException ? reason.name : "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        setStatus("blocked");
+      } else if (name === "NotFoundError") {
+        fail("Nenhum microfone encontrado.");
+      } else {
+        fail("Não foi possível usar o microfone agora.");
+      }
+    }
+  }, [listen]);
 
   /** Ends listening and delivers what was heard. */
   const stop = useCallback(() => recognition.current?.stop(), []);
@@ -169,5 +219,5 @@ export function useVoiceInput({
     [],
   );
 
-  return { status, transcript, error, start, stop, cancel };
+  return { status, transcript, error, start, allow, stop, cancel };
 }
