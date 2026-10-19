@@ -41,8 +41,8 @@ import {
 } from "@/features/onboarding/starter-kits";
 import { useUpdatePreferences } from "@/features/settings/use-settings";
 import { formatTaskDate, localDateKey } from "@/features/tasks/date-utils";
-import { parseQuickTask } from "@/features/tasks/quick-task";
-import { normalize, suggestOrganization } from "@/features/tasks/smart-organize";
+import { normalize } from "@/features/tasks/smart-organize";
+import { interpretTask } from "@/features/tasks/smart-task";
 import { useCreateTask } from "@/features/tasks/use-tasks";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeThemePreference } from "@/lib/theme";
@@ -711,8 +711,8 @@ function TaskStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }
   const [manualFolder, setManualFolder] = useState<string | null | undefined>(undefined);
   const [manualTags, setManualTags] = useState<string[] | undefined>(undefined);
 
-  const smart = title.trim() ? suggestOrganization(title, { folders, categories }) : null;
-  const parsed = parseQuickTask(smart?.title || title);
+  const smart = title.trim() ? interpretTask(title, { folders, categories }) : null;
+  const parsed = smart ?? { title: "", description: null, due_date: null, due_time: null, priority: "normal" as const };
   const folderId = manualFolder === undefined ? (smart?.folderId ?? null) : manualFolder;
   const tagIds = manualTags ?? smart?.categoryIds ?? [];
   const when = parsed.due_date
@@ -726,6 +726,8 @@ function TaskStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }
         title: parsed.title,
         due_date: parsed.due_date ?? localDateKey(new Date()),
         due_time: parsed.due_time,
+        description: parsed.description,
+        priority: parsed.priority,
         folder_id: folderId,
         category_ids: tagIds,
       },

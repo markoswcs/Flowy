@@ -502,16 +502,20 @@ export function MobileToolbar({
       >
         <DockButton id={dock[0]} state={state} onRun={onRun} />
         <DockButton id={dock[1]} state={state} onRun={onRun} />
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => onRun(add)}
-            aria-label={state.hasTopic ? TOOLS.child.label : "Adicionar tópico"}
-            className="flowy-glow -mt-7 grid size-16 place-items-center rounded-full bg-gradient-to-br from-primary to-fuchsia-500 text-primary-foreground shadow-[0_12px_30px_-8px_hsl(var(--primary)/0.7)] transition-transform active:scale-90 motion-reduce:transform-none"
-          >
-            <Plus className="size-7" strokeWidth={2.5} />
-          </button>
-        </div>
+        {/* Adds to the map, inside the dock: a raised round "+" here read as
+            the app-wide create button. */}
+        <button
+          type="button"
+          onClick={() => onRun(add)}
+          aria-label={state.hasTopic ? TOOLS.child.label : "Adicionar tópico"}
+          data-no-glow
+          className="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl bg-primary text-[10.5px] font-semibold leading-none text-primary-foreground shadow-sm transition-transform active:scale-90 motion-reduce:transform-none"
+        >
+          <Plus className="size-5" strokeWidth={2.5} />
+          <span className="max-w-full truncate px-0.5">
+            {state.hasTopic ? "Subtópico" : "Tópico"}
+          </span>
+        </button>
         <DockButton id={dock[2]} state={state} onRun={onRun} />
         <button
           type="button"

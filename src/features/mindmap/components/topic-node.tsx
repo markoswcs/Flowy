@@ -266,7 +266,9 @@ function AddChildHandle({
       aria-label="Adicionar subtópico (Tab)"
       title="Adicionar subtópico (Tab)"
       className={cn(
-        "absolute z-10 grid size-6 animate-in place-items-center rounded-full bg-primary text-primary-foreground shadow-md fade-in zoom-in-50 before:absolute before:-inset-2.5 before:content-[''] hover:scale-110 motion-reduce:transform-none",
+        // Touch screens add from the toolbar dock; a tiny handle there is
+        // easy to hit by accident and crowds small maps.
+        "absolute z-10 grid size-6 animate-in place-items-center rounded-full bg-primary text-primary-foreground shadow-md fade-in zoom-in-50 before:absolute before:-inset-2.5 before:content-[''] hover:scale-110 motion-reduce:transform-none [@media(pointer:coarse)]:hidden",
         addHandlePosition(side, beyondToggle),
       )}
     >

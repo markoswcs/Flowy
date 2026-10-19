@@ -13,15 +13,19 @@ import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { TaskScheduleFields } from "@/features/tasks/components/task-schedule-fields";
 import {
   SmartSuggestionChips,
-  useSmartOrganize,
+  SmartTaskDetails,
+  useSmartTask,
   withDismissed,
 } from "@/features/tasks/components/smart-suggestions";
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
-import { useCreateTask } from "@/features/tasks/use-tasks";
+import { VoiceTaskButton } from "@/features/tasks/components/voice-capture";
+import { interpretTask, type SmartTask } from "@/features/tasks/smart-task";
+import { useCreateTask, useTasks } from "@/features/tasks/use-tasks";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/providers/notification-provider";
 import type {
@@ -38,6 +42,10 @@ interface TaskComposerProps {
   defaultDueDate?: string | null;
   defaultCategoryIds?: string[];
   compact?: boolean;
+  /** Text to interpret and pre-fill for review (e.g. from the quick bar). */
+  initialText?: string;
+  /** Start dictating as soon as the composer opens. */
+  autoVoice?: boolean;
 }
 
 export function TaskComposer({
@@ -47,36 +55,90 @@ export function TaskComposer({
   defaultDueDate = null,
   defaultCategoryIds = [],
   compact = false,
+  initialText,
+  autoVoice = false,
 }: TaskComposerProps) {
   const createMutation = useCreateTask();
   const { addNotification } = useNotifications();
-  const [title, setTitle] = useState("");
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [dueDate, setDueDate] = useState(defaultDueDate ?? "");
-  const [dueTime, setDueTime] = useState("");
-  const [recurrence, setRecurrence] = useState<TaskRecurrence | "none">(
-    "none",
+  const { data: history } = useTasks({ scope: "all" });
+  // Text handed over from another flow is interpreted once, up front, and
+  // shown as editable fields.
+  const [initial] = useState(() =>
+    initialText?.trim()
+      ? interpretTask(initialText, { folders, categories, history: history ?? [] })
+      : null,
   );
-  const [priority, setPriority] = useState<TaskPriority>("normal");
-  const [folderId, setFolderId] = useState(defaultFolderId ?? "");
-  const [categoryIds, setCategoryIds] = useState<string[]>(defaultCategoryIds);
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [detailsOpen, setDetailsOpen] = useState(Boolean(initial));
+  const [dueDate, setDueDate] = useState(initial?.due_date ?? defaultDueDate ?? "");
+  const [dueTime, setDueTime] = useState(initial?.due_time ?? "");
+  const [recurrence, setRecurrence] = useState<TaskRecurrence | "none">(
+    initial?.recurrence ?? "none",
+  );
+  const [priority, setPriority] = useState<TaskPriority>(initial?.priority ?? "normal");
+  const [folderId, setFolderId] = useState(initial?.folderId ?? defaultFolderId ?? "");
+  const [categoryIds, setCategoryIds] = useState<string[]>(() => [
+    ...new Set([...defaultCategoryIds, ...(initial?.categoryIds ?? [])]),
+  ]);
+  // Once interpreted into the fields, the title is read as plain text again
+  // and any doubts are listed for the person to confirm.
+  const [reviewing, setReviewing] = useState<string[] | null>(initial ? initial.ambiguities : null);
   const [dismissed, setDismissed] = useState({ folder: false, categoryIds: [] as string[] });
-  const rawSuggestion = useSmartOrganize(title, folders, categories);
-  const suggestion = withDismissed(rawSuggestion, dismissed);
+  const live = withDismissed(useSmartTask(reviewing ? "" : title, folders, categories), dismissed);
   // Suggestions only fill what the person has not chosen by hand.
-  const suggestedExtras = suggestion
+  const suggestedExtras = live
     ? {
-        ...suggestion,
-        folderId: folderId ? null : suggestion.folderId,
-        categoryIds: suggestion.categoryIds.filter((id) => !categoryIds.includes(id)),
+        ...live,
+        folderId: folderId ? null : live.folderId,
+        categoryIds: live.categoryIds.filter((id) => !categoryIds.includes(id)),
       }
     : null;
 
+  function applyInterpretation(task: SmartTask) {
+    setTitle(task.title);
+    setDescription((current) => current || task.description || "");
+    if (task.due_date) setDueDate(task.due_date);
+    if (task.due_time) setDueTime(task.due_time);
+    if (task.recurrence) setRecurrence(task.recurrence);
+    if (task.priority !== "normal") setPriority(task.priority);
+    if (!folderId && task.folderId) setFolderId(task.folderId);
+    setCategoryIds((current) => [...new Set([...current, ...task.categoryIds])]);
+    setReviewing(task.ambiguities);
+    setDetailsOpen(true);
+  }
+
+  function handleVoice(text: string) {
+    applyInterpretation(interpretTask(text, { folders, categories, history: history ?? [] }));
+  }
+
+  function reset() {
+    setTitle("");
+    setDescription("");
+    setDueDate(defaultDueDate ?? "");
+    setDueTime("");
+    setRecurrence("none");
+    setPriority("normal");
+    setFolderId(defaultFolderId ?? "");
+    setCategoryIds(defaultCategoryIds);
+    setReviewing(null);
+    setDismissed({ folder: false, categoryIds: [] });
+    if (compact) setDetailsOpen(false);
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const cleanTitle = (suggestion?.title ?? title).trim();
+    // A doubt (unknown client, likely duplicate) is shown once before creating.
+    if (live?.ambiguities.length) {
+      applyInterpretation(live);
+      return;
+    }
+    const cleanTitle = (live?.title ?? title).trim();
     if (!cleanTitle) return;
-    if (recurrence !== "none" && !dueDate) {
+    const date = dueDate || live?.due_date || "";
+    const time = dueTime || live?.due_time || "";
+    const repeat = recurrence !== "none" ? recurrence : (live?.recurrence ?? null);
+    if (repeat && !date) {
       toast.error("Escolha uma data para repetir a tarefa.");
       return;
     }
@@ -84,24 +146,17 @@ export function TaskComposer({
     createMutation.mutate(
       {
         title: cleanTitle,
-        due_date: dueDate || null,
-        due_time: dueDate && dueTime ? dueTime : null,
-        recurrence: recurrence === "none" ? null : recurrence,
-        priority,
+        description: description.trim() || live?.description || null,
+        due_date: date || null,
+        due_time: date && time ? time : null,
+        recurrence: repeat,
+        priority: priority !== "normal" ? priority : (live?.priority ?? "normal"),
         folder_id: folderId || suggestedExtras?.folderId || null,
         category_ids: [...categoryIds, ...(suggestedExtras?.categoryIds ?? [])],
       },
       {
         onSuccess: () => {
-          setTitle("");
-          setDueDate(defaultDueDate ?? "");
-          setDueTime("");
-          setRecurrence("none");
-          setPriority("normal");
-          setFolderId(defaultFolderId ?? "");
-          setCategoryIds(defaultCategoryIds);
-          setDismissed({ folder: false, categoryIds: [] });
-          if (compact) setDetailsOpen(false);
+          reset();
           addNotification({ title: "Tarefa criada", description: cleanTitle });
         },
       },
@@ -117,24 +172,29 @@ export function TaskComposer({
       aria-label="Criar tarefa"
     >
       <div className="absolute inset-0 -z-10 rounded-3xl backdrop-blur-xl" aria-hidden="true" />
-      <div className="flex items-center gap-3 rounded-2xl bg-muted/30 px-3 py-1 transition-colors focus-within:bg-muted/50">
-        <Plus className="size-5 flowy-ink" aria-hidden="true" />
+      <div className="flex items-center gap-2 rounded-2xl bg-muted/30 py-1 pl-3 pr-1 transition-colors focus-within:bg-muted/50 sm:gap-3">
+        <Plus className="size-5 shrink-0 flowy-ink" aria-hidden="true" />
         <Input
           id="mobile-task-input"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="O que precisa ser feito? Use #etiqueta e /pasta"
+          placeholder="Nova tarefa…"
           aria-label="Título da nova tarefa"
           maxLength={300}
-          className="h-12 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
+          className="h-12 min-w-0 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
           disabled={createMutation.isPending}
         />
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <VoiceTaskButton onResult={handleVoice} autoStart={autoVoice} />
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => setDetailsOpen((open) => !open)}
+            onClick={() => {
+              // Opening the details turns what was understood into editable fields.
+              if (!detailsOpen && live) applyInterpretation(live);
+              else setDetailsOpen((open) => !open);
+            }}
             className={cn(
               "rounded-xl text-muted-foreground transition-all hover:bg-background hover:text-foreground",
               detailsOpen && "bg-background text-foreground shadow-sm"
@@ -149,9 +209,9 @@ export function TaskComposer({
           </Button>
           <Button
             type="submit"
-            className="rounded-xl px-5 font-medium shadow-sm transition-all active:scale-95"
+            className="rounded-xl px-4 font-medium shadow-sm transition-all active:scale-95 sm:px-5"
             loading={createMutation.isPending}
-            disabled={!title.trim() || (recurrence !== "none" && !dueDate)}
+            disabled={!title.trim()}
           >
             Criar
           </Button>
@@ -168,8 +228,28 @@ export function TaskComposer({
         }
         className="px-3 pb-1"
       />
+      <SmartTaskDetails task={live} className="px-3 pb-1" />
+      {reviewing?.length ? (
+        <p className="mx-2 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400" role="status">
+          {reviewing.join(" ")} Confira os campos e toque em Criar.
+        </p>
+      ) : null}
       {detailsOpen && (
         <div className="grid gap-5 animate-in slide-in-from-top-2 fade-in px-4 pb-4 pt-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-2 sm:col-span-2 lg:col-span-4">
+            <Label htmlFor="quick-task-description" className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+              Descrição
+            </Label>
+            <Textarea
+              id="quick-task-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Detalhes, contexto ou próximos passos"
+              maxLength={2000}
+              className="min-h-16 rounded-xl border-border/60 bg-background/50"
+            />
+          </div>
+
           <div className="space-y-2 sm:col-span-2">
             <span className="block text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
               Quando

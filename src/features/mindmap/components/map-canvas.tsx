@@ -46,7 +46,7 @@ import type { ViewportStore } from "@/features/mindmap/components/viewport-store
 import { cn } from "@/lib/utils";
 
 export interface CanvasHandlers extends TopicNodeHandlers {
-  tapTopic: (id: string, additive: boolean) => void;
+  tapTopic: (id: string, additive: boolean, touch: boolean) => void;
   tapBackground: () => void;
   tapRelation: (id: string) => void;
   openActions: (id: string, clientX: number, clientY: number) => void;
@@ -162,6 +162,7 @@ export function MapCanvas(props: MapCanvasProps) {
     onRelationTap: handlers.tapRelation,
     onTopicLongPress: handlers.openActions,
     canDrag: (id) => id !== doc.root.id,
+    isSelected: (id) => selection.has(id),
     onDragMove: (id, x, y, dx, dy) =>
       setDrag({ id, dx, dy, target: findDropTarget(doc, layout, id, x, y) }),
     onDragEnd: (id, x, y, dx, dy) => {

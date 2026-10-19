@@ -582,8 +582,12 @@ export function useMapActions(deps: ActionDeps) {
   }
 
   const canvas: CanvasHandlers = {
-    tapTopic(id, additive) {
+    tapTopic(id, additive, touch) {
       if (ui.linking) return linkTo(id);
+      // Touch: the first tap selects, a second tap on the same topic edits it
+      // (there is no reliable double-tap on phones).
+      if (touch && !additive && selection.length === 1 && selection[0] === id)
+        return editTopic(id);
       focusCanvas();
       if (!additive) return select([id]);
       select(

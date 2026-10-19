@@ -38,7 +38,8 @@ export function FirstUseTip() {
           reorganizar
         </span>
         <span className="md:hidden">
-          Arraste um tópico para mudar de lugar · segure para ver as ações
+          Toque para selecionar · toque de novo para editar · arraste o
+          selecionado para mover · segure para mais ações
         </span>
       </p>
       <button

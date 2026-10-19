@@ -1075,7 +1075,7 @@
       [role="button"],
       [role="menuitem"],
       .flowy-glow-hover
-    ):not(.excalidraw *, [data-topic-control]) {
+    ):not(.excalidraw *, [data-topic-control], [data-no-glow]) {
     position: relative;
   }
 }
@@ -1086,12 +1086,13 @@
     [role="tab"][aria-selected="true"],
     [aria-current="page"],
     .flowy-glow
-  ):not(.excalidraw *, [data-topic-control])::after,
+  ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after,
 :where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
     :disabled,
     [aria-disabled="true"],
     .excalidraw *,
-    [data-topic-control]
+    [data-topic-control],
+    [data-no-glow]
   ):hover::after {
   content: "";
   position: absolute;
@@ -1140,7 +1141,8 @@
     [aria-current="page"],
     .flowy-glow,
     .excalidraw *,
-    [data-topic-control]
+    [data-topic-control],
+    [data-no-glow]
   ):hover::after {
   opacity: 0.75;
   animation-duration: 2.4s, 220ms;

@@ -5,10 +5,20 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { TEMPLATES } from "@/features/mindmap/convert";
+import { createMap } from "@/features/mindmap/model";
 import type { TemplateId } from "@/features/mindmap/types";
 import { LayoutIcon } from "@/features/mindmap/components/layout-icon";
 import { holdOverlay } from "@/lib/overlay";
 import { cn } from "@/lib/utils";
+
+// What each template starts with, shown as a quiet preview on its card.
+const BRANCHES = Object.fromEntries(
+  TEMPLATES.map((template) => {
+    const root = createMap("", template.id).root;
+    const first = root.text ? [root.text, ...root.children.map((child) => child.text)] : root.children.map((child) => child.text);
+    return [template.id, first.filter(Boolean).slice(0, 4)];
+  }),
+) as Record<TemplateId, string[]>;
 
 interface TemplatePickerProps {
   title?: string;
@@ -109,6 +119,18 @@ export function TemplatePicker({
                   <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
                     {template.description}
                   </span>
+                  {BRANCHES[template.id]?.length ? (
+                    <span className="mt-1.5 flex flex-wrap gap-1" aria-hidden="true">
+                      {BRANCHES[template.id].map((branch) => (
+                        <span
+                          key={branch}
+                          className="rounded-md bg-muted/70 px-1.5 py-0.5 text-[10px] leading-4 text-muted-foreground"
+                        >
+                          {branch}
+                        </span>
+                      ))}
+                    </span>
+                  ) : null}
                 </span>
               </button>
             ))}
@@ -122,7 +144,7 @@ export function TemplatePicker({
             />
             <p className="flex-1 text-sm">
               O conteúdo atual do mapa será substituído. Você ainda pode
-              desfazer com Ctrl+Z.
+              desfazer em seguida.
             </p>
             <div className="flex gap-2">
               <button

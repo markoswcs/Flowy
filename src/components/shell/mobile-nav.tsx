@@ -25,13 +25,16 @@ function NavItem({
       aria-label={label}
       title={label}
       aria-current={active ? "page" : undefined}
-      className="flowy-glow-hover relative grid h-full place-items-center rounded-2xl transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+      // The pill and dot already mark the active tab; the travelling glow
+      // stuck on touch screens and doubled the indicator.
+      data-no-glow
+      className="relative grid h-full place-items-center rounded-2xl transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
     >
       <span
         className={cn(
           "grid h-10 w-14 place-items-center rounded-2xl transition-all duration-300",
           active
-            ? "bg-foreground/[0.08] text-foreground"
+            ? "bg-foreground/[0.08] text-foreground [&_svg]:text-[var(--flowy-ink)]"
             : "text-muted-foreground hover:text-foreground",
         )}
       >

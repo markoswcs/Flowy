@@ -7,9 +7,12 @@ import { AlertCircle, Calendar, CheckCircle2, Clock, CornerDownLeft, List, Sun, 
 import { cn } from "@/lib/utils";
 import {
   SmartSuggestionChips,
-  useSmartOrganize,
+  SmartTaskDetails,
+  smartTaskWhen,
+  useSmartTask,
   withDismissed,
 } from "@/features/tasks/components/smart-suggestions";
+import { VoiceTaskButton } from "@/features/tasks/components/voice-capture";
 import { BulkActionBar, TaskSelectionProvider, useTaskSelection } from "@/features/tasks/task-selection";
 
 import { Input } from "@/components/ui/input";
@@ -21,9 +24,7 @@ import { TaskKanban } from "@/features/tasks/components/task-kanban";
 import { TaskMatrix } from "@/features/tasks/components/task-matrix";
 import { TaskList } from "@/features/tasks/components/task-list";
 import { TaskViewSwitcher, type TaskView } from "@/features/tasks/components/task-view-switcher";
-import { formatTaskDate } from "@/features/tasks/date-utils";
 import { buildDailyPhrase } from "@/features/tasks/daily-phrase";
-import { parseQuickTask } from "@/features/tasks/quick-task";
 import { useCreateTask, useTasks, useTasksRealtime } from "@/features/tasks/use-tasks";
 import { useNotifications } from "@/providers/notification-provider";
 import type {
@@ -99,22 +100,33 @@ function DashboardContent({
 
   const searchText = filters.search ?? "";
   const [dismissed, setDismissed] = useState({ folder: false, categoryIds: [] as string[] });
-  const smart = withDismissed(useSmartOrganize(searchText, folders, categories), dismissed);
-  const quickTask = searchText.trim() ? parseQuickTask(smart?.title || searchText) : null;
+  const quickTask = withDismissed(useSmartTask(searchText, folders, categories), dismissed);
   const selection = useTaskSelection();
-  const quickTaskWhen = quickTask?.due_date
-    ? `${formatTaskDate(quickTask.due_date)}${quickTask.due_time ? ` às ${quickTask.due_time}` : ""}`
-    : null;
+  const quickTaskWhen = quickTask ? smartTaskWhen(quickTask) : null;
+
+  // Doubts (unknown client, likely duplicate) go to the full composer for review.
+  function reviewInComposer() {
+    window.dispatchEvent(new CustomEvent("flowy:open-task-composer", { detail: { text: searchText } }));
+    setFilters((current) => ({ ...current, search: "" }));
+    setDismissed({ folder: false, categoryIds: [] });
+  }
 
   function createFromSearch() {
     if (!quickTask || createTask.isPending) return;
+    if (quickTask.ambiguities.length) {
+      reviewInComposer();
+      return;
+    }
     createTask.mutate(
       {
         title: quickTask.title,
+        description: quickTask.description,
         due_date: quickTask.due_date,
         due_time: quickTask.due_time,
-        folder_id: smart?.folderId ?? null,
-        category_ids: smart?.categoryIds ?? [],
+        recurrence: quickTask.recurrence,
+        priority: quickTask.priority,
+        folder_id: quickTask.folderId,
+        category_ids: quickTask.categoryIds,
       },
       {
         onSuccess: () => {
@@ -286,6 +298,9 @@ function DashboardContent({
               placeholder="Buscar ou criar tarefa…"
               className="h-10 min-w-0 flex-1 appearance-none border-none bg-transparent px-2 text-sm shadow-none placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
+            <VoiceTaskButton
+              onResult={(text) => setFilters((current) => ({ ...current, search: text }))}
+            />
             <button
               type="button"
               onClick={() => setStatusBarOpen(!statusBarOpen)}
@@ -332,17 +347,25 @@ function DashboardContent({
               >
                 <CornerDownLeft className="size-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">
-                  Criar “{quickTask.title}”
+                  {quickTask.ambiguities.length ? "Revisar" : "Criar"} “{quickTask.title}”
                   {quickTaskWhen ? <span className="font-normal opacity-80"> · {quickTaskWhen}</span> : null}
                 </span>
               </button>
+              <button
+                type="button"
+                onClick={reviewInComposer}
+                className="flex min-h-9 items-center rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                Revisar
+              </button>
               <SmartSuggestionChips
-                suggestion={smart}
+                suggestion={quickTask}
                 folders={folders}
                 categories={categories}
                 onRemoveFolder={() => setDismissed((current) => ({ ...current, folder: true }))}
                 onRemoveCategory={(id) => setDismissed((current) => ({ ...current, categoryIds: [...current.categoryIds, id] }))}
               />
+              <SmartTaskDetails task={quickTask} className="w-full" />
             </div>
           ) : null}
 

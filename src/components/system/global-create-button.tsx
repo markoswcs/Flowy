@@ -3,6 +3,7 @@
 import {
   CheckSquare,
   Folder,
+  Mic,
   Network,
   NotebookPen,
   PenTool,
@@ -40,8 +41,8 @@ export function GlobalCreateButton({ className }: { className?: string }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  const dispatchEvent = (eventName: string) => {
-    window.dispatchEvent(new Event(eventName));
+  const openComposer = (voice = false) => {
+    window.dispatchEvent(new CustomEvent("flowy:open-task-composer", { detail: { voice } }));
     setOpen(false);
   };
 
@@ -96,7 +97,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
       >
         <div className="flex flex-col p-1.5 gap-0.5">
           <button
-            onClick={() => dispatchEvent("flowy:open-task-composer")}
+            onClick={() => openComposer()}
             className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-primary/10 focus-visible:outline-none"
           >
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform group-active:scale-95">
@@ -104,6 +105,17 @@ export function GlobalCreateButton({ className }: { className?: string }) {
             </div>
             <span className="text-foreground transition-colors group-hover:flowy-ink">
               Criar Tarefa
+            </span>
+          </button>
+          <button
+            onClick={() => openComposer(true)}
+            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-rose-500/10 focus-visible:outline-none"
+          >
+            <div className="flex size-8 items-center justify-center rounded-lg bg-rose-500/15 text-rose-500 transition-transform group-active:scale-95">
+              <Mic className="size-4" />
+            </div>
+            <span className="text-foreground transition-colors group-hover:text-rose-500">
+              Tarefa por voz
             </span>
           </button>
           <div className="my-1 h-px mx-2 bg-border/50" />
@@ -170,6 +182,7 @@ export function GlobalCreateButton({ className }: { className?: string }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
+        data-no-glow
         className={cn(
           "group relative flex size-[3.6rem] items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 shadow-[0_10px_30px_-6px_rgb(124_58_237/0.75)] ring-[5px] ring-background md:ring-1 md:ring-white/20 transition-all duration-300 active:scale-90 md:size-16 md:rounded-[1.4rem] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-400/50",
           open

@@ -6,6 +6,25 @@ export interface QuickTask {
   due_time: string | null;
 }
 
+const MONTHS = [
+  "janeiro",
+  "fevereiro",
+  "marco",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
+];
+
+// Words that only tie a date or time to the sentence ("até amanhã", "na
+// próxima sexta", "no dia 20") and should leave the title together with it.
+const LEAD = String.raw`(?:(?:ate|para|pra|em|no|na|de|do|da)\s+)?`;
+
 const WEEKDAYS: Record<string, number> = {
   domingo: 0,
   segunda: 1,
@@ -46,10 +65,13 @@ export function parseQuickTask(input: string, now = new Date()): QuickTask {
   const period = String.raw`(?:\s*(pm|am|(?:da|de)\s+(?:manha|tarde|noite)))`;
   const time =
     withoutAccents(text).match(
-      new RegExp(String.raw`\s(?:as\s+|a\s+)?(\d{1,2})(?:[:h](\d{2})|h)${period}?(?=\s)`, "i"),
+      new RegExp(
+        String.raw`\s(?:ate\s+)?(?:as\s+|a\s+)?(\d{1,2})(?:[:h](\d{2})|\s?horas?|h)${period}?(?=[\s,.;!?])`,
+        "i",
+      ),
     ) ??
     withoutAccents(text).match(
-      new RegExp(String.raw`\s(?:as\s+|a\s+)?(\d{1,2})()${period}(?=\s)`, "i"),
+      new RegExp(String.raw`\s(?:ate\s+)?(?:as\s+|a\s+)?(\d{1,2})()${period}(?=[\s,.;!?])`, "i"),
     );
   // A 12-hour clock time with no period ("11:26" typed at night) may still be
   // meant for later today; resolved once the date is known.
@@ -70,19 +92,49 @@ export function parseQuickTask(input: string, now = new Date()): QuickTask {
     }
   }
 
-  const relative = withoutAccents(text).match(
-    /\s(depois de amanha|amanha|hoje)(?=\s)/i,
+  const plain = () => withoutAccents(text);
+  const end = String.raw`(?=[\s,.;!?])`;
+  const relative = plain().match(
+    new RegExp(String.raw`\s${LEAD}(depois de amanha|amanha|hoje)${end}`, "i"),
   );
-  const weekday = withoutAccents(text).match(
-    /\s(?:na\s+|no\s+)?(domingo|segunda|terca|quarta|quinta|sexta|sabado)(?:-feira)?(?=\s)/i,
+  const inDays = plain().match(
+    new RegExp(String.raw`\s(?:daqui a|em)\s+(\d{1,2}|uma?|duas|dois|tres)\s+(dias?|semanas?)${end}`, "i"),
   );
-  const explicit = text.match(/\s(?:dia\s+)?(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?=\s)/);
+  const nextWeek = plain().match(
+    new RegExp(String.raw`\s${LEAD}(?:(?:a|na)\s+)?(?:semana que vem|proxima semana)${end}`, "i"),
+  );
+  const weekday = plain().match(
+    new RegExp(
+      String.raw`\s${LEAD}(?:(?:a|o|esta|este|essa|esse|nesta|neste|nessa|nesse|proxima|proximo)\s+)?(domingo|segunda|terca|quarta|quinta|sexta|sabado)(?:-feira)?${end}`,
+      "i",
+    ),
+  );
+  const explicit = plain().match(
+    new RegExp(String.raw`\s${LEAD}(?:o\s+)?(?:dia\s+)?(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?${end}`, "i"),
+  );
+  const named = plain().match(
+    new RegExp(
+      String.raw`\s${LEAD}(?:o\s+)?(?:dia\s+)?(\d{1,2})\s+de\s+(${MONTHS.join("|")})(?:\s+de\s+(\d{4}))?${end}`,
+      "i",
+    ),
+  );
+  const dayOnly = plain().match(new RegExp(String.raw`\s${LEAD}(?:o\s+)?dia\s+(\d{1,2})${end}`, "i"));
 
   if (relative) {
     const word = relative[1]!.toLowerCase();
     const offset = word === "hoje" ? 0 : word === "amanha" ? 1 : 2;
     dueDate = localDateKey(addDays(now, offset));
     text = strip(text, relative);
+  } else if (inDays) {
+    const words: Record<string, number> = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3 };
+    const amount = words[inDays[1]!.toLowerCase()] ?? Number(inDays[1]);
+    const unit = inDays[2]!.toLowerCase().startsWith("semana") ? 7 : 1;
+    dueDate = localDateKey(addDays(now, amount * unit));
+    text = strip(text, inDays);
+  } else if (nextWeek) {
+    // Next Monday: the start of the coming week.
+    dueDate = localDateKey(addDays(now, (1 - now.getDay() + 7) % 7 || 7));
+    text = strip(text, nextWeek);
   } else if (weekday) {
     const target = WEEKDAYS[weekday[1]!.toLowerCase()]!;
     const offset = (target - now.getDay() + 7) % 7 || 7;
@@ -100,6 +152,25 @@ export function parseQuickTask(input: string, now = new Date()): QuickTask {
       }
       dueDate = localDateKey(candidate);
       text = strip(text, explicit);
+    }
+  } else if (named) {
+    const day = Number(named[1]);
+    const month = MONTHS.indexOf(named[2]!.toLowerCase());
+    const year = named[3] ? Number(named[3]) : now.getFullYear();
+    const candidate = new Date(year, month, day);
+    if (candidate.getDate() === day) {
+      if (!named[3] && localDateKey(candidate) < localDateKey(now)) candidate.setFullYear(year + 1);
+      dueDate = localDateKey(candidate);
+      text = strip(text, named);
+    }
+  } else if (dayOnly) {
+    // "dia 25": this month, or next month once it has passed.
+    const day = Number(dayOnly[1]);
+    const candidate = new Date(now.getFullYear(), now.getMonth(), day);
+    if (localDateKey(candidate) < localDateKey(now)) candidate.setMonth(candidate.getMonth() + 1);
+    if (day >= 1 && day <= 31 && candidate.getDate() === day) {
+      dueDate = localDateKey(candidate);
+      text = strip(text, dayOnly);
     }
   }
 
