@@ -12,6 +12,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * which opens the system prompt. A permission blocked earlier cannot be
  * re-asked by a page, so "blocked" tells the interface to explain how to
  * unblock it in the settings.
+ *
+ * Recognition reports "not-allowed" both when the microphone is blocked and
+ * when the speech service itself refuses to run (it happens in installed apps
+ * on some phones even with the microphone allowed). The microphone is probed
+ * to tell them apart: the second case is "unavailable", where the keyboard's
+ * own dictation is the way out.
  */
 
 interface RecognitionResult {
@@ -39,7 +45,26 @@ interface Recognition {
 
 type RecognitionConstructor = new () => Recognition;
 
-export type VoiceStatus = "idle" | "asking" | "listening" | "blocked" | "error";
+export type VoiceStatus =
+  "idle" | "asking" | "listening" | "blocked" | "unavailable" | "error";
+
+type MicAccess = "granted" | "denied" | "missing" | "error";
+
+/** Opens (and closes) the microphone once: shows the system prompt if needed. */
+async function requestMicrophone(): Promise<MicAccess> {
+  if (!navigator.mediaDevices?.getUserMedia) return "error";
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Only the permission was needed; recognition opens its own stream.
+    stream.getTracks().forEach((track) => track.stop());
+    return "granted";
+  } catch (reason) {
+    const name = reason instanceof DOMException ? reason.name : "";
+    if (name === "NotAllowedError" || name === "SecurityError") return "denied";
+    if (name === "NotFoundError") return "missing";
+    return "error";
+  }
+}
 
 const ERRORS: Record<string, string> = {
   "service-not-allowed":
@@ -86,6 +111,10 @@ export function useVoiceInput({
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
+  /** Technical reason of the last failure, shown small to help support. */
+  const [detail, setDetail] = useState<string | null>(null);
+  /** "Já liberei" was tapped but the microphone is still blocked. */
+  const [stillBlocked, setStillBlocked] = useState(false);
   const recognition = useRef<Recognition | null>(null);
   const finalText = useRef("");
   const cancelled = useRef(false);
@@ -137,10 +166,13 @@ export function useVoiceInput({
       if (event.error === "aborted") return;
       cancelled.current = true;
       if (event.error === "not-allowed") {
-        setStatus("blocked");
-        setError(null);
+        void requestMicrophone().then((access) => {
+          setDetail(`reconhecimento: not-allowed · microfone: ${access}`);
+          setStatus(access === "granted" ? "unavailable" : "blocked");
+        });
         return;
       }
+      setDetail(`reconhecimento: ${event.error}`);
       fail(ERRORS[event.error] ?? "Não foi possível usar o microfone agora.");
     };
     instance.onend = () => {
@@ -171,29 +203,31 @@ export function useVoiceInput({
       return;
     }
     setError(null);
+    setDetail(null);
+    setStillBlocked(false);
     const permission = await microphonePermission();
-    if (permission === "denied") return setStatus("blocked");
+    if (permission === "denied") {
+      setDetail("permissão: denied");
+      return setStatus("blocked");
+    }
     if (permission === "prompt") return setStatus("asking");
     listen();
   }, [listen]);
 
   /** Shows the system microphone prompt, then starts listening once allowed. */
   const allow = useCallback(async () => {
-    if (!navigator.mediaDevices?.getUserMedia) return listen();
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Only the permission was needed; recognition opens its own stream.
-      stream.getTracks().forEach((track) => track.stop());
+    const access = await requestMicrophone();
+    if (access === "granted") return listen();
+    setDetail(`microfone: ${access}`);
+    if (access === "denied") {
+      // Tapped again while blocked: say so instead of changing nothing.
+      setStillBlocked(true);
+      setStatus("blocked");
+    } else if (access === "missing") {
+      fail("Nenhum microfone encontrado.");
+    } else {
+      // No way to probe (old browser): let recognition ask by itself.
       listen();
-    } catch (reason) {
-      const name = reason instanceof DOMException ? reason.name : "";
-      if (name === "NotAllowedError" || name === "SecurityError") {
-        setStatus("blocked");
-      } else if (name === "NotFoundError") {
-        fail("Nenhum microfone encontrado.");
-      } else {
-        fail("Não foi possível usar o microfone agora.");
-      }
     }
   }, [listen]);
 
@@ -209,6 +243,8 @@ export function useVoiceInput({
     setStatus("idle");
     setTranscript("");
     setError(null);
+    setDetail(null);
+    setStillBlocked(false);
   }, []);
 
   useEffect(
@@ -219,5 +255,15 @@ export function useVoiceInput({
     [],
   );
 
-  return { status, transcript, error, start, allow, stop, cancel };
+  return {
+    status,
+    transcript,
+    error,
+    detail,
+    stillBlocked,
+    start,
+    allow,
+    stop,
+    cancel,
+  };
 }

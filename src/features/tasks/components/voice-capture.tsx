@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Mic, MicOff, X } from "lucide-react";
+import { Check, Keyboard, Mic, MicOff, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
@@ -22,10 +22,13 @@ function isInstalledApp() {
  */
 export function VoiceTaskButton({
   onResult,
+  inputId,
   autoStart = false,
   className,
 }: {
   onResult: (text: string) => void;
+  /** Field to focus for the keyboard's own dictation when ours cannot run. */
+  inputId?: string;
   autoStart?: boolean;
   className?: string;
 }) {
@@ -59,12 +62,20 @@ export function VoiceTaskButton({
         <Mic className="size-4" aria-hidden="true" />
       </button>
 
-      {voice.status !== "idle" ? <VoiceSheet voice={voice} /> : null}
+      {voice.status !== "idle" ? (
+        <VoiceSheet voice={voice} inputId={inputId} />
+      ) : null}
     </>
   );
 }
 
-function VoiceSheet({ voice }: { voice: ReturnType<typeof useVoiceInput> }) {
+function VoiceSheet({
+  voice,
+  inputId,
+}: {
+  voice: ReturnType<typeof useVoiceInput>;
+  inputId?: string;
+}) {
   // Portal to <body>: a blurred ancestor (the quick bar) would otherwise
   // become the containing block of this fixed sheet and pull it up the page.
   const [installed] = useState(isInstalledApp);
@@ -119,21 +130,22 @@ function VoiceSheet({ voice }: { voice: ReturnType<typeof useVoiceInput> }) {
   } else if (voice.status === "blocked") {
     icon = <MicOff className="size-5" aria-hidden="true" />;
     title = "Microfone bloqueado";
+    // An installed app has two switches: the Android app permission and the
+    // site permission inside Chrome. Either one blocks the microphone.
     const steps = installed
       ? [
-          "Toque e segure o ícone do Flowy na tela inicial",
-          "Informações do app › Permissões",
-          "Microfone › Permitir",
+          "Android: segure o ícone do Flowy › Informações do app › Permissões › Microfone › Permitir",
+          "Chrome: ⋮ › Configurações › Configurações do site › Microfone › Flowy › Permitir",
         ]
       : [
           "Toque no ícone ao lado do endereço do site",
-          "Permissões › Microfone",
-          "Escolha Permitir",
+          "Permissões › Microfone › Permitir",
         ];
     body = (
       <>
         <p className="text-sm text-muted-foreground">
-          O pedido de acesso foi recusado antes, e só você pode liberar:
+          Por segurança, só você pode liberar, nas configurações. Confira
+          {installed ? " os dois lugares" : ""}:
         </p>
         <ol className="mt-2 space-y-1 text-sm">
           {steps.map((step, index) => (
@@ -145,13 +157,25 @@ function VoiceSheet({ voice }: { voice: ReturnType<typeof useVoiceInput> }) {
             </li>
           ))}
         </ol>
+        {voice.stillBlocked ? (
+          <p className="mt-2 text-sm font-medium text-amber-500" role="status">
+            Ainda está bloqueado. Libere e toque de novo em Já liberei.
+          </p>
+        ) : null}
       </>
     );
     actions = (
       <>
-        <button type="button" onClick={voice.cancel} className={secondary}>
-          Fechar
-        </button>
+        {inputId ? (
+          <button type="button" onClick={openKeyboard} className={secondary}>
+            <Keyboard className="size-4" aria-hidden="true" />
+            Teclado
+          </button>
+        ) : (
+          <button type="button" onClick={voice.cancel} className={secondary}>
+            Fechar
+          </button>
+        )}
         <button
           type="button"
           onClick={() => void voice.allow()}
@@ -159,6 +183,30 @@ function VoiceSheet({ voice }: { voice: ReturnType<typeof useVoiceInput> }) {
         >
           Já liberei
         </button>
+      </>
+    );
+  } else if (voice.status === "unavailable") {
+    icon = <MicOff className="size-5" aria-hidden="true" />;
+    title = "Ditado indisponível aqui";
+    body = (
+      <p className="text-sm text-muted-foreground">
+        O microfone está liberado, mas o reconhecimento de voz do Chrome não
+        funciona {installed ? "no app instalado" : "neste navegador"} deste
+        aparelho. Use o ditado do teclado: toque no microfone do teclado e fale
+        a tarefa, que o Flowy entende do mesmo jeito.
+      </p>
+    );
+    actions = (
+      <>
+        <button type="button" onClick={voice.cancel} className={secondary}>
+          Fechar
+        </button>
+        {inputId ? (
+          <button type="button" onClick={openKeyboard} className={primary}>
+            <Keyboard className="size-4" aria-hidden="true" />
+            Usar teclado
+          </button>
+        ) : null}
       </>
     );
   } else if (voice.status === "error") {
@@ -183,6 +231,12 @@ function VoiceSheet({ voice }: { voice: ReturnType<typeof useVoiceInput> }) {
   }
 
   const listening = voice.status === "listening";
+
+  function openKeyboard() {
+    voice.cancel();
+    const field = inputId ? document.getElementById(inputId) : null;
+    field?.focus();
+  }
 
   return createPortal(
     <div className="fixed inset-0 z-[220] flex items-end justify-center p-3 pb-[calc(max(0.75rem,env(safe-area-inset-bottom))+5.25rem)] md:items-center md:pb-3">
@@ -223,6 +277,11 @@ function VoiceSheet({ voice }: { voice: ReturnType<typeof useVoiceInput> }) {
           <div className="min-w-0 flex-1 pt-0.5" aria-live="polite">
             <p className="font-semibold">{title}</p>
             <div className="mt-1">{body}</div>
+            {voice.detail && !listening ? (
+              <p className="mt-2 font-mono text-[10px] text-muted-foreground/70">
+                {voice.detail}
+              </p>
+            ) : null}
           </div>
         </div>
         <div className="mt-4 flex justify-end gap-2">{actions}</div>

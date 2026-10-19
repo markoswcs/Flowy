@@ -284,6 +284,7 @@ function DashboardContent({
           >
             <Search className="ml-2.5 size-4 shrink-0 text-muted-foreground transition-colors group-focus-within:flowy-ink" aria-hidden="true" />
             <Input
+              id="quick-task-input"
               value={filters.search ?? ""}
               onChange={(event) => setFilters({ ...filters, search: event.target.value })}
               onKeyDown={(event) => {
@@ -299,6 +300,7 @@ function DashboardContent({
               className="h-10 min-w-0 flex-1 appearance-none border-none bg-transparent px-2 text-sm shadow-none placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <VoiceTaskButton
+              inputId="quick-task-input"
               onResult={(text) => setFilters((current) => ({ ...current, search: text }))}
             />
             <button
