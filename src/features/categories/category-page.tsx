@@ -62,7 +62,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
     deleteMutation.mutate(category.id, {
       onSuccess: () => {
         router.push("/app");
-        notify("Etiqueta movida para a lixeira", {
+        notify("Movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(category.id),

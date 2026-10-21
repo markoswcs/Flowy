@@ -301,7 +301,10 @@ function DashboardContent({
             />
             <VoiceTaskButton
               inputId="quick-task-input"
-              onResult={(text) => setFilters((current) => ({ ...current, search: text }))}
+              // Dictation always gets the editable preview before anything is saved.
+              onResult={(text) =>
+                window.dispatchEvent(new CustomEvent("flowy:open-task-composer", { detail: { text } }))
+              }
             />
             <button
               type="button"

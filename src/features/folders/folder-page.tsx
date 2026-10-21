@@ -55,7 +55,7 @@ export function FolderPage({ folderId }: { folderId: string }) {
     deleteMutation.mutate(folder.id, {
       onSuccess: () => {
         router.push("/app");
-        notify("Pasta movida para a lixeira", {
+        notify("Movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(folder.id),

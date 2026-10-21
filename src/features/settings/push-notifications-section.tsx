@@ -30,10 +30,10 @@ export function PushNotificationsSection() {
     try {
       if (enabled) {
         await disable();
-        toast.success("Notificações desativadas neste dispositivo.");
+        toast.success("Notificações desativadas");
       } else {
         await enable();
-        toast.success("Notificações ativadas.");
+        toast.success("Notificações ativadas");
       }
     } catch (error) {
       toast.error(errorMessage(error));

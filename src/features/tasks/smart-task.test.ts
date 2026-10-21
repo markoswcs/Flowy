@@ -241,3 +241,66 @@ describe("interpretTask with dictation (no punctuation)", () => {
     });
   });
 });
+
+describe("interpretTask understanding intent", () => {
+  const now = new Date(2026, 9, 21, 10, 0);
+  const empty = { folders: [], categories: [] };
+
+  it("turns a rambling request into a short title, reason and period", () => {
+    const task = interpretTask(
+      "Ah, eu preciso mandar aquele relatório pro João amanhã de manhã, sabe, porque ele precisa conferir os resultados da campanha.",
+      empty,
+      now,
+    );
+    expect(task).toMatchObject({
+      title: "Enviar relatório para João",
+      description: "Ele precisa conferir os resultados da campanha. Período: manhã.",
+      due_date: "2026-10-22",
+      due_time: null,
+      period: "manhã",
+      ambiguities: [],
+    });
+  });
+
+  it("drops stutters and repeated words", () => {
+    const task = interpretTask("é é preciso preciso revisar o contrato o contrato da Maria hoje à noite", empty, now);
+    expect(task).toMatchObject({ title: "Revisar o contrato da Maria", due_date: "2026-10-21", period: "noite" });
+  });
+
+  it("lists spoken steps as subtasks", () => {
+    const task = interpretTask(
+      "preciso fazer a apresentação do cliente, primeiro montar os slides, depois revisar os números e por fim enviar pro Pedro",
+      empty,
+      now,
+    );
+    expect(task.title).toBe("Fazer a apresentação do cliente");
+    expect(task.subtasks).toEqual(["Montar os slides", "Revisar os números", "Enviar para Pedro"]);
+    expect(task.description).toBe("• Montar os slides\n• Revisar os números\n• Enviar para Pedro");
+  });
+
+  it("asks when two different dates are mentioned", () => {
+    const task = interpretTask("enviar o orçamento amanhã porque o cliente pediu até sexta", empty, now);
+    expect(task.ambiguities).toContain("Mais de uma data foi mencionada.");
+  });
+
+  it("never turns a period into an hour", () => {
+    expect(interpretTask("reunião com a equipe amanhã à tarde", empty, now)).toMatchObject({
+      title: "Reunião com a equipe",
+      due_time: null,
+      period: "tarde",
+    });
+    expect(interpretTask("levar o carro na oficina às 3 da tarde", empty, now)).toMatchObject({
+      due_time: "15:00",
+      period: null,
+    });
+  });
+
+  it("ignores the task being saved when checking for duplicates", () => {
+    const history = [{ id: "optimistic-1", title: "Comprar pão", folder_id: null, status: "todo" }];
+    expect(interpretTask("comprar pão", { ...empty, history }, now).ambiguities).toEqual([]);
+    const saved = [{ id: "abc", title: "Comprar pão", folder_id: null, status: "todo" }];
+    expect(interpretTask("comprar pão", { ...empty, history: saved }, now).ambiguities).toContain(
+      "Já existe uma tarefa aberta com este título.",
+    );
+  });
+});

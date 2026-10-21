@@ -1,10 +1,12 @@
 "use client";
 
 import { AlertTriangle, CalendarDays, Flag, Folder as FolderIcon, Repeat2, Sparkles, Tag, Text, X } from "lucide-react";
+import { useMutationState } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { formatTaskDate } from "@/features/tasks/date-utils";
-import { suggestOrganization, type SmartSuggestion } from "@/features/tasks/smart-organize";
+import { taskKeys } from "@/features/tasks/query-keys";
+import { normalize, suggestOrganization, type SmartSuggestion } from "@/features/tasks/smart-organize";
 import { interpretTask, type SmartTask } from "@/features/tasks/smart-task";
 import { useTasks } from "@/features/tasks/use-tasks";
 import { cn } from "@/lib/utils";
@@ -25,17 +27,27 @@ export function useSmartOrganize(
 /** The shared task interpreter, fed with the person's folders, labels and tasks. */
 export function useSmartTask(text: string, folders: Folder[], categories: Category[]): SmartTask | null {
   const { data: history } = useTasks({ scope: "all" });
+  // Tasks being saved right now are the ones just submitted: comparing the text
+  // against them would flag the new task as a duplicate of itself.
+  const saving = useMutationState({
+    filters: { mutationKey: taskKeys.create(), status: "pending" },
+    select: (mutation) => normalize((mutation.state.variables as { title?: string } | undefined)?.title ?? ""),
+  });
+  const savingKey = saving.join("\n");
   return useMemo(() => {
     if (!text.trim()) return null;
-    return interpretTask(text, { folders, categories, history: history ?? [] });
-  }, [categories, folders, history, text]);
+    const pending = new Set(savingKey ? savingKey.split("\n") : []);
+    const past = (history ?? []).filter((task) => !pending.has(normalize(task.title)));
+    return interpretTask(text, { folders, categories, history: past });
+  }, [categories, folders, history, savingKey, text]);
 }
 
 const RECURRENCE_LABELS = { daily: "Diariamente", weekly: "Semanalmente", monthly: "Mensalmente" } as const;
 
-export function smartTaskWhen(task: Pick<SmartTask, "due_date" | "due_time">) {
+export function smartTaskWhen(task: Pick<SmartTask, "due_date" | "due_time"> & { period?: SmartTask["period"] }) {
   if (!task.due_date) return null;
-  return `${formatTaskDate(task.due_date)}${task.due_time ? ` às ${task.due_time}` : ""}`;
+  const at = task.due_time ? ` às ${task.due_time}` : task.period ? ` · ${task.period}` : "";
+  return `${formatTaskDate(task.due_date)}${at}`;
 }
 
 /** What the interpreter understood beyond the title: when, priority, details and doubts. */

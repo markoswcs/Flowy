@@ -98,7 +98,7 @@ export function CategoryManager({ autoFocusNew = false }: CategoryManagerProps) 
   function remove(category: Category) {
     deleteMutation.mutate(category.id, {
       onSuccess: () =>
-        notify("Etiqueta movida para a lixeira", {
+        notify("Movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(category.id),

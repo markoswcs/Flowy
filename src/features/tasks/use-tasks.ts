@@ -73,6 +73,7 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
 
   return useMutation<Task, unknown, CreateTaskInput, TaskMutationContext>({
+    mutationKey: taskKeys.create(),
     mutationFn: createTask,
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() });

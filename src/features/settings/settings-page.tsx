@@ -147,12 +147,12 @@ export function SettingsPage() {
       return;
     }
     
-    notify("Otimizando e enviando foto...");
+    notify("Enviando foto…", { tone: "info" });
     try {
       // Shown at most ~80px (160px on retina): 192px at 70% stays ~10-25 KB.
       const optimizedFile = await optimizeImage(file, 192, 192, 0.7);
       await uploadAvatar.mutateAsync(optimizedFile);
-      notify("Foto atualizada com sucesso!");
+      notify("Foto atualizada");
     } catch {
       toast.error("Não foi possível enviar a foto.");
     } finally {

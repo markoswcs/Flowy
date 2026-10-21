@@ -192,13 +192,17 @@ export function useVoiceInput({
     setTranscript("");
     setError(null);
 
+    // A recognizer replaced by a newer one (a restart) must not report: its
+    // late events would deliver the new one's text a second time.
+    const current = () => recognition.current === instance;
     instance.onresult = (event) => {
+      if (!current()) return;
       const { final, full } = transcriptFrom(event.results);
       finalText.current = final;
       setTranscript(full);
     };
     instance.onerror = (event) => {
-      if (event.error === "aborted") return;
+      if (event.error === "aborted" || !current()) return;
       cancelled.current = true;
       if (event.error === "not-allowed") {
         void requestMicrophone().then((access) => {
@@ -211,6 +215,7 @@ export function useVoiceInput({
       fail(ERRORS[event.error] ?? "Não foi possível usar o microfone agora.");
     };
     instance.onend = () => {
+      if (!current()) return;
       clearTimer();
       recognition.current = null;
       if (cancelled.current) return;
@@ -220,11 +225,12 @@ export function useVoiceInput({
     };
 
     try {
-      instance.start();
       recognition.current = instance;
+      instance.start();
       setStatus("listening");
       timer.current = window.setTimeout(() => instance.stop(), MAX_LISTEN_MS);
     } catch {
+      recognition.current = null;
       fail("Não foi possível iniciar o microfone.");
     }
   }, []);

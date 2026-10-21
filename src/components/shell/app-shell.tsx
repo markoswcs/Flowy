@@ -268,7 +268,7 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className="theme-shell-panel absolute inset-y-0 left-0 w-[min(88vw,320px)] animate-[flowy-menu-enter_420ms_cubic-bezier(.22,1,.36,1)] border-r border-border shadow-soft"
+            className="theme-shell-panel absolute inset-y-0 left-0 w-[min(88vw,320px)] animate-[flowy-menu-enter_260ms_cubic-bezier(.22,1,.36,1)] border-r border-border shadow-soft"
           >
             <Button
               type="button"
