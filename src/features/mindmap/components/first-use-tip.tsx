@@ -1,30 +1,14 @@
 "use client";
 
 import { Lightbulb, X } from "lucide-react";
-import { useState } from "react";
 
 import { TIP_STORAGE_KEY } from "@/features/mindmap/components/constants";
+import { useIntroOffered } from "@/lib/intro-preferences";
 
-function wasDismissed(): boolean {
-  try {
-    return window.localStorage.getItem(TIP_STORAGE_KEY) === "1";
-  } catch {
-    return true;
-  }
-}
-
+/** Shown once per account; closing it retires it on every device. */
 export function FirstUseTip() {
-  const [visible, setVisible] = useState(() => !wasDismissed());
-  if (!visible) return null;
-
-  function dismiss() {
-    setVisible(false);
-    try {
-      window.localStorage.setItem(TIP_STORAGE_KEY, "1");
-    } catch {
-      // Private mode: the tip simply shows again next time.
-    }
-  }
+  const [offered, dismiss] = useIntroOffered("mindmap:first-use", [TIP_STORAGE_KEY]);
+  if (!offered) return null;
 
   return (
     <div

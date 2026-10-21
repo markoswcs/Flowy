@@ -1088,7 +1088,8 @@
    A thin static border with a soft light travelling around it: only the
    gradient angle animates, the element itself never rotates.
    - Selected / pressed / current controls: full glow, always on.
-   - Buttons and cards under the mouse: the same light, a little softer.
+   - Hover never glows: it gets its own quiet wash (see below), so what is
+     selected and what is merely under the cursor never look alike.
    Excalidraw's own UI and tiny in-topic controls are left alone.
    ------------------------------------------------------------------------ */
 /* Glow palette: vivid on dark themes, deeper (higher contrast) on white. */
@@ -1147,14 +1148,7 @@
     [role="tab"][aria-selected="true"],
     [aria-current="page"],
     .flowy-glow
-  ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after,
-:where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
-    :disabled,
-    [aria-disabled="true"],
-    .excalidraw *,
-    [data-topic-control],
-    [data-no-glow]
-  ):hover::after {
+  ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after {
   content: "";
   position: absolute;
   inset: -1.5px;
@@ -1193,20 +1187,53 @@
     flowy-glow-in 220ms ease-out;
 }
 
-/* Hover is a lighter touch than a real selection. */
-:where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
-    :disabled,
-    [aria-disabled="true"],
-    [aria-pressed="true"],
-    [aria-checked="true"],
-    [aria-current="page"],
-    .flowy-glow,
-    .excalidraw *,
-    [data-topic-control],
-    [data-no-glow]
-  ):hover::after {
-  opacity: 0.75;
-  animation-duration: 2.4s, 220ms;
+/* Hover: a translucent wash with a hairline edge and a slightly brighter
+   icon. Only on devices with a real pointer, so a tap never leaves it stuck. */
+@media (hover: hover) and (pointer: fine) {
+  :where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
+      :disabled,
+      [aria-disabled="true"],
+      [aria-pressed="true"],
+      [role="radio"][aria-checked="true"],
+      [role="tab"][aria-selected="true"],
+      [aria-current="page"],
+      .flowy-glow,
+      .excalidraw *,
+      [data-topic-control],
+      [data-no-glow]
+    ):hover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: hsl(var(--foreground) / 0.05);
+    box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 0.1);
+    animation: flowy-hover-in 150ms ease-out;
+  }
+
+  :where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
+      :disabled,
+      [aria-disabled="true"],
+      .excalidraw *,
+      [data-topic-control],
+      [data-no-glow]
+    ):hover
+    svg {
+    filter: brightness(1.18);
+  }
+}
+
+@keyframes flowy-hover-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Icons ease back when the pointer leaves. */
+:where(button, [role="button"], [role="menuitem"], .flowy-glow-hover) svg {
+  transition: filter 150ms ease-out;
 }
 
 @keyframes flowy-glow-spin {
@@ -1234,11 +1261,7 @@
     [role="radio"][aria-checked="true"],
     [role="tab"][aria-selected="true"],
     [aria-current="page"],
-    .flowy-glow,
-    button,
-    [role="button"],
-    [role="menuitem"],
-    .flowy-glow-hover
+    .flowy-glow
   )::after {
   animation: none !important;
   background: hsl(var(--glow-1) / 0.7) !important;
@@ -1251,11 +1274,7 @@
       [role="radio"][aria-checked="true"],
       [role="tab"][aria-selected="true"],
       [aria-current="page"],
-      .flowy-glow,
-      button,
-      [role="button"],
-      [role="menuitem"],
-      .flowy-glow-hover
+      .flowy-glow
     )::after {
     animation: none !important;
     background: hsl(var(--glow-1) / 0.7) !important;

@@ -249,7 +249,7 @@ export function NoteList() {
         </div>
       </header>
 
-      <SectionTutorial section={section} />
+      <SectionTutorial key={section} section={section} />
 
       <label className="relative block">
         <span className="sr-only">{pageCopy.search}</span>

@@ -1,20 +1,27 @@
 import {
   ArrowRight,
   Bell,
-  CalendarClock,
+  CalendarDays,
   Check,
-  CheckCircle2,
   Columns3,
   Folder,
   Grid2x2,
+  Home,
   LayoutList,
   Lock,
+  Mic,
   Moon,
+  Network,
   NotebookPen,
+  PenTool,
+  Plus,
+  RefreshCw,
+  Repeat2,
+  Search,
   Smartphone,
   Sparkles,
-  Tag,
-  Wand2,
+  Sun,
+  WifiOff,
   Workflow,
 } from "lucide-react";
 import { Bricolage_Grotesque, Instrument_Serif } from "next/font/google";
@@ -64,7 +71,7 @@ function DisplayHeading({ children, className }: { children: ReactNode; classNam
     <h2
       className={cn(
         styles.display,
-        "font-[family-name:var(--font-display)] text-4xl font-bold sm:text-6xl",
+        "font-[family-name:var(--font-display)] text-3xl font-bold sm:text-5xl",
         className,
       )}
     >
@@ -73,95 +80,154 @@ function DisplayHeading({ children, className }: { children: ReactNode; classNam
   );
 }
 
+function Eyebrow({ children }: { children: ReactNode }) {
+  return (
+    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[color:var(--violet-hot)]">
+      {children}
+    </p>
+  );
+}
+
+// The home screen as it really is: same navigation, tabs, search bar and
+// task chips, with sample tasks.
 const mockTasks = [
-  { title: "Enviar proposta para o cliente", meta: "Hoje · 14:00", tag: "Trabalho", color: "#a78bfa", done: true },
-  { title: "Revisar fluxo de onboarding", meta: "Hoje · 16:30", tag: "Produto", color: "#67e8f9", done: false },
-  { title: "Academia", meta: "Amanhã · 07:00", tag: "Pessoal", color: "#4ade80", done: false },
-  { title: "Planejar campanha de novembro", meta: "Sex · 10:00", tag: "Marketing", color: "#fbbf24", done: false },
+  { title: "Enviar proposta para o cliente", when: "Hoje · 14:00", folder: "Trabalho", done: true },
+  { title: "Revisar o contrato da Maria", when: "Hoje · 16:30", folder: "Trabalho", done: false },
+  { title: "Academia", when: "Amanhã · 07:00", folder: "Pessoal", repeat: true, done: false },
+  { title: "Planejar a campanha de novembro", when: "Sex", folder: "Trabalho", done: false },
 ];
 
 function AppMock() {
   return (
     <div className="flex h-full overflow-hidden rounded-[1.4rem] text-left">
-      <aside className="hidden w-44 shrink-0 border-r border-white/5 bg-white/[0.02] p-4 sm:block">
-        <div className="mb-6 flex items-center gap-2 text-sm font-semibold">
+      <aside className="hidden w-48 shrink-0 flex-col border-r border-white/5 bg-white/[0.02] p-3 sm:flex">
+        <div className="mb-5 flex items-center gap-2 px-2 pt-1 text-sm font-semibold">
           <Image src="/logo.png" alt="" width={22} height={22} className="rounded-md" />
           Flowy
         </div>
-        {["Início", "Notas", "Fluxogramas", "Mapas mentais"].map((item, index) => (
+        {[
+          { label: "Início", icon: Home },
+          { label: "Notas", icon: NotebookPen },
+          { label: "Mapas", icon: Network },
+          { label: "Desenhos", icon: PenTool },
+        ].map(({ label, icon: Icon }, index) => (
           <div
-            key={item}
+            key={label}
             className={cn(
-              "mb-1 rounded-xl px-3 py-2 text-xs",
-              index === 0 ? "bg-violet-500/15 text-violet-200" : "text-white/45",
+              "mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs",
+              index === 0 ? styles.mockActive : "text-white/50",
             )}
           >
-            {item}
+            <Icon className="size-3.5" />
+            {label}
           </div>
         ))}
-        <p className="mb-2 mt-6 px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white/30">
+        <p className="mb-1.5 mt-5 px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white/30">
           Pastas
         </p>
-        {["Trabalho", "Pessoal"].map((item) => (
-          <div key={item} className="flex items-center gap-2 px-3 py-1.5 text-xs text-white/45">
-            <Folder className="size-3.5" /> {item}
+        {[
+          ["Trabalho", "#a78bfa"],
+          ["Pessoal", "#4ade80"],
+        ].map(([name, color]) => (
+          <div key={name} className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-white/50">
+            <Folder className="size-3.5" style={{ color }} /> {name}
           </div>
         ))}
       </aside>
-      <div className="min-w-0 flex-1 p-4 sm:p-6">
-        <div className="flex items-center gap-3">
-          <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-400 to-violet-600">
-            <Moon className="size-4 text-white" />
-          </span>
-          <p className="text-lg font-bold tracking-tight sm:text-xl">Boa noite, Ana</p>
+
+      <div className="relative min-w-0 flex-1 p-4 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-600">
+              <Sun className="size-4 text-white" />
+            </span>
+            <p className="truncate font-[family-name:var(--font-display)] text-lg font-bold tracking-tight sm:text-xl">
+              Boa tarde, Ana
+            </p>
+          </div>
+          <div className="hidden shrink-0 items-center gap-0.5 rounded-full border border-white/10 p-0.5 text-[10px] text-white/50 md:flex">
+            <span className={cn(styles.mockActive, "flex items-center gap-1 rounded-full px-2 py-1")}>
+              <LayoutList className="size-3" /> Lista
+            </span>
+            <span className="flex items-center gap-1 px-2 py-1">
+              <Columns3 className="size-3" /> Kanban
+            </span>
+            <span className="flex items-center gap-1 px-2 py-1">
+              <Grid2x2 className="size-3" /> Matriz
+            </span>
+          </div>
         </div>
-        <div className="mt-4 flex gap-1.5">
-          {["Todas", "Hoje", "Próximas"].map((item, index) => (
+
+        <div className="mt-4 flex gap-1 text-[10px] text-white/45">
+          {["Todas", "Hoje", "Atrasadas", "Próximas", "Concluídas"].map((item, index) => (
             <span
               key={item}
               className={cn(
-                "rounded-full px-3 py-1 text-[10px]",
-                index === 1 ? "bg-violet-500/20 text-violet-200" : "text-white/40",
+                "rounded-full px-2.5 py-1",
+                index === 0 && cn(styles.mockActive, "text-white"),
+                index === 2 || index === 4 ? "hidden sm:inline" : "",
               )}
             >
               {item}
             </span>
           ))}
         </div>
-        <div className="mt-4 rounded-full border border-white/10 bg-black/30 px-4 py-2.5 text-[11px] text-white/70">
-          <span className={cn(styles.typing, "inline-block align-bottom")}>
-            Reunião com o time amanhã 15h
+
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/25 px-3 py-2.5 text-[11px] text-white/75">
+          <Search className="size-3.5 shrink-0 text-white/40" />
+          <span className="min-w-0 flex-1 truncate">
+            <span className={cn(styles.typing, "inline-block max-w-full align-bottom")}>
+              Reunião com o time amanhã às 15h
+            </span>
           </span>
+          <Mic className="size-3.5 shrink-0 text-white/40" />
         </div>
-        <div className="mt-4 space-y-2">
-          {mockTasks.map((task) => (
+
+        <p className="mb-2 mt-4 text-[9px] font-bold uppercase tracking-[0.2em] text-white/35">Hoje</p>
+        <div className="space-y-2">
+          {mockTasks.map((task, index) => (
             <div
               key={task.title}
-              className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] px-3 py-2.5"
+              className={cn(
+                "flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.03] px-3 py-2.5",
+                // On phones the last one would sit under the "+" button.
+                index === mockTasks.length - 1 && "hidden sm:flex",
+              )}
             >
               <span
                 className={cn(
-                  "grid size-4 shrink-0 place-items-center rounded-full border",
-                  task.done ? "border-violet-400 bg-violet-500" : "border-white/25",
+                  "mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border-2",
+                  task.done ? "border-violet-500 bg-violet-500" : "border-white/30",
                 )}
               >
-                {task.done ? <Check className="size-2.5 text-white" /> : null}
+                {task.done ? <Check className="size-2.5 text-white" strokeWidth={3} /> : null}
               </span>
               <div className="min-w-0 flex-1">
                 <p className={cn("truncate text-xs font-medium", task.done && "text-white/40 line-through")}>
                   {task.title}
                 </p>
-                <p className="mt-0.5 flex items-center gap-2 text-[10px] text-white/40">
-                  {task.meta}
-                  <span className="flex items-center gap-1" style={{ color: task.color }}>
-                    <span className="size-1.5 rounded-full" style={{ background: task.color }} />
-                    {task.tag}
+                <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] text-white/45">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-white/10 px-1.5 py-0.5">
+                    <CalendarDays className="size-2.5" />
+                    {task.when}
+                  </span>
+                  {task.repeat ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Repeat2 className="size-2.5" /> Diariamente
+                    </span>
+                  ) : null}
+                  <span className="inline-flex items-center gap-1">
+                    <Folder className="size-2.5" /> {task.folder}
                   </span>
                 </p>
               </div>
             </div>
           ))}
         </div>
+
+        <span className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 shadow-[0_10px_30px_-8px_rgb(124_58_237/0.9)] sm:bottom-5 sm:right-5">
+          <Plus className="size-5 text-white" />
+        </span>
       </div>
     </div>
   );
@@ -169,17 +235,23 @@ function AppMock() {
 
 const features = [
   {
-    icon: Wand2,
-    title: "Escreva como você fala",
-    body: "“Pagar boleto sexta 10h” vira uma tarefa com data e horário. Sem formulários.",
+    icon: Mic,
+    title: "Escreva ou fale como você fala",
+    body: "O Flowy separa título e detalhes e entende data, período, pasta e prioridade. Você só confere e salva.",
     span: "md:col-span-2",
     art: (
-      <div className="mt-6 space-y-2">
-        <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/70">
-          Pagar boleto <span className="text-violet-300">sexta 10h</span>
+      <div className="mt-6 grid gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+        <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm leading-6 text-white/70">
+          “Preciso mandar o relatório pro João amanhã de manhã, porque ele vai conferir a campanha.”
         </div>
-        <div className="flex items-center gap-2 rounded-2xl bg-violet-500/15 px-4 py-3 text-sm text-violet-100">
-          <CalendarClock className="size-4" /> Criar “Pagar boleto” · sexta às 10:00
+        <ArrowRight className="mx-auto hidden size-4 text-white/30 sm:block" />
+        <div className="space-y-1.5 rounded-2xl bg-violet-500/12 px-4 py-3 text-sm text-violet-50">
+          <p className="font-semibold">Enviar relatório para João</p>
+          <p className="text-xs text-white/60">Ele vai conferir a campanha.</p>
+          <p className="flex flex-wrap gap-1.5 pt-1 text-[11px] text-white/70">
+            <span className="rounded-md border border-white/10 px-1.5 py-0.5">Amanhã · manhã</span>
+            <span className="rounded-md border border-white/10 px-1.5 py-0.5">Trabalho</span>
+          </p>
         </div>
       </div>
     ),
@@ -187,16 +259,14 @@ const features = [
   {
     icon: Columns3,
     title: "Lista, Kanban e Matriz",
-    body: "Veja o mesmo trabalho do jeito que sua cabeça pede no momento.",
+    body: "O mesmo trabalho, visto do jeito que fizer sentido agora.",
     span: "",
     art: (
       <div className="mt-6 grid grid-cols-3 gap-2">
         {["A fazer", "Fazendo", "Feito"].map((column, index) => (
           <div key={column} className="rounded-xl bg-white/[0.03] p-2">
-            <p className="mb-2 text-[9px] uppercase tracking-widest text-white/40">{column}</p>
-            {index === 0 ? (
-              <div className={cn(styles.kanbanCard, "h-6 rounded-md bg-violet-400/40")} />
-            ) : null}
+            <p className="mb-2 truncate text-[9px] uppercase tracking-widest text-white/40">{column}</p>
+            {index === 0 ? <div className={cn(styles.kanbanCard, "h-6 rounded-md bg-violet-400/40")} /> : null}
             <div className="mt-1.5 h-6 rounded-md bg-white/10" />
           </div>
         ))}
@@ -205,99 +275,83 @@ const features = [
   },
   {
     icon: Workflow,
-    title: "Mapas mentais e fluxogramas",
-    body: "Desenhe ideias, conecte tópicos e transforme rabiscos em planos.",
+    title: "Mapas mentais e desenhos",
+    body: "Conecte ideias em um mapa ou rabisque um fluxograma livre.",
     span: "",
     art: (
-      <svg viewBox="0 0 220 110" className="mt-6 w-full" aria-hidden="true">
+      <svg viewBox="0 0 220 100" className="mt-6 w-full" aria-hidden="true">
         <g stroke="rgb(167 139 250 / 0.7)" strokeWidth="1.5" fill="none">
-          <path className={styles.mindLine} d="M110 55 C 80 55, 70 20, 40 20" />
-          <path className={styles.mindLine} d="M110 55 C 80 55, 70 90, 40 90" />
-          <path className={styles.mindLine} d="M110 55 C 140 55, 150 20, 180 20" />
-          <path className={styles.mindLine} d="M110 55 C 140 55, 150 90, 180 90" />
+          <path className={styles.mindLine} d="M110 50 C 80 50, 70 18, 42 18" />
+          <path className={styles.mindLine} d="M110 50 C 80 50, 70 82, 42 82" />
+          <path className={styles.mindLine} d="M110 50 C 140 50, 150 18, 178 18" />
+          <path className={styles.mindLine} d="M110 50 C 140 50, 150 82, 178 82" />
         </g>
-        <rect x="80" y="42" width="60" height="26" rx="13" fill="#7c3aed" />
-        <text x="110" y="59" textAnchor="middle" fontSize="10" fill="white">Ideia</text>
+        <rect x="80" y="37" width="60" height="26" rx="13" fill="#7c3aed" />
+        <text x="110" y="54" textAnchor="middle" fontSize="10" fill="white">
+          Projeto
+        </text>
         {[
-          [40, 20],
-          [40, 90],
-          [180, 20],
-          [180, 90],
-        ].map(([x, y]) => (
-          <rect key={`${x}-${y}`} x={x! - 22} y={y! - 9} width="44" height="18" rx="9" fill="rgb(255 255 255 / 0.1)" />
+          [42, 18, "Prazo"],
+          [42, 82, "Equipe"],
+          [178, 18, "Ideias"],
+          [178, 82, "Custos"],
+        ].map(([x, y, label]) => (
+          <g key={label as string}>
+            <rect x={(x as number) - 24} y={(y as number) - 9} width="48" height="18" rx="9" fill="rgb(255 255 255 / 0.08)" />
+            <text x={x as number} y={(y as number) + 3.5} textAnchor="middle" fontSize="8" fill="rgb(255 255 255 / 0.65)">
+              {label}
+            </text>
+          </g>
         ))}
       </svg>
     ),
   },
   {
     icon: NotebookPen,
-    title: "Notas que acompanham você",
-    body: "Listas de verificação, desenhos e cores. Salva sozinho enquanto você escreve.",
+    title: "Notas que se salvam sozinhas",
+    body: "Listas de verificação, imagens e formatação, salvas enquanto você escreve.",
     span: "",
     art: (
-      <div className="mt-6 space-y-2 rounded-2xl bg-amber-200/[0.06] p-4">
-        <div className="h-2 w-2/3 rounded bg-white/25" />
-        <div className="h-2 w-full rounded bg-white/10" />
-        <div className="flex items-center gap-2 text-xs text-white/60">
-          <CheckCircle2 className="size-3.5 text-emerald-400" /> Comprar café
-        </div>
+      <div className="mt-6 space-y-2.5 rounded-2xl bg-white/[0.04] p-4 text-xs text-white/65">
+        <p className="font-semibold text-white/85">Viagem de fim de ano</p>
+        <p className="flex items-center gap-2">
+          <span className="grid size-3.5 place-items-center rounded bg-emerald-500">
+            <Check className="size-2.5 text-white" strokeWidth={3} />
+          </span>
+          Reservar hotel
+        </p>
+        <p className="flex items-center gap-2">
+          <span className="size-3.5 rounded border border-white/30" /> Comprar passagens
+        </p>
       </div>
     ),
   },
   {
     icon: Bell,
-    title: "Lembretes no celular",
-    body: "Notificações no horário certo, mesmo com o app fechado.",
+    title: "Lembretes no celular e no PC",
+    body: "Notificações no horário da tarefa, mesmo com o Flowy fechado.",
     span: "",
     art: (
       <div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
         <span className={cn(styles.ring, "grid size-9 place-items-center rounded-xl bg-violet-500/25 text-violet-200")}>
           <Bell className="size-4" />
         </span>
-        <div className="text-xs">
-          <p className="font-semibold">Revisar proposta</p>
+        <div className="min-w-0 text-xs">
+          <p className="truncate font-semibold">Revisar o contrato da Maria</p>
           <p className="text-white/45">Agora · Flowy</p>
         </div>
       </div>
     ),
   },
-  {
-    icon: Tag,
-    title: "Pastas e etiquetas inteligentes",
-    body: "O Flowy sugere a pasta e as etiquetas certas enquanto você digita a tarefa.",
-    span: "md:col-span-2",
-    art: (
-      <div className="mt-6 flex flex-wrap gap-2">
-        {[
-          ["Trabalho", "#a78bfa"],
-          ["Urgente", "#f87171"],
-          ["Clientes", "#67e8f9"],
-          ["Pessoal", "#4ade80"],
-          ["Ideias", "#fbbf24"],
-        ].map(([name, color]) => (
-          <span
-            key={name}
-            className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs"
-          >
-            <span className="size-2 rounded-full" style={{ background: color }} />
-            {name}
-          </span>
-        ))}
-        <span className="flex items-center gap-1.5 rounded-full bg-violet-500/20 px-3 py-1.5 text-xs text-violet-100">
-          <Sparkles className="size-3.5" /> Sugestão: Trabalho
-        </span>
-      </div>
-    ),
-  },
 ];
 
-const extras = [
-  { icon: Smartphone, label: "Instala como app no celular" },
-  { icon: Lock, label: "Seus dados protegidos e privados" },
-  { icon: LayoutList, label: "Funciona até offline" },
-  { icon: Grid2x2, label: "Matriz de prioridades" },
-  { icon: Moon, label: "Temas escuro, OLED e claro" },
-  { icon: Sparkles, label: "Tour guiado no primeiro acesso" },
+const benefits = [
+  { icon: Sparkles, title: "Organiza enquanto você digita", body: "Sugere pasta e etiquetas pelo que você já costuma usar." },
+  { icon: RefreshCw, title: "Sincroniza entre aparelhos", body: "Comece no computador e termine no celular." },
+  { icon: Smartphone, title: "Instala como app", body: "No celular ou no PC, direto do navegador." },
+  { icon: WifiOff, title: "Avisa quando fica offline", body: "E volta a sincronizar quando a conexão retorna." },
+  { icon: Lock, title: "Seus dados são só seus", body: "Cada conta vê apenas o próprio conteúdo." },
+  { icon: Moon, title: "Temas escuro, OLED e claro", body: "Com opção de reduzir animações." },
 ];
 
 export function LandingPage() {
@@ -315,7 +369,7 @@ export function LandingPage() {
             </Link>
             <div className="hidden items-center gap-7 text-sm text-[color:var(--muted)] md:flex">
               <a href="#recursos" className="transition-colors hover:text-white">Recursos</a>
-              <a href="#como-funciona" className="transition-colors hover:text-white">Como funciona</a>
+              <a href="#por-que" className="transition-colors hover:text-white">Por que o Flowy</a>
             </div>
             <div className="flex items-center gap-2">
               <Link href="/login" className={cn(styles.ctaGhost, "rounded-full px-4 py-2 text-sm font-medium")}>
@@ -332,35 +386,34 @@ export function LandingPage() {
         </header>
 
         <main>
-          <section className="relative px-4 pb-10 pt-16 text-center sm:px-6 sm:pt-24">
+          <section className="relative px-4 pb-16 pt-14 text-center sm:px-6 sm:pt-20">
             <div className={styles.gridFloor} aria-hidden="true" />
-            <div className="relative mx-auto max-w-4xl">
+            <div className="relative mx-auto max-w-3xl">
               <Reveal>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-[color:var(--muted)]">
-                  <Sparkles className="size-3.5 text-[color:var(--violet-hot)]" />
-                  Tarefas, notas, fluxogramas e mapas mentais em um só lugar
+                  Tarefas · Notas · Mapas mentais · Desenhos
                 </span>
               </Reveal>
               <Reveal wait={80}>
                 <h1
                   className={cn(
                     styles.display,
-                    "mt-6 font-[family-name:var(--font-display)] text-[2.9rem] font-extrabold sm:text-7xl md:text-[5.5rem]",
+                    "mt-6 font-[family-name:var(--font-display)] text-[2.6rem] font-extrabold sm:text-6xl md:text-7xl",
                   )}
                 >
-                  Sua mente,{" "}
+                  Suas tarefas e ideias,{" "}
                   <span className={cn(styles.serif, "font-[family-name:var(--font-serif)] font-normal")}>
-                    em fluxo.
+                    no seu ritmo.
                   </span>
                 </h1>
               </Reveal>
               <Reveal wait={160}>
-                <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-[color:var(--muted)] sm:text-lg">
-                  O Flowy organiza o que você precisa fazer, pensar e lembrar. Escreva do seu
-                  jeito, veja tudo com clareza e deixe o resto com a gente.
+                <p className="mx-auto mt-5 max-w-lg text-base leading-7 text-[color:var(--muted)] sm:text-lg">
+                  Escreva ou fale do seu jeito. O Flowy coloca data, pasta e prioridade, e
+                  lembra você na hora certa.
                 </p>
               </Reveal>
-              <Reveal wait={240} className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Reveal wait={240} className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
                   href="/cadastro"
                   className={cn(styles.ctaPrimary, "inline-flex h-12 items-center gap-2 rounded-full px-7 text-sm font-semibold text-white")}
@@ -376,79 +429,59 @@ export function LandingPage() {
               </Reveal>
             </div>
 
-            <div className={cn(styles.stage, "relative mx-auto mt-16 max-w-5xl sm:mt-20")}>
-              <div className={cn(styles.device, "relative h-[420px] sm:h-[520px]")}>
+            <Reveal wait={320} className="relative mx-auto mt-14 max-w-5xl sm:mt-16">
+              <div className={cn(styles.device, "relative h-[440px] sm:h-[500px]")}>
                 <div className={cn(styles.deviceGlare, "pointer-events-none absolute inset-0 rounded-[1.5rem]")} />
                 <AppMock />
 
+                {/* Floating cards sit on the frame's edges, never over the content. */}
                 <div
-                  className={cn(styles.float, "-left-2 top-16 hidden w-56 p-3 text-left md:block")}
+                  className={cn(styles.float, "-bottom-6 right-24 hidden w-56 p-3 text-left lg:block")}
                   style={depth(1.4)}
                 >
-                  <div className={styles.bob}>
-                    <p className="text-[10px] uppercase tracking-widest text-white/40">Criada agora</p>
-                    <p className="mt-1 text-sm font-semibold">Reunião com o time</p>
-                    <p className="mt-1 flex items-center gap-1.5 text-xs text-violet-200">
-                      <CalendarClock className="size-3.5" /> Amanhã às 15:00
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  className={cn(styles.float, "-right-3 top-40 hidden w-52 p-3 text-left md:block")}
-                  style={depth(2)}
-                >
-                  <div className={styles.bob} style={{ animationDelay: "-2s" }}>
-                    <div className="flex items-center gap-2">
-                      <span className={cn(styles.ring, "grid size-8 place-items-center rounded-lg bg-violet-500/25")}>
-                        <Bell className="size-4 text-violet-200" />
-                      </span>
-                      <div>
-                        <p className="text-xs font-semibold">Lembrete</p>
-                        <p className="text-[11px] text-white/50">Academia em 10 min</p>
-                      </div>
+                  <div className={cn(styles.bob, "flex items-center gap-2.5")}>
+                    <span className={cn(styles.ring, "grid size-8 shrink-0 place-items-center rounded-lg bg-violet-500/25")}>
+                      <Bell className="size-4 text-violet-200" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold">Lembrete</p>
+                      <p className="truncate text-[11px] text-white/55">Revisar o contrato · 16:30</p>
                     </div>
                   </div>
                 </div>
 
                 <div
-                  className={cn(styles.float, "bottom-10 left-1/3 hidden px-3 py-2 lg:block")}
+                  className={cn(styles.float, "-left-6 bottom-12 hidden w-52 p-3 text-left lg:block")}
                   style={depth(1)}
                 >
-                  <div className={cn(styles.bob, "flex items-center gap-2 text-xs")} style={{ animationDelay: "-4s" }}>
-                    <Sparkles className="size-3.5 text-amber-300" /> Sugestão: pasta Trabalho
+                  <div className={styles.bob} style={{ animationDelay: "-3s" }}>
+                    <p className="text-[10px] uppercase tracking-widest text-white/40">Criada agora</p>
+                    <p className="mt-1 text-sm font-semibold">Reunião com o time</p>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-violet-200">
+                      <CalendarDays className="size-3.5" /> Amanhã às 15:00
+                    </p>
                   </div>
                 </div>
               </div>
-            </div>
+            </Reveal>
           </section>
 
-          <section className="overflow-hidden border-y border-white/5 py-5" aria-label="Destaques">
-            <div className={cn(styles.marquee, "flex w-max gap-10")}>
-              {[...extras, ...extras].map(({ icon: Icon, label }, index) => (
-                <span key={`${label}-${index}`} className="flex items-center gap-2 whitespace-nowrap text-sm text-[color:var(--muted)]">
-                  <Icon className="size-4 text-[color:var(--violet-hot)]" /> {label}
-                </span>
-              ))}
-            </div>
-          </section>
-
-          <section id="recursos" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 sm:px-6 sm:py-32">
+          <section id="recursos" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 sm:py-24">
             <Reveal className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[color:var(--violet-hot)]">Recursos</p>
-              <DisplayHeading className="mt-4">
-                Tudo o que você precisa.{" "}
-                <span className="text-[color:var(--muted)]">Nada que atrapalhe.</span>
+              <Eyebrow>Recursos</Eyebrow>
+              <DisplayHeading className="mt-3">
+                Tudo em um lugar.{" "}
+                <span className="text-[color:var(--muted)]">Sem complicar.</span>
               </DisplayHeading>
             </Reveal>
-            <div className="mt-14 grid gap-4 md:grid-cols-3">
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
               {features.map(({ icon: Icon, title, body, span, art }, index) => (
-                <Reveal key={title} wait={(index % 3) * 90} className={span}>
-                  <article className={cn(styles.card, "h-full p-6 sm:p-7")}>
+                <Reveal key={title} wait={(index % 3) * 80} className={span}>
+                  <article className={cn(styles.card, "h-full p-6")}>
                     <span className="grid size-10 place-items-center rounded-xl bg-violet-500/15 text-[color:var(--violet-hot)]">
                       <Icon className="size-5" />
                     </span>
-                    <h3 className="mt-5 font-[family-name:var(--font-display)] text-xl font-bold tracking-tight">
+                    <h3 className="mt-4 font-[family-name:var(--font-display)] text-xl font-bold tracking-tight">
                       {title}
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{body}</p>
@@ -459,61 +492,43 @@ export function LandingPage() {
             </div>
           </section>
 
-          <section id="como-funciona" className="relative mx-auto max-w-6xl scroll-mt-20 px-4 pb-24 sm:px-6 sm:pb-32">
+          <section id="por-que" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-16 sm:px-6 sm:pb-24">
             <Reveal className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[color:var(--violet-hot)]">Como funciona</p>
-              <DisplayHeading className="mt-4">Do caos à clareza em três passos.</DisplayHeading>
+              <Eyebrow>Por que o Flowy</Eyebrow>
+              <DisplayHeading className="mt-3">Feito para o dia a dia.</DisplayHeading>
             </Reveal>
-            <ol className="mt-14 grid gap-4 md:grid-cols-3">
-              {[
-                ["Crie sua conta", "Leva menos de um minuto. Só precisamos do seu nome, e-mail e uma senha."],
-                ["Faça o tour", "No primeiro acesso, um tutorial rápido mostra o essencial e cria sua primeira tarefa."],
-                ["Entre no fluxo", "Use no computador ou instale no celular. Tudo sincroniza em tempo real."],
-              ].map(([title, body], index) => (
-                <Reveal key={title} wait={index * 120}>
-                  <li className={cn(styles.card, "h-full p-7")}>
-                    <span className={cn(styles.stepNumber, "font-[family-name:var(--font-display)] text-6xl font-extrabold")}>
-                      0{index + 1}
+            <ul className="mt-10 grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+              {benefits.map(({ icon: Icon, title, body }, index) => (
+                <Reveal key={title} wait={(index % 3) * 80}>
+                  <li className="flex gap-4">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-[color:var(--violet-hot)]">
+                      <Icon className="size-[18px]" />
                     </span>
-                    <h3 className="mt-4 text-lg font-semibold">{title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{body}</p>
+                    <div>
+                      <h3 className="font-semibold">{title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-[color:var(--muted)]">{body}</p>
+                    </div>
                   </li>
                 </Reveal>
               ))}
-            </ol>
+            </ul>
           </section>
 
-          <section className="px-4 pb-24 sm:px-6">
-            <Reveal className={cn(styles.ctaBox, "relative isolate mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] px-6 py-20 text-center sm:py-28")}>
+          <section className="px-4 pb-20 sm:px-6">
+            <Reveal className={cn(styles.ctaBox, "relative isolate mx-auto max-w-4xl overflow-hidden rounded-[2rem] px-6 py-14 text-center sm:py-16")}>
               <div
                 aria-hidden="true"
-                className="absolute inset-0 -z-10 bg-[radial-gradient(55%_70%_at_50%_0%,rgb(124_58_237/0.5),transparent_70%),radial-gradient(40%_50%_at_50%_110%,rgb(99_102_241/0.35),transparent_70%)]"
+                className="absolute inset-0 -z-10 bg-[radial-gradient(55%_80%_at_50%_0%,rgb(124_58_237/0.45),transparent_70%)]"
               />
               <div aria-hidden="true" className={cn(styles.ctaGrid, "absolute inset-0 -z-10")} />
-              {/* Two slow orbits with feature icons riding on them. */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[520px] -translate-x-1/2 -translate-y-1/2 sm:size-[680px]"
-              >
-                <div className={cn(styles.orbit, "absolute inset-0 rounded-full border border-dashed border-white/15")}>
-                  <span className={cn(styles.orbitIcon, "left-1/2 top-0")}><CalendarClock className="size-4" /></span>
-                  <span className={cn(styles.orbitIcon, "left-1/2 top-full")}><Workflow className="size-4" /></span>
-                </div>
-                <div className={cn(styles.orbitReverse, "absolute inset-[18%] rounded-full border border-white/10")}>
-                  <span className={cn(styles.orbitIcon, "left-0 top-1/2")}><Bell className="size-4" /></span>
-                  <span className={cn(styles.orbitIcon, "left-full top-1/2")}><Sparkles className="size-4" /></span>
-                </div>
-              </div>
-              <DisplayHeading className="mx-auto max-w-2xl">
-                Pronto para entrar no{" "}
-                <span className="whitespace-nowrap">
-                  <span className={cn(styles.serif, "font-[family-name:var(--font-serif)] font-normal")}>fluxo</span>?
-                </span>
+              <DisplayHeading className="mx-auto max-w-xl">
+                Comece hoje,{" "}
+                <span className={cn(styles.serif, "font-[family-name:var(--font-serif)] font-normal")}>sem custo.</span>
               </DisplayHeading>
-              <p className="mx-auto mt-5 max-w-md text-[color:var(--muted)]">
-                Crie sua conta grátis e organize seu dia ainda hoje.
+              <p className="mx-auto mt-4 max-w-md text-[color:var(--muted)]">
+                Crie sua conta em menos de um minuto. Um tour rápido mostra o essencial.
               </p>
-              <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
                   href="/cadastro"
                   className={cn(styles.ctaPrimary, "inline-flex h-12 items-center gap-2 rounded-full px-8 text-sm font-semibold text-white")}
@@ -529,7 +544,7 @@ export function LandingPage() {
         </main>
 
         <footer className="border-t border-white/5 px-4 py-8 text-center text-xs text-[color:var(--muted)] sm:px-6">
-          © {new Date().getFullYear()} Flowy · Feito para mentes em movimento.
+          © {new Date().getFullYear()} Flowy
         </footer>
       </div>
     </LandingMotion>
