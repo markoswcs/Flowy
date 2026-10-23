@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Task } from "@/types/productivity";
 
@@ -25,6 +25,15 @@ function seed(userId: string, day: string, savedAt = Date.now()) {
     JSON.stringify({ day, savedAt, tasks: [task] }),
   );
 }
+
+// Test files share one jsdom (isolate: false): start from empty storage and
+// only look at this module's keys.
+const cacheKeys = () =>
+  Object.keys(window.localStorage).filter((key) => key.startsWith("flowy:tasks-cache:"));
+
+beforeEach(() => {
+  window.localStorage.clear();
+});
 
 afterEach(() => {
   window.localStorage.clear();
@@ -60,7 +69,7 @@ describe("useTaskListCache", () => {
     renderHook(() => useTaskListCache("u1", { scope: "all" }, [task, optimistic]), { wrapper });
     renderHook(() => useTaskListCache("u1", { scope: "all", search: "conta" }, [task]), { wrapper });
 
-    const keys = Object.keys(window.localStorage);
+    const keys = cacheKeys();
     expect(keys).toEqual([`flowy:tasks-cache:u1:${JSON.stringify({ scope: "all" })}`]);
     expect(JSON.parse(window.localStorage.getItem(keys[0]!)!).tasks).toEqual([task]);
   });
@@ -71,6 +80,7 @@ describe("useTaskListCache", () => {
 
     clearTaskCache();
 
-    expect(Object.keys(window.localStorage)).toEqual(["flowy:theme"]);
+    expect(cacheKeys()).toEqual([]);
+    expect(window.localStorage.getItem("flowy:theme")).toBe("purple");
   });
 });

@@ -38,6 +38,8 @@ export interface Task {
   due_date: string | null;
   due_time: string | null;
   recurrence: TaskRecurrence | null;
+  /** Weekdays (0 = Sunday) a daily/weekly task repeats on; null = every day / same weekday. */
+  recurrence_days: number[] | null;
   priority: TaskPriority;
   status: TaskStatus;
   folder_id: string | null;
@@ -67,6 +69,7 @@ export interface CreateTaskInput {
   due_date?: string | null;
   due_time?: string | null;
   recurrence?: TaskRecurrence | null;
+  recurrence_days?: number[] | null;
   priority?: TaskPriority;
   status?: TaskStatus;
   folder_id?: string | null;
@@ -81,6 +84,7 @@ export interface UpdateTaskInput {
   due_date?: string | null;
   due_time?: string | null;
   recurrence?: TaskRecurrence | null;
+  recurrence_days?: number[] | null;
   priority?: TaskPriority;
   status?: TaskStatus;
   folder_id?: string | null;

@@ -18,7 +18,10 @@ vi.mock("@/features/tasks/use-tasks", () => ({
   useCreateTask: () => ({ mutate, isPending: false }),
   useTasks: () => ({ data: history }),
 }));
-vi.mock("@/providers/notification-provider", () => ({
+// Partial mock: tests share modules (isolate: false), so `toast` may already be
+// bound to this module; keeping the real `notify` stops it leaking elsewhere.
+vi.mock("@/providers/notification-provider", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/providers/notification-provider")>()),
   useNotifications: () => ({ addNotification: vi.fn() }),
 }));
 
@@ -72,6 +75,7 @@ describe("TaskComposer", () => {
       due_date: "2026-10-16",
       due_time: "14:00",
       recurrence: null,
+      recurrence_days: null,
       priority: "high",
       folder_id: "f-roberto",
       category_ids: ["c-comercial"],
@@ -130,5 +134,36 @@ describe("TaskComposer", () => {
       priority: "low",
       folder_id: "f-pessoal",
     });
+  });
+
+  it("limits a daily repeat to the weekdays picked", () => {
+    render(
+      <TaskComposer
+        folders={folders}
+        categories={categories}
+        initialText="Regar as plantas todo dia"
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Dias úteis" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sexta" }));
+    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+    expect(mutate.mock.calls[0]![0]).toMatchObject({
+      recurrence: "daily",
+      recurrence_days: [1, 2, 3, 4],
+      due_date: "2026-10-15",
+    });
+  });
+
+  it("saves no weekdays when every day stays selected", () => {
+    render(
+      <TaskComposer
+        folders={folders}
+        categories={categories}
+        initialText="Regar as plantas todo dia"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Domingo" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Criar" }));
+    expect(mutate.mock.calls[0]![0]).toMatchObject({ recurrence: "daily", recurrence_days: null });
   });
 });

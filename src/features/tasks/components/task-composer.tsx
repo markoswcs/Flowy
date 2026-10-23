@@ -24,6 +24,8 @@ import {
 } from "@/features/tasks/components/smart-suggestions";
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
 import { VoiceTaskButton } from "@/features/tasks/components/voice-capture";
+import { RecurrenceDaysPicker } from "@/features/tasks/components/recurrence-days-picker";
+import { daysToStore, selectedDays, supportsDays } from "@/features/tasks/recurrence";
 import { interpretTask, type SmartTask } from "@/features/tasks/smart-task";
 import { useCreateTask, useTasks } from "@/features/tasks/use-tasks";
 import { cn } from "@/lib/utils";
@@ -76,6 +78,8 @@ export function TaskComposer({
   const [recurrence, setRecurrence] = useState<TaskRecurrence | "none">(
     initial?.recurrence ?? "none",
   );
+  // Weekdays chosen in the picker; null = the plain repeat (every day / same weekday).
+  const [recurrenceDays, setRecurrenceDays] = useState<number[] | null>(null);
   const [priority, setPriority] = useState<TaskPriority>(initial?.priority ?? "normal");
   const [folderId, setFolderId] = useState(initial?.folderId ?? defaultFolderId ?? "");
   const [categoryIds, setCategoryIds] = useState<string[]>(() => [
@@ -118,6 +122,7 @@ export function TaskComposer({
     setDueDate(defaultDueDate ?? "");
     setDueTime("");
     setRecurrence("none");
+    setRecurrenceDays(null);
     setPriority("normal");
     setFolderId(defaultFolderId ?? "");
     setCategoryIds(defaultCategoryIds);
@@ -150,6 +155,10 @@ export function TaskComposer({
         due_date: date || null,
         due_time: date && time ? time : null,
         recurrence: repeat,
+        recurrence_days:
+          repeat === recurrence && recurrenceDays
+            ? daysToStore(repeat, recurrenceDays, date)
+            : null,
         priority: priority !== "normal" ? priority : (live?.priority ?? "normal"),
         folder_id: folderId || suggestedExtras?.folderId || null,
         category_ids: [...categoryIds, ...(suggestedExtras?.categoryIds ?? [])],
@@ -277,9 +286,10 @@ export function TaskComposer({
             <div className={cn(!dueDate && "pointer-events-none opacity-50")}>
               <CustomSelect
                 value={recurrence}
-                onChange={(value) =>
-                  setRecurrence(value as TaskRecurrence | "none")
-                }
+                onChange={(value) => {
+                  setRecurrence(value as TaskRecurrence | "none");
+                  setRecurrenceDays(null);
+                }}
                 triggerIcon={<Repeat2 className="size-4" />}
                 options={[
                   { value: "none", label: "Não repetir" },
@@ -290,6 +300,13 @@ export function TaskComposer({
                 className="h-10 w-full border-border/60 bg-background/50 backdrop-blur-lg"
               />
             </div>
+            {dueDate && supportsDays(recurrence) ? (
+              <RecurrenceDaysPicker
+                value={selectedDays(recurrence, recurrenceDays, dueDate)}
+                onChange={setRecurrenceDays}
+                className="animate-in fade-in slide-in-from-top-1"
+              />
+            ) : null}
           </div>
 
           <div className="space-y-2">
