@@ -50,10 +50,13 @@ export default async function PrivateAppLayout({
         .select("folder_id")
         .is("deleted_at", null)
         .neq("status", "completed"),
+      // Only labels of open tasks count, matching the folder counts above,
+      // so this stays small instead of growing with every task ever tagged.
       supabase
         .from("task_categories")
-        .select("category_id")
-      // assuming task_categories exists, if not we'll ignore it. Flowy usually has tasks <-> categories M:N or 1:N.
+        .select("category_id, task:tasks!inner(id)")
+        .is("task.deleted_at", null)
+        .neq("task.status", "completed"),
     ]);
 
   const metadataName =
