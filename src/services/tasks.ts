@@ -1,3 +1,4 @@
+import { alignToDays, supportsDays } from "@/features/tasks/recurrence";
 import { getAuthenticatedClient } from "@/services/authenticated-client";
 import type {
   Category,
@@ -16,6 +17,7 @@ const TASK_FIELDS = `
   due_date,
   due_time,
   recurrence,
+  recurrence_days,
   priority,
   status,
   folder_id,
@@ -208,6 +210,12 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
   if (values.recurrence && !values.due_date) {
     throw new Error("Escolha uma data para repetir a tarefa.");
   }
+  const recurrenceDays =
+    supportsDays(values.recurrence ?? null) && values.recurrence_days?.length
+      ? values.recurrence_days
+      : null;
+  // A task limited to some weekdays starts on the first of them.
+  const dueDate = alignToDays(values.due_date || "", recurrenceDays) || null;
   const { data, error } = await supabase
     .from("tasks")
     .insert({
@@ -215,9 +223,10 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       title,
       user_id: userId,
       description: values.description?.trim() || null,
-      due_date: values.due_date || null,
-      due_time: values.due_date && values.due_time ? values.due_time : null,
+      due_date: dueDate,
+      due_time: dueDate && values.due_time ? values.due_time : null,
       recurrence: values.recurrence ?? null,
+      recurrence_days: recurrenceDays,
       priority: values.priority ?? "normal",
       status,
       folder_id: values.folder_id || null,
@@ -256,6 +265,17 @@ export async function updateTask(input: UpdateTaskInput): Promise<Task> {
     }
     values.due_time = null;
     values.recurrence = null;
+    values.recurrence_days = null;
+  }
+  if (changes.recurrence !== undefined && !supportsDays(changes.recurrence)) {
+    values.recurrence_days = null;
+  }
+  if (changes.recurrence_days !== undefined) {
+    const days = changes.recurrence_days?.length ? changes.recurrence_days : null;
+    values.recurrence_days = days;
+    if (days && typeof changes.due_date === "string") {
+      values.due_date = alignToDays(changes.due_date, days);
+    }
   }
   if (changes.status === "completed" && changes.completed_at === undefined) {
     values.completed_at = new Date().toISOString();

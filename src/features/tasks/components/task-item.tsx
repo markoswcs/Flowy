@@ -19,6 +19,7 @@ import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { formatTaskDate, relativeTaskDate } from "@/features/tasks/date-utils";
+import { RecurrenceDaysPicker } from "@/features/tasks/components/recurrence-days-picker";
 import { TaskActionSheet } from "@/features/tasks/components/task-action-sheet";
 import { TaskScheduleFields } from "@/features/tasks/components/task-schedule-fields";
 import { TaskTagSelector } from "@/features/tasks/components/task-tag-selector";
@@ -27,6 +28,12 @@ import {
   useSoftDeleteTask,
   useUpdateTask,
 } from "@/features/tasks/use-tasks";
+import {
+  daysToStore,
+  recurrenceLabel,
+  selectedDays,
+  supportsDays,
+} from "@/features/tasks/recurrence";
 import { useTaskSelection } from "@/features/tasks/task-selection";
 import { holdOverlay } from "@/lib/overlay";
 import { cn } from "@/lib/utils";
@@ -71,11 +78,6 @@ const statusLabels: Record<TaskStatus, string> = {
   completed: "Concluída",
 };
 
-const recurrenceLabels: Record<TaskRecurrence, string> = {
-  daily: "Diariamente",
-  weekly: "Semanalmente",
-  monthly: "Mensalmente",
-};
 
 export function TaskEditor({
   task,
@@ -91,6 +93,9 @@ export function TaskEditor({
   const [dueTime, setDueTime] = useState(task.due_time?.slice(0, 5) ?? "");
   const [recurrence, setRecurrence] = useState<TaskRecurrence | "none">(
     task.recurrence ?? "none",
+  );
+  const [recurrenceDays, setRecurrenceDays] = useState<number[] | null>(
+    task.recurrence_days,
   );
   const [priority, setPriority] = useState(task.priority);
   const [status, setStatus] = useState(task.status);
@@ -114,6 +119,7 @@ export function TaskEditor({
         due_date: dueDate || null,
         due_time: dueDate && dueTime ? dueTime : null,
         recurrence: recurrence === "none" ? null : recurrence,
+        recurrence_days: recurrenceDays ? daysToStore(recurrence, recurrenceDays, dueDate) : null,
         priority,
         status,
         folder_id: folderId || null,
@@ -202,9 +208,10 @@ export function TaskEditor({
         <div className={cn("min-w-0", !dueDate && "pointer-events-none opacity-50")}>
           <CustomSelect
             value={recurrence}
-            onChange={(value) =>
-              setRecurrence(value as TaskRecurrence | "none")
-            }
+            onChange={(value) => {
+              setRecurrence(value as TaskRecurrence | "none");
+              setRecurrenceDays(null);
+            }}
             options={[
               { value: "none", label: "Não repetir" },
               { value: "daily", label: "Todos os dias" },
@@ -253,6 +260,14 @@ export function TaskEditor({
           containerClassName="col-span-2 min-w-0 sm:col-span-1"
         />
       </div>
+
+      {dueDate && supportsDays(recurrence) ? (
+        <RecurrenceDaysPicker
+          value={selectedDays(recurrence, recurrenceDays, dueDate)}
+          onChange={setRecurrenceDays}
+          className="animate-in fade-in slide-in-from-top-1"
+        />
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-1.5">
         <Tag className="mr-1 size-3.5 text-muted-foreground" />
@@ -360,7 +375,7 @@ export function TaskItem({
           }
           if (task.recurrence) {
             const nextDate = formatTaskDate(updatedTask.due_date);
-            addNotification({ title: "Próxima ocorrência agendada", description: `${recurrenceLabels[task.recurrence]}${
+            addNotification({ title: "Próxima ocorrência agendada", description: `${recurrenceLabel(task.recurrence, task.recurrence_days)}${
                 nextDate ? ` • ${nextDate}` : ""
               }${updatedTask.due_time ? ` às ${updatedTask.due_time.slice(0, 5)}` : ""}` });
             return;
@@ -525,7 +540,7 @@ export function TaskItem({
                 {task.recurrence ? (
                   <span className="inline-flex items-center gap-1">
                     <Repeat2 className="size-3.5" aria-hidden="true" />
-                    {recurrenceLabels[task.recurrence]}
+                    {recurrenceLabel(task.recurrence, task.recurrence_days)}
                   </span>
                 ) : null}
                 {task.folder ? (
