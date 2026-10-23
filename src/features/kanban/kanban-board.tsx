@@ -146,7 +146,7 @@ export function KanbanBoard() {
       selectBoard(
         boards.data?.find((item) => item.id !== previousBoard.id)?.id ?? null,
       );
-      notify("Quadro movido para a lixeira", {
+      notify("Movido para a lixeira", {
         action: {
           label: "Desfazer",
           onClick: () => updateBoardMutation.mutate({ deleted_at: null }),
@@ -201,7 +201,7 @@ export function KanbanBoard() {
       { cardId: card.id, changes: { deleted_at: new Date().toISOString() } },
       {
         onSuccess: () =>
-          notify("Card movido para a lixeira", {
+          notify("Movido para a lixeira", {
             action: {
               label: "Desfazer",
               onClick: () =>

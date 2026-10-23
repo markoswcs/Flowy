@@ -1,11 +1,12 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, Sunrise } from "lucide-react";
 import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { usePushNotifications, type PushStatus } from "@/features/settings/use-push-notifications";
+import { usePreferences, useUpdatePreferences } from "@/features/settings/use-settings";
 
 const descriptions: Record<PushStatus, string> = {
   loading: "Verificando este dispositivo…",
@@ -25,15 +26,30 @@ export function PushNotificationsSection() {
   const { status, busy, enable, disable, sendTest } = usePushNotifications();
   const enabled = status === "enabled";
   const canToggle = status === "enabled" || status === "disabled";
+  const preferences = usePreferences();
+  const updatePreferences = useUpdatePreferences();
+  // Rows created before the column existed read as on, like the database default.
+  const digestOn = preferences.data?.morning_digest !== false;
+
+  function toggleDigest() {
+    updatePreferences.mutate(
+      { morning_digest: !digestOn },
+      {
+        onSuccess: () =>
+          toast.success(digestOn ? "Resumo da manhã desativado" : "Resumo da manhã ativado"),
+        onError: () => toast.error("Não foi possível salvar a preferência."),
+      },
+    );
+  }
 
   async function toggle() {
     try {
       if (enabled) {
         await disable();
-        toast.success("Notificações desativadas neste dispositivo.");
+        toast.success("Notificações desativadas");
       } else {
         await enable();
-        toast.success("Notificações ativadas.");
+        toast.success("Notificações ativadas");
       }
     } catch (error) {
       toast.error(errorMessage(error));
@@ -60,6 +76,16 @@ export function PushNotificationsSection() {
         disabled={!canToggle || busy}
         onToggle={toggle}
       />
+      {enabled ? (
+        <SwitchRow
+          icon={<Sunrise className="size-5" />}
+          title="Resumo da manhã"
+          description="Às 8h, um aviso com as tarefas de hoje e as atrasadas, inclusive as sem horário."
+          checked={digestOn}
+          disabled={!preferences.data || updatePreferences.isPending}
+          onToggle={toggleDigest}
+        />
+      ) : null}
       {enabled ? (
         <Button type="button" variant="outline" size="sm" className="mt-3" loading={busy} onClick={test}>
           Enviar notificação de teste

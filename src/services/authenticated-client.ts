@@ -2,10 +2,14 @@ import { createClient } from "@/lib/supabase/client";
 
 export async function getAuthenticatedClient() {
   const supabase = createClient();
+  // The session is read from local storage (and refreshed only when expired),
+  // so queries no longer wait for an auth round trip first. RLS still checks
+  // every request against the signed token on the server.
   const {
-    data: { user },
+    data: { session },
     error,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (error || !user) {
     throw new Error("Sua sessão expirou. Entre novamente para continuar.");

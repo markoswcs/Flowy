@@ -128,7 +128,7 @@ export function BulkActionBar({
   const count = ids.length;
   const allSelected = count > 0 && count === tasks.length;
 
-  async function run(label: string, action: (task: Task) => Promise<unknown>) {
+  async function run(label: string, action: (task: Task) => Promise<unknown>, undo?: () => void) {
     if (!chosen.length || !selection) return;
     setBusy(true);
     setMenu(null);
@@ -137,23 +137,19 @@ export function BulkActionBar({
     const failed = results.filter((result) => result.status === "rejected").length;
     addNotification({
       title: failed ? `${label}: ${chosen.length - failed} de ${chosen.length}` : label,
-      description: failed
-        ? "Algumas tarefas não foram alteradas. Tente novamente."
-        : `${chosen.length} ${chosen.length === 1 ? "tarefa" : "tarefas"}`,
+      description: failed ? "Algumas tarefas não foram alteradas. Tente novamente." : undefined,
+      tone: failed ? "error" : "success",
+      action: undo ? { label: "Desfazer", onClick: undo } : undefined,
     });
     selection.clear();
   }
 
   function trash() {
     const removed = chosen.map((task) => task.id);
-    void run("Tarefas movidas para a lixeira", (task) => deleteTask.mutateAsync(task.id)).then(() =>
-      addNotification({
-        title: "Desfazer exclusão em massa?",
-        action: {
-          label: "Restaurar tarefas",
-          onClick: () => removed.forEach((id) => restoreTask.mutate(id)),
-        },
-      }),
+    void run(
+      "Movidas para a lixeira",
+      (task) => deleteTask.mutateAsync(task.id),
+      () => removed.forEach((id) => restoreTask.mutate(id)),
     );
   }
 

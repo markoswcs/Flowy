@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
+import { syncPushSubscription } from "@/features/settings/use-push-notifications";
 import { useProfile } from "@/features/settings/use-settings";
 import { cn, getInitials } from "@/lib/utils";
 import { holdOverlay } from "@/lib/overlay";
@@ -109,6 +110,16 @@ export function AppShell({
       task_count: taskCounts.get(category.id) ?? 0,
     }));
   }, [categories, categoriesQuery.data]);
+
+  useEffect(() => {
+    // After startup settles, so it never competes with the first paint.
+    const timeout = window.setTimeout(() => {
+      syncPushSubscription().catch(() => {
+        // Offline or blocked: tried again the next time the app opens.
+      });
+    }, 4000);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -268,7 +279,7 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
-            className="theme-shell-panel absolute inset-y-0 left-0 w-[min(88vw,320px)] animate-[flowy-menu-enter_420ms_cubic-bezier(.22,1,.36,1)] border-r border-border shadow-soft"
+            className="theme-shell-panel absolute inset-y-0 left-0 w-[min(88vw,320px)] animate-[flowy-menu-enter_260ms_cubic-bezier(.22,1,.36,1)] border-r border-border shadow-soft"
           >
             <Button
               type="button"

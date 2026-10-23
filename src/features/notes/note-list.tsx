@@ -200,7 +200,7 @@ export function NoteList() {
   async function handleTrash(noteId: string) {
     try {
       await trash.mutateAsync(noteId);
-      notify("Nota movida para a lixeira", {
+      notify("Movida para a lixeira", {
         action: {
           label: "Desfazer",
           onClick: () => {
@@ -249,7 +249,7 @@ export function NoteList() {
         </div>
       </header>
 
-      <SectionTutorial section={section} />
+      <SectionTutorial key={section} section={section} />
 
       <label className="relative block">
         <span className="sr-only">{pageCopy.search}</span>

@@ -40,7 +40,7 @@ export function NavLink({
       aria-current={active ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(
-        "theme-sidebar-item flowy-glow-hover flex min-h-[42px] items-center gap-3 rounded-2xl px-4 text-sm font-medium text-muted-foreground transition-all duration-300 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:scale-[1.02]",
+        "theme-sidebar-item flowy-glow-hover flex min-h-[42px] items-center gap-3 rounded-2xl px-4 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active && "theme-sidebar-active bg-foreground/[0.07] text-foreground",
         collapsed && "justify-center px-0",
       )}

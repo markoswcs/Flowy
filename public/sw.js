@@ -6,9 +6,8 @@ self.addEventListener('activate', () => {
   return self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  // Pass-through fetch to allow the app to be installable
-});
+// No fetch handler on purpose: an empty one adds a service-worker hop to
+// every request and slows each page load, and installing no longer needs it.
 
 // Task reminders sent by /api/cron/reminders.
 self.addEventListener('push', (event) => {
@@ -31,6 +30,19 @@ self.addEventListener('push', (event) => {
   );
 });
 
+// The browser may replace a subscription at any time. Subscribe again with the
+// same key right away; the app saves the new one on the account when it opens.
+self.addEventListener('pushsubscriptionchange', (event) => {
+  const options = event.oldSubscription && event.oldSubscription.options;
+  if (!options || !options.applicationServerKey) return;
+  event.waitUntil(
+    self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: options.applicationServerKey,
+    }),
+  );
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = new URL(event.notification.data?.url || '/app', self.location.origin).href;
@@ -39,8 +51,11 @@ self.addEventListener('notificationclick', (event) => {
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
       const existing = windows.find((client) => client.url.startsWith(self.location.origin));
       if (existing) {
-        existing.navigate(url);
-        return existing.focus();
+        // Focus first, while the click still counts as a user gesture.
+        return existing
+          .focus()
+          .then((client) => (client || existing).navigate(url))
+          .catch(() => undefined);
       }
       return self.clients.openWindow(url);
     }),

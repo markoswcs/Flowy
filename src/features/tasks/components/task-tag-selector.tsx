@@ -46,7 +46,7 @@ export function TaskTagSelector({
           onChange([...new Set([...value, category.id])]);
           setName("");
           setCreating(false);
-          notify("Etiqueta criada e adicionada à tarefa");
+          notify("Etiqueta adicionada");
         },
       },
     );

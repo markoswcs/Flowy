@@ -136,14 +136,36 @@ function countWords(text: string): number {
   return words ? words.length : 0;
 }
 
-async function fileToDataUrl(file: File): Promise<string> {
-  const optimized = await optimizeImage(file, 1280, 1280, 0.8);
+function readAsDataUrl(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(new Error("Falha ao ler a imagem."));
-    reader.readAsDataURL(optimized);
+    reader.readAsDataURL(file);
   });
+}
+
+// Each step is smaller than the last; the first one that fits the note wins.
+const IMAGE_STEPS = [
+  [1280, 0.8],
+  [1024, 0.72],
+  [800, 0.62],
+] as const;
+
+/** The image, resized and compressed before it is saved; null if it never fits. */
+async function fileToDataUrl(file: File): Promise<string | null> {
+  for (const [size, quality] of IMAGE_STEPS) {
+    const optimized = await optimizeImage(file, size, size, quality);
+    // An already small file (icon, screenshot of text) can beat re-encoding.
+    const smallest = file.size <= optimized.size ? file : optimized;
+    const src = await readAsDataUrl(smallest);
+    if (src.length <= MAX_IMAGE_CHARS) return src;
+  }
+  return null;
+}
+
+function imageFiles(data: DataTransfer | null) {
+  return Array.from(data?.files ?? []).filter((file) => file.type.startsWith("image/"));
 }
 
 function BarButton({
@@ -321,6 +343,7 @@ export function TextNoteEditor({ note }: { note: Note }) {
   // Keeps the formatting bar above the on-screen keyboard.
   useEffect(() => trackVisualViewport(), []);
 
+  const insertImageRef = useRef<(file: File) => Promise<unknown>>(async () => {});
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -330,7 +353,7 @@ export function TextNoteEditor({ note }: { note: Note }) {
       ImageExtension.configure({
         inline: false,
         allowBase64: true,
-        HTMLAttributes: { class: "flowy-editor-image" },
+        HTMLAttributes: { class: "flowy-editor-image", loading: "lazy", decoding: "async" },
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -341,6 +364,21 @@ export function TextNoteEditor({ note }: { note: Note }) {
       attributes: {
         class: "flowy-editor min-h-[5rem] max-w-none focus:outline-none",
         "aria-label": "Conteúdo da nota",
+      },
+      // Pasted or dropped pictures go through the same optimization as picked ones.
+      handlePaste: (_view: unknown, event: ClipboardEvent) => {
+        const files = imageFiles(event.clipboardData);
+        if (!files.length) return false;
+        event.preventDefault();
+        files.forEach((file) => void insertImageRef.current(file));
+        return true;
+      },
+      handleDrop: (_view: unknown, event: DragEvent) => {
+        const files = imageFiles(event.dataTransfer);
+        if (!files.length) return false;
+        event.preventDefault();
+        files.forEach((file) => void insertImageRef.current(file));
+        return true;
       },
     },
     onUpdate: ({
@@ -470,13 +508,16 @@ export function TextNoteEditor({ note }: { note: Note }) {
   async function insertImage(file: File) {
     try {
       const src = await fileToDataUrl(file);
-      if (src.length > MAX_IMAGE_CHARS)
-        return toast.error("Imagem grande demais. Tente uma menor.");
+      if (!src) return toast.error("Imagem grande demais. Tente uma menor.");
       editor?.chain().focus().setImage({ src }).run();
     } catch {
       toast.error("Não foi possível adicionar a imagem.");
     }
   }
+
+  useEffect(() => {
+    insertImageRef.current = insertImage;
+  });
 
   async function handleFavorite() {
     const next = !favorite;
@@ -493,7 +534,7 @@ export function TextNoteEditor({ note }: { note: Note }) {
     try {
       await trash.mutateAsync(note.id);
       router.push(SECTION_HREF.nota);
-      notify("Nota movida para a lixeira", {
+      notify("Movida para a lixeira", {
         action: {
           label: "Desfazer",
           onClick: () => restore.mutate(note.id),

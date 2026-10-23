@@ -19,7 +19,7 @@ import {
 import { useCreateNote, useNotes } from "@/features/notes/use-notes";
 import { TaskComposer } from "@/features/tasks/components/task-composer";
 import { TaskList } from "@/features/tasks/components/task-list";
-import { useTasks, useTasksRealtime } from "@/features/tasks/use-tasks";
+import { useTasks } from "@/features/tasks/use-tasks";
 import { cn } from "@/lib/utils";
 
 export function FolderPage({ folderId }: { folderId: string }) {
@@ -32,7 +32,6 @@ export function FolderPage({ folderId }: { folderId: string }) {
   const createNoteMutation = useCreateNote();
   const deleteMutation = useSoftDeleteFolder();
   const restoreMutation = useRestoreFolder();
-  useTasksRealtime();
 
   const folder = folderQuery.data;
   const folders = foldersQuery.data ?? [];
@@ -55,7 +54,7 @@ export function FolderPage({ folderId }: { folderId: string }) {
     deleteMutation.mutate(folder.id, {
       onSuccess: () => {
         router.push("/app");
-        notify("Pasta movida para a lixeira", {
+        notify("Movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(folder.id),

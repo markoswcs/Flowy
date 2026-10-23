@@ -383,7 +383,7 @@ export function TaskItem({
   function moveToTrash() {
     deleteMutation.mutate(task.id, {
       onSuccess: () => {
-        addNotification({ title: "Tarefa movida para a lixeira", description: task.title,
+        addNotification({ title: "Movida para a lixeira", description: task.title,
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(task.id),
@@ -454,7 +454,7 @@ export function TaskItem({
       }}
       data-selected={selecting ? selected : undefined}
       className={cn(
-        "group relative mb-2 overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-sm transition-all duration-300 hover:border-border hover:bg-card/70 animate-scale-in [-webkit-touch-callout:none]",
+        "group relative mb-2 overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-sm transition-all duration-200 hover:border-border hover:bg-card/70 animate-scale-in [-webkit-touch-callout:none]",
         selecting && "cursor-pointer select-none",
         selected && "border-violet-400/60 bg-violet-500/10 shadow-[0_0_0_1px_rgb(167_139_250/0.4)]",
         completed && !selecting && "opacity-70",
@@ -482,7 +482,7 @@ export function TaskItem({
             )}
           >
             {(selecting ? selected : completed) ? (
-              <Check className="size-3.5 animate-in zoom-in duration-200" aria-hidden="true" />
+              <Check className="size-3.5 flowy-check-pop" aria-hidden="true" />
             ) : null}
           </button>
 

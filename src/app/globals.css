@@ -241,17 +241,51 @@
 }
 
 @layer components {
+  /* Quick and discreet: a short fade with a few pixels of travel. */
   .app-page-transition {
-    animation: flowy-page-enter 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: flowy-page-enter 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .app-page-transition > * {
-    animation: flowy-content-settle 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: 70ms;
+    animation: flowy-content-settle 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: 40ms;
   }
 
   .flowy-list-item {
-    animation: flowy-list-enter 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: flowy-list-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .flowy-toast {
+    animation: flowy-toast-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .flowy-toast-leave {
+    animation: flowy-toast-leave 160ms ease-in both;
+  }
+
+  .flowy-check-pop {
+    animation: flowy-check-pop 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* Expands and collapses to the content's own height (folders, sections).
+     Children need no fixed max-height; closed content is also made inert. */
+  .flowy-collapse {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transition:
+      grid-template-rows 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 180ms ease;
+  }
+
+  .flowy-collapse[data-open="false"] {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+
+  .flowy-collapse > * {
+    min-height: 0;
+    overflow: hidden;
   }
 
   .flowy-loader-orbit::before {
@@ -904,7 +938,7 @@
 @keyframes flowy-page-enter {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.985);
+    transform: translateY(6px);
   }
   /* "none" (not translateY(0)) so the finished page is no containing block
      for position: fixed children such as floating toolbars. */
@@ -917,7 +951,7 @@
 @keyframes flowy-content-settle {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -925,14 +959,32 @@
   }
 }
 
-@keyframes flowy-list-enter {
+@keyframes flowy-toast-enter {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.99);
+    transform: translateY(-8px) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
+  }
+}
+
+@keyframes flowy-toast-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+@keyframes flowy-list-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -995,19 +1047,28 @@
 }
 
 @keyframes flowy-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The check mark of a task springs in: small, quick and satisfying. */
+@keyframes flowy-check-pop {
   0% {
     opacity: 0;
-    transform: translateX(-28px) scale(0.98);
-    filter: blur(3px);
+    transform: scale(0.3) rotate(-12deg);
   }
-  65% {
+  60% {
     opacity: 1;
-    transform: translateX(2px) scale(1.005);
-    filter: blur(0);
+    transform: scale(1.25) rotate(0);
   }
   100% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: scale(1);
   }
 }
 
@@ -1027,7 +1088,8 @@
    A thin static border with a soft light travelling around it: only the
    gradient angle animates, the element itself never rotates.
    - Selected / pressed / current controls: full glow, always on.
-   - Buttons and cards under the mouse: the same light, a little softer.
+   - Hover never glows: it gets its own quiet wash (see below), so what is
+     selected and what is merely under the cursor never look alike.
    Excalidraw's own UI and tiny in-topic controls are left alone.
    ------------------------------------------------------------------------ */
 /* Glow palette: vivid on dark themes, deeper (higher contrast) on white. */
@@ -1086,14 +1148,7 @@
     [role="tab"][aria-selected="true"],
     [aria-current="page"],
     .flowy-glow
-  ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after,
-:where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
-    :disabled,
-    [aria-disabled="true"],
-    .excalidraw *,
-    [data-topic-control],
-    [data-no-glow]
-  ):hover::after {
+  ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after {
   content: "";
   position: absolute;
   inset: -1.5px;
@@ -1132,20 +1187,53 @@
     flowy-glow-in 220ms ease-out;
 }
 
-/* Hover is a lighter touch than a real selection. */
-:where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
-    :disabled,
-    [aria-disabled="true"],
-    [aria-pressed="true"],
-    [aria-checked="true"],
-    [aria-current="page"],
-    .flowy-glow,
-    .excalidraw *,
-    [data-topic-control],
-    [data-no-glow]
-  ):hover::after {
-  opacity: 0.75;
-  animation-duration: 2.4s, 220ms;
+/* Hover: a translucent wash with a hairline edge and a slightly brighter
+   icon. Only on devices with a real pointer, so a tap never leaves it stuck. */
+@media (hover: hover) and (pointer: fine) {
+  :where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
+      :disabled,
+      [aria-disabled="true"],
+      [aria-pressed="true"],
+      [role="radio"][aria-checked="true"],
+      [role="tab"][aria-selected="true"],
+      [aria-current="page"],
+      .flowy-glow,
+      .excalidraw *,
+      [data-topic-control],
+      [data-no-glow]
+    ):hover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: hsl(var(--foreground) / 0.05);
+    box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 0.1);
+    animation: flowy-hover-in 150ms ease-out;
+  }
+
+  :where(button, [role="button"], [role="menuitem"], .flowy-glow-hover):not(
+      :disabled,
+      [aria-disabled="true"],
+      .excalidraw *,
+      [data-topic-control],
+      [data-no-glow]
+    ):hover
+    svg {
+    filter: brightness(1.18);
+  }
+}
+
+@keyframes flowy-hover-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Icons ease back when the pointer leaves. */
+:where(button, [role="button"], [role="menuitem"], .flowy-glow-hover) svg {
+  transition: filter 150ms ease-out;
 }
 
 @keyframes flowy-glow-spin {
@@ -1173,11 +1261,7 @@
     [role="radio"][aria-checked="true"],
     [role="tab"][aria-selected="true"],
     [aria-current="page"],
-    .flowy-glow,
-    button,
-    [role="button"],
-    [role="menuitem"],
-    .flowy-glow-hover
+    .flowy-glow
   )::after {
   animation: none !important;
   background: hsl(var(--glow-1) / 0.7) !important;
@@ -1190,11 +1274,7 @@
       [role="radio"][aria-checked="true"],
       [role="tab"][aria-selected="true"],
       [aria-current="page"],
-      .flowy-glow,
-      button,
-      [role="button"],
-      [role="menuitem"],
-      .flowy-glow-hover
+      .flowy-glow
     )::after {
     animation: none !important;
     background: hsl(var(--glow-1) / 0.7) !important;
@@ -1591,8 +1671,8 @@
       #0d041e;
     color: #fff;
     transition:
-      opacity 450ms ease,
-      transform 450ms ease;
+      opacity 220ms ease,
+      transform 220ms ease;
   }
 }
 
@@ -1713,5 +1793,133 @@
   .flowy-launch {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------------
+   Drawing tool (Excalidraw) in Flowy's look, matching the mind map toolbar:
+   frosted islands, rounded controls and the purple selection state.
+   Unlayered on purpose: Excalidraw's own CSS is unlayered, and three
+   classes outrank its `.excalidraw.theme--dark` palette.
+   ------------------------------------------------------------------------ */
+.flowy-excalidraw .excalidraw,
+.flowy-excalidraw .excalidraw.theme--dark {
+  --color-primary: color-mix(in oklab, hsl(262 83% 58%) 80%, hsl(var(--foreground)));
+  --color-primary-darker: hsl(262 83% 52%);
+  --color-primary-darkest: hsl(262 83% 46%);
+  --color-primary-hover: hsl(262 83% 64%);
+  --color-primary-light: var(--flowy-active-bg);
+  --color-primary-light-darker: color-mix(in oklab, hsl(262 83% 58%) 28%, transparent);
+  --color-surface-primary-container: var(--flowy-active-bg);
+  --color-on-primary-container: hsl(var(--foreground));
+  --color-brand-hover: hsl(262 83% 64%);
+  --color-brand-active: hsl(262 83% 52%);
+  --island-bg-color: hsl(var(--card) / 0.9);
+  --button-hover-bg: hsl(var(--accent));
+  --default-border-color: hsl(var(--border));
+  --border-radius-md: 0.75rem;
+  --border-radius-lg: 1rem;
+}
+
+/* Islands (tool bar, style panel, zoom and undo) as frosted glass. Phones
+   keep their own bottom-bar layout (see the max-width: 900px rules). */
+@media (min-width: 901px) {
+  .flowy-excalidraw .excalidraw .Island {
+    border: 1px solid hsl(var(--border) / 0.7);
+    border-radius: 1rem;
+    background-color: hsl(var(--card) / 0.9);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.06),
+      0 18px 40px -22px rgb(0 0 0 / 0.55);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    backdrop-filter: blur(22px) saturate(170%);
+  }
+}
+
+/* Tools: rounded squares with a calm hover and the Flowy selected state. */
+.flowy-excalidraw .excalidraw .ToolIcon__icon {
+  border-radius: 0.75rem;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.flowy-excalidraw .excalidraw .ToolIcon:active .ToolIcon__icon {
+  transform: scale(0.94);
+}
+
+.flowy-excalidraw .excalidraw .ToolIcon_type_radio:checked + .ToolIcon__icon,
+.flowy-excalidraw .excalidraw .ToolIcon_type_checkbox:checked + .ToolIcon__icon,
+.flowy-excalidraw .excalidraw .ToolIcon.ToolIcon--selected .ToolIcon__icon {
+  background-color: var(--flowy-active-bg);
+  color: var(--flowy-ink);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, hsl(262 83% 58%) 35%, transparent);
+}
+
+.flowy-excalidraw .excalidraw .ToolIcon_type_radio:checked + .ToolIcon__icon svg,
+.flowy-excalidraw .excalidraw .ToolIcon_type_checkbox:checked + .ToolIcon__icon svg {
+  color: var(--flowy-ink);
+}
+
+/* Style panel: tighter, labelled sections like the mind map format panel. */
+.flowy-excalidraw .excalidraw .App-menu__left .panelColumn {
+  row-gap: 0.75rem;
+}
+
+.flowy-excalidraw .excalidraw .App-menu__left legend,
+.flowy-excalidraw .excalidraw .App-menu__left h3 {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Menus (main menu, right-click menu, extra tools) as one glass sheet. */
+.flowy-excalidraw .excalidraw .dropdown-menu-container,
+.flowy-excalidraw .excalidraw .context-menu {
+  border: 1px solid hsl(var(--border) / 0.7);
+  border-radius: 1rem;
+  background-color: hsl(var(--card) / 0.96);
+  box-shadow: 0 1.25rem 3rem -1rem rgb(0 0 0 / 0.55);
+  padding: 0.375rem;
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+  animation: flowy-menu-pop 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.flowy-excalidraw .excalidraw .dropdown-menu-item,
+.flowy-excalidraw .excalidraw .context-menu-item {
+  border-radius: 0.625rem;
+  transition: background-color 120ms ease;
+}
+
+.flowy-excalidraw .excalidraw .context-menu-item:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--foreground));
+}
+
+.flowy-excalidraw .excalidraw .context-menu-item.dangerous:hover {
+  background-color: hsl(var(--destructive) / 0.15);
+  color: hsl(var(--destructive));
+}
+
+.flowy-excalidraw .excalidraw .context-menu-item-separator {
+  margin: 0.25rem 0.5rem;
+  border-color: hsl(var(--border) / 0.7);
+}
+
+@keyframes flowy-menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flowy-excalidraw .excalidraw .dropdown-menu-container,
+  .flowy-excalidraw .excalidraw .context-menu {
+    animation: none;
   }
 }

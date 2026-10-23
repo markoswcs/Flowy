@@ -25,7 +25,8 @@ import { TaskMatrix } from "@/features/tasks/components/task-matrix";
 import { TaskList } from "@/features/tasks/components/task-list";
 import { TaskViewSwitcher, type TaskView } from "@/features/tasks/components/task-view-switcher";
 import { buildDailyPhrase } from "@/features/tasks/daily-phrase";
-import { useCreateTask, useTasks, useTasksRealtime } from "@/features/tasks/use-tasks";
+import { useTaskListCache } from "@/features/tasks/task-cache";
+import { useCreateTask, useTasks } from "@/features/tasks/use-tasks";
 import { useNotifications } from "@/providers/notification-provider";
 import type {
   TaskFilters as TaskFilterValues,
@@ -45,6 +46,7 @@ function useDebouncedValue(value: string, delay: number) {
 
 interface DashboardPageProps {
   displayName: string;
+  userId?: string;
   initialOrganizer?: "folders" | "categories" | null;
   initialScope?: TaskScope;
   initialLayout?: "list" | "kanban" | "matrix";
@@ -75,7 +77,8 @@ const statusLabels: Record<TaskStatus, string> = {
 
 function DashboardContent({
   displayName,
-  initialScope = "all",
+  userId,
+  initialScope = "today",
   initialLayout = "list",
 }: DashboardPageProps) {
   const { addNotification } = useNotifications();
@@ -86,13 +89,16 @@ function DashboardContent({
   const [statusBarOpen, setStatusBarOpen] = useState(false);
   const [layout, setLayout] = useState<TaskView>(initialLayout);
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 250);
-  const effectiveFilters = { ...filters, search: debouncedSearch };
-  
+  // An empty search is left out so "Todas" shares its query (and cache) with
+  // the list used for the daily phrase instead of fetching the same rows twice.
+  const effectiveFilters = { ...filters, search: debouncedSearch || undefined };
+
   const tasksQuery = useTasks(effectiveFilters);
   const allTasksQuery = useTasks({ scope: "all" });
+  useTaskListCache(userId, effectiveFilters, tasksQuery.data);
+  useTaskListCache(userId, { scope: "all" }, allTasksQuery.data);
   const foldersQuery = useFolders();
   const categoriesQuery = useCategories();
-  useTasksRealtime();
 
   const folders = foldersQuery.data ?? [];
   const categories = categoriesQuery.data ?? [];
@@ -301,7 +307,10 @@ function DashboardContent({
             />
             <VoiceTaskButton
               inputId="quick-task-input"
-              onResult={(text) => setFilters((current) => ({ ...current, search: text }))}
+              // Dictation always gets the editable preview before anything is saved.
+              onResult={(text) =>
+                window.dispatchEvent(new CustomEvent("flowy:open-task-composer", { detail: { text } }))
+              }
             />
             <button
               type="button"

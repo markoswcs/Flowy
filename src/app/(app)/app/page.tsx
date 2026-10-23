@@ -49,11 +49,11 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   ]);
 
   if (!requestedView) {
-    requestedView = preferences?.default_task_view ?? "all";
+    requestedView = preferences?.default_task_view ?? "today";
   }
   const initialScope = allowedScopes.has(requestedView as TaskScope)
     ? (requestedView as TaskScope)
-    : "all";
+    : "today";
 
   const metadataName =
     typeof user?.user_metadata?.display_name === "string"
@@ -66,6 +66,7 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   return (
     <DashboardPage
       displayName={profile?.display_name || metadataName || emailName}
+      userId={user.id}
       initialOrganizer={initialOrganizer}
       initialScope={initialScope}
       initialLayout={

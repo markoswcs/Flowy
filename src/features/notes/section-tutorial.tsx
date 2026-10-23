@@ -9,6 +9,7 @@ import {
   type SceneId,
 } from "@/components/system/tutorial-scenes";
 import type { NoteSection } from "@/features/notes/note-sections";
+import { useIntroOffered } from "@/lib/intro-preferences";
 import { holdOverlay } from "@/lib/overlay";
 import { cn } from "@/lib/utils";
 
@@ -100,23 +101,8 @@ const STEPS: Record<NoteSection, Step[]> = {
   ],
 };
 
-const SEEN_PREFIX = "flowy:intro:";
-
-function readSeen(section: NoteSection): boolean {
-  try {
-    return window.localStorage.getItem(SEEN_PREFIX + section) === "1";
-  } catch {
-    return true;
-  }
-}
-
-function markSeen(section: NoteSection) {
-  try {
-    window.localStorage.setItem(SEEN_PREFIX + section, "1");
-  } catch {
-    // Private mode: the offer simply shows again next time.
-  }
-}
+// Where each section's "seen" flag lived before it moved to the account.
+const LEGACY_PREFIX = "flowy:intro:";
 
 function TutorialDialog({
   section,
@@ -235,26 +221,13 @@ function TutorialDialog({
 }
 
 /**
- * First visit to a section offers an optional tour; it can always be opened
- * again from the "Como funciona" button.
+ * First visit to a section offers an optional tour, once per account: "Ver
+ * tutorial" and "Agora não" both retire the offer on every device. The tour
+ * can always be opened again from the "Como funciona" button.
  */
 export function SectionTutorial({ section }: { section: NoteSection }) {
-  const [seen, setSeen] = useState<Record<string, boolean>>({});
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // Reading storage only after mount keeps server and client markup equal.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
-
-  const offered = mounted && !seen[section] && !readSeen(section);
-
-  function dismiss() {
-    markSeen(section);
-    setSeen((current) => ({ ...current, [section]: true }));
-  }
+  const [offered, dismiss] = useIntroOffered(`section:${section}`, [LEGACY_PREFIX + section]);
 
   return (
     <>

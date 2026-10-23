@@ -20,7 +20,7 @@ import {
 } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
 import { TaskList } from "@/features/tasks/components/task-list";
-import { useTasks, useTasksRealtime } from "@/features/tasks/use-tasks";
+import { useTasks } from "@/features/tasks/use-tasks";
 import { cn } from "@/lib/utils";
 
 export function CategoryPage({ categoryId }: { categoryId: string }) {
@@ -34,7 +34,6 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
   const restoreMutation = useRestoreCategory();
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState<string | null>(null);
-  useTasksRealtime();
 
   const category = categoryQuery.data;
   const categories = categoriesQuery.data ?? [];
@@ -62,7 +61,7 @@ export function CategoryPage({ categoryId }: { categoryId: string }) {
     deleteMutation.mutate(category.id, {
       onSuccess: () => {
         router.push("/app");
-        notify("Etiqueta movida para a lixeira", {
+        notify("Movida para a lixeira", {
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(category.id),

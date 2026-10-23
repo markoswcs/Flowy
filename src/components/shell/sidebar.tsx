@@ -21,6 +21,7 @@ import {
 } from "@/components/shell/navigation";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
+import { clearTaskCache } from "@/features/tasks/task-cache";
 import { cn, getInitials } from "@/lib/utils";
 
 export interface ShellFolder {
@@ -107,7 +108,7 @@ export function Sidebar({
       <div key={folder.id}>
         <div
           className={cn(
-            "group flex min-h-11 items-center rounded-2xl border transition-all duration-300 hover:scale-[1.01]",
+            "group flex min-h-11 items-center rounded-2xl border transition-colors duration-200",
             active
               ? "border-primary/30 bg-primary/10 text-foreground shadow-[0_0_18px_hsl(var(--primary)/0.16)]"
               : "border-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground",
@@ -122,11 +123,9 @@ export function Sidebar({
               aria-label={`${expanded ? "Recolher" : "Expandir"} ${folder.name}`}
               aria-expanded={expanded}
             >
-              {expanded ? (
-                <ChevronDown className="size-4" />
-              ) : (
-                <ChevronRight className="size-4" />
-              )}
+              <ChevronRight
+                className={cn("size-4 transition-transform duration-200", expanded && "rotate-90")}
+              />
             </button>
           ) : (
             <span className="w-8 shrink-0" />
@@ -161,7 +160,13 @@ export function Sidebar({
             <MoreVertical className="size-4" />
           </button>
         </div>
-        {expanded ? children.map((child) => renderFolder(child, depth + 1)) : null}
+        {children.length ? (
+          <div className="flowy-collapse" data-open={expanded} inert={!expanded}>
+            <div className="space-y-0.5 pt-0.5">
+              {children.map((child) => renderFolder(child, depth + 1))}
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   };
@@ -213,18 +218,18 @@ export function Sidebar({
 
         {!collapsed ? (
           <>
-            <div className="mt-8">
+            <div className="mt-6">
               <div className="mb-2 flex items-center justify-between px-2">
                 <button
                   type="button"
                   onClick={() => setIsFoldersOpen(!isFoldersOpen)}
+                  aria-expanded={isFoldersOpen}
                   className="flex flex-1 items-center gap-1.5 px-1 py-1 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground focus-visible:outline-none rounded-sm transition-colors"
                 >
-                  {isFoldersOpen ? (
-                    <ChevronDown className="size-3.5" />
-                  ) : (
-                    <ChevronRight className="size-3.5" />
-                  )}
+                  <ChevronRight
+                    className={cn("size-3.5 transition-transform duration-200", isFoldersOpen && "rotate-90")}
+                    aria-hidden="true"
+                  />
                   Pastas
                 </button>
                 <button
@@ -238,12 +243,8 @@ export function Sidebar({
                 </button>
               </div>
               
-              <div
-                className={cn(
-                  "space-y-0.5 overflow-hidden transition-all duration-300 px-3 -mx-3 py-1 -my-1",
-                  isFoldersOpen ? "max-h-[1000px] opacity-100 mt-2" : "max-h-0 opacity-0"
-                )}
-              >
+              <div className="flowy-collapse" data-open={isFoldersOpen} inert={!isFoldersOpen}>
+              <div className="-mx-3 space-y-0.5 px-3 py-1">
                 {(foldersByParent.get(null) ?? []).map((folder) =>
                   renderFolder(folder),
                 )}
@@ -253,20 +254,21 @@ export function Sidebar({
                   </p>
                 ) : null}
               </div>
+              </div>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-6">
               <div className="mb-2 flex items-center justify-between px-2">
                 <button
                   type="button"
                   onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+                  aria-expanded={isCategoriesOpen}
                   className="flex flex-1 items-center gap-1.5 px-1 py-1 text-left text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground focus-visible:outline-none rounded-sm transition-colors"
                 >
-                  {isCategoriesOpen ? (
-                    <ChevronDown className="size-3.5" />
-                  ) : (
-                    <ChevronRight className="size-3.5" />
-                  )}
+                  <ChevronRight
+                    className={cn("size-3.5 transition-transform duration-200", isCategoriesOpen && "rotate-90")}
+                    aria-hidden="true"
+                  />
                   Etiquetas
                 </button>
                 <button
@@ -280,12 +282,8 @@ export function Sidebar({
                 </button>
               </div>
 
-              <div
-                className={cn(
-                  "space-y-0.5 overflow-hidden transition-all duration-300 px-3 -mx-3 py-1 -my-1",
-                  isCategoriesOpen ? "max-h-[1000px] opacity-100 mt-2" : "max-h-0 opacity-0"
-                )}
-              >
+              <div className="flowy-collapse" data-open={isCategoriesOpen} inert={!isCategoriesOpen}>
+              <div className="-mx-3 space-y-0.5 px-3 py-1">
                 {categories.map((category) => {
                   const href = `/app/categories/${category.id}`;
                   const active = pathname === href;
@@ -296,7 +294,7 @@ export function Sidebar({
                         onClick={onNavigate}
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "group flex min-h-[40px] flex-1 items-center gap-3 rounded-2xl px-3 text-[13px] transition-all duration-300 hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border border-transparent",
+                          "group flex min-h-[40px] flex-1 items-center gap-3 rounded-2xl px-3 text-[13px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border border-transparent",
                           active
                             ? "bg-primary/10 text-foreground font-medium shadow-[0_0_15px_rgba(var(--primary),0.15)] border-primary/30"
                             : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
@@ -325,11 +323,13 @@ export function Sidebar({
                   );
                 })}
               </div>
+              </div>
             </div>
           </>
         ) : null}
 
-        <div className={cn("mt-8 space-y-0.5", collapsed && "mt-5")}>
+        {/* Lixeira and Configurações are housekeeping, set apart from the content. */}
+        <div className={cn("mt-6 space-y-0.5 border-t border-border/50 pt-4", collapsed && "mt-5")}>
           {secondaryNavigation.map((item) => (
             <NavLink
               key={item.href}
@@ -376,7 +376,7 @@ export function Sidebar({
             <Link
               href="/app/settings"
               onClick={onNavigate}
-              className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-2 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-all duration-300 hover:scale-[1.02] border border-transparent hover:border-white/5 hover:shadow-lg"
+              className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-2 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors duration-200 border border-transparent hover:border-white/5"
             >
               <span
                 className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent bg-cover bg-center text-[11px] font-bold shadow-sm"
@@ -398,7 +398,7 @@ export function Sidebar({
                 </span>
               </span>
             </Link>
-            <form action={signOutAction}>
+            <form action={signOutAction} onSubmit={clearTaskCache}>
               <Button
                 type="submit"
                 variant="ghost"

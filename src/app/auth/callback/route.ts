@@ -28,8 +28,13 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
+    // The code may have been used already (link opened twice) or started on
+    // another address; a person who is signed in anyway just goes on.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     return NextResponse.redirect(
-      new URL("/login?erro=link-expirado", url.origin),
+      new URL(user ? next : "/login?erro=link-expirado", url.origin),
     );
   }
 

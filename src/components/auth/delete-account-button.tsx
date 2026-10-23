@@ -6,6 +6,7 @@ import { useFormStatus } from "react-dom";
 
 import { deleteAccountAction } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
+import { clearTaskCache } from "@/features/tasks/task-cache";
 
 const confirmationPhrase = "EXCLUIR MINHA CONTA";
 
@@ -51,6 +52,7 @@ export function DeleteAccountButton({ showLabel = false }: { showLabel?: boolean
         >
           <form
             action={deleteAccountAction}
+            onSubmit={clearTaskCache}
             onMouseDown={(event) => event.stopPropagation()}
             className="w-full max-w-md rounded-xl border border-destructive/50 bg-card p-6 shadow-xl"
             aria-labelledby="delete-account-title"

@@ -8,7 +8,7 @@ import plugin from "tailwindcss/plugin";
 const enterAnimations = plugin(({ addUtilities, matchUtilities, theme }) => {
   addUtilities({
     ".animate-in": {
-      animation: "flowy-enter 360ms cubic-bezier(0.16, 1, 0.3, 1) both",
+      animation: "flowy-enter 240ms cubic-bezier(0.16, 1, 0.3, 1) both",
     },
     ".fade-in": { "--flowy-enter-opacity": "0" },
     ".zoom-in": { "--flowy-enter-scale": "0.6" },
@@ -36,6 +36,8 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/features/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/providers/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     container: {
@@ -111,7 +113,7 @@ const config: Config = {
       },
       animation: {
         "fade-in": "fade-in 160ms ease-out",
-        "slide-up-fade": "slide-up-fade 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "slide-up-fade": "slide-up-fade 240ms cubic-bezier(0.16, 1, 0.3, 1)",
         "scale-in": "scale-in 200ms ease-out",
       },
     },

@@ -23,6 +23,7 @@ interface Named {
 }
 
 interface PastTask {
+  id?: string;
   title: string;
   folder_id: string | null;
   status?: string;
@@ -44,9 +45,15 @@ export interface SmartTask {
   explicitCategoryIds: string[];
   /** A client named in the text that matches no folder. */
   unknownClient: string | null;
+  /** Part of the day said without a time ("amanhã de manhã"). */
+  period: TaskPeriod | null;
+  /** Steps listed in the request ("primeiro…, depois…, por fim…"). */
+  subtasks: string[];
   /** Doubts worth confirming before creating; empty when it is safe to create. */
   ambiguities: string[];
 }
+
+export type TaskPeriod = "madrugada" | "manhã" | "tarde" | "noite";
 
 // Openers that only say "make a task" and carry no meaning of their own.
 const PREAMBLES = [
@@ -119,7 +126,69 @@ const FILLER_START =
   /^(?:n[eé]|ent[aã]o|a[ií]|tipo(?:\s+assim)?|bom|olha|ok(?:ay)?|beleza|hum+|ahn|eh|t[aá]|ah|oi|ei)[,\s]+/i;
 const FILLER_END =
   /[,\s]+(?:n[eé]|sabe|t[aá]|ok|obrigad[oa]|valeu|por\s+favor|beleza)[.!?]?$/i;
-const FILLER_ANYWHERE = /\s(?:n[eé]|tipo\s+assim|hum+|ahn)(?=[\s,.!?])/gi;
+const FILLER_ANYWHERE =
+  /\s(?:n[eé]|tipo\s+assim|hum+|ahn|ah+|eh+|h[aã]+|uh+)(?=[\s,.!?])|,?\s+sabe(?=\s*[,.!?]|\s+(?:porque|pois)\b|\s*$)/gi;
+// Stutters and restarts: "é é preciso preciso revisar o contrato o contrato".
+const REPEATED = /(?<!\p{L})(\p{L}+(?:\s+\p{L}+)?)(?:\s+\1)+(?!\p{L})/giu;
+
+// "de manhã", "à tarde", "hoje à noite", "logo cedo".
+const PERIOD_PATTERN =
+  /[,;]?\s(?:(?:de|pela|na|a|à|durante\s+a)\s+(manh[aã]|tarde|noite|madrugada)|(?:logo|bem)\s+(cedo))(?=[\s,.;!?]|$)/i;
+
+// Spoken sequence of steps; two or more markers make a list of subtasks.
+const STEP_MARKER =
+  /(?:[,;.]\s*|\s)(?:e\s+)?(?:primeiro(?:amente)?|depois(?:\s+disso)?|em\s+seguida|por\s+fim|por\s+[uú]ltimo|finalmente|no\s+final)[,:]?\s+/gi;
+
+// Colloquial verbs that open a title, said the way a task list writes them.
+const TITLE_VERBS: [RegExp, string][] = [
+  [/^mandar\b/i, "Enviar"],
+  [/^botar\b/i, "Colocar"],
+  [/^dar\s+uma\s+olhada\s+(?:n[oa]s?|em)\b/i, "Revisar"],
+  [/^fazer\s+uma\s+liga[cç][aã]o\s+(?=para\b)/i, "Ligar "],
+];
+
+/** "pro João" → "para João", "pro contador" → "para o contador". */
+function formalPrepositions(text: string) {
+  return text
+    .replace(/\bpro\s+(?=\p{Lu})/gu, "para ")
+    .replace(/\bpros\b/gi, "para os")
+    .replace(/\bpras\b/gi, "para as")
+    .replace(/\bpro\b/gi, "para o")
+    .replace(/\bpra\b/gi, "para");
+}
+
+/** "aquele relatório" → "o relatório": the speaker's pointing adds nothing. */
+function plainArticles(text: string) {
+  return text.replace(
+    /\baquel([ea])(s?)\s+(?=\p{L})/giu,
+    (_, gender: string, plural: string) =>
+      `${gender.toLowerCase() === "e" ? "o" : "a"}${plural} `,
+  );
+}
+
+/** A title reads like a to-do: "Mandar o relatório pro João" → "Enviar relatório para João". */
+function polishTitle(text: string) {
+  // In a title the pointing word goes away entirely: "Enviar relatório".
+  let title = formalPrepositions(
+    text.replace(/\baquel[ea]s?\s+(?=\p{L})/giu, ""),
+  );
+  for (const [pattern, verb] of TITLE_VERBS) title = title.replace(pattern, verb);
+  return capitalize(tidy(title));
+}
+
+/** Splits "fazer X, primeiro A, depois B e por fim C" into X and [A, B, C]. */
+function splitSteps(text: string): [string, string[]] {
+  const markers = [...text.matchAll(STEP_MARKER)];
+  if (markers.length < 2) return [text, []];
+  const first = markers[0]!.index ?? 0;
+  if (text.slice(0, first).trim().split(/\s+/).length < 2) return [text, []];
+  const steps = text
+    .slice(first)
+    .split(STEP_MARKER)
+    .map((step) => tidy(step.replace(/[.!?]+$/, "")))
+    .filter(Boolean);
+  return [text.slice(0, first), steps];
+}
 
 function stripFillers(text: string) {
   let current = ` ${text} `.replace(FILLER_ANYWHERE, " ").trim();
@@ -231,13 +300,15 @@ export function interpretTask(
   now = new Date(),
 ): SmartTask {
   const ambiguities: string[] = [];
-  const raw = stripFillers(
+  const spoken = stripFillers(
     input
       .replace(/\s+/g, " ")
+      .replace(REPEATED, "$1")
       .replace(/(?:(?<=^|\s)(?:ao|à|a|as|às)\s+)?\bmeio[- ]dia\b/gi, "às 12h")
       .replace(/(?:(?<=^|\s)(?:à|a|as|às)\s+)?\bmeia[- ]noite\b/gi, "às 0h")
       .trim(),
   );
+  const [raw, rawSteps] = splitSteps(spoken);
 
   // 1. Split the request into its main sentence and the details after it.
   const labeled = raw.match(LABELED);
@@ -284,8 +355,7 @@ export function interpretTask(
   if (split && (split.index ?? 0) > 3) {
     const extra = head.slice((split.index ?? 0) + split[0].length);
     head = head.slice(0, split.index);
-    if (extra.trim())
-      cleanDetails.unshift(sentence(gerundToInfinitive(extra.trim())));
+    if (extra.trim()) cleanDetails.unshift(detailSentence(extra));
   } else if (!labeled) {
     const [main, extra] = splitSpoken(head);
     head = main;
@@ -317,7 +387,13 @@ export function interpretTask(
   // sexta") they are taken from there.
   const schedule = parseQuickTask(tidy(text), now);
   text = ` ${schedule.title} `.replace(/^\s*(?:de|para|pra|que|e)\s+/i, " ");
-  if (!schedule.due_date) {
+  if (schedule.due_date) {
+    // Another date in the details may be the one meant: ask instead of guessing.
+    const other = cleanDetails
+      .map((part) => parseQuickTask(part, now).due_date)
+      .find((date) => date && date !== schedule.due_date);
+    if (other) ambiguities.push("Mais de uma data foi mencionada.");
+  } else {
     for (let index = 0; index < cleanDetails.length; index += 1) {
       const found = parseQuickTask(cleanDetails[index]!, now);
       if (!found.due_date) continue;
@@ -325,6 +401,26 @@ export function interpretTask(
       schedule.due_time = found.due_time;
       cleanDetails[index] = sentence(found.title.replace(/[.!?]+$/, ""));
       break;
+    }
+  }
+
+  // Part of the day with no time: kept as such, never turned into an hour.
+  let period: TaskPeriod | null = null;
+  const takePeriod = (part: string) => {
+    const match = ` ${part} `.match(PERIOD_PATTERN);
+    if (!match) return part;
+    const word = normalize(match[1] ?? match[2] ?? "");
+    period =
+      word === "cedo" || word === "manha"
+        ? "manhã"
+        : (word as TaskPeriod);
+    return cut(` ${part} `, match);
+  };
+  if (!schedule.due_time) {
+    text = takePeriod(text);
+    for (let index = 0; !period && index < cleanDetails.length; index += 1) {
+      const rest = takePeriod(cleanDetails[index]!);
+      if (period) cleanDetails[index] = sentence(rest.replace(/[.!?]+$/, ""));
     }
   }
 
@@ -391,8 +487,8 @@ export function interpretTask(
     ]),
   ].slice(0, Math.max(3, explicitCategoryIds.length));
 
-  let title = capitalize(tidy(organized.title).replace(/[.!?]+$/, ""));
-  if (!title) title = capitalize(tidy(raw).replace(/[.!?]+$/, ""));
+  let title = polishTitle(tidy(organized.title).replace(/[.!?]+$/, ""));
+  if (!title) title = polishTitle(tidy(raw).replace(/[.!?]+$/, ""));
 
   // A long spoken run with no detail words: keep the action short and move
   // the rest ("…de vendas e enviar para a diretoria com…") to the details.
@@ -413,8 +509,11 @@ export function interpretTask(
   if (unknownClient)
     ambiguities.push(`Cliente “${unknownClient}” não tem pasta cadastrada.`);
   const wanted = normalize(title);
+  // A task still being saved (optimistic copy) is the one being created now,
+  // not an earlier one with the same title.
   const duplicate = history.find(
     (task) =>
+      !task.id?.startsWith("optimistic-") &&
       !task.deleted_at &&
       task.status !== "completed" &&
       normalize(task.title) === wanted,
@@ -422,9 +521,29 @@ export function interpretTask(
   if (duplicate)
     ambiguities.push("Já existe uma tarefa aberta com este título.");
 
+  const subtasks = rawSteps
+    .map((step) =>
+      capitalize(
+        tidy(
+          formalPrepositions(plainArticles(stripPreambles(takeFlags(step)))),
+        ),
+      ),
+    )
+    .filter(Boolean);
+  const notes = cleanDetails
+    .map((part) => formalPrepositions(plainArticles(part)))
+    .filter((part) => part.length > 1);
+  if (period) notes.push(`Período: ${period}.`);
+  const description = [
+    notes.join(" "),
+    subtasks.map((step) => `• ${step}`).join("\n"),
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   return {
     title,
-    description: cleanDetails.length ? cleanDetails.join(" ") : null,
+    description: description || null,
     due_date: dueDate,
     due_time: schedule.due_time,
     recurrence,
@@ -434,6 +553,8 @@ export function interpretTask(
     explicitFolder: explicitFolderId !== null || organized.explicitFolder,
     explicitCategoryIds,
     unknownClient,
+    period,
+    subtasks,
     ambiguities,
   };
 }
