@@ -18,7 +18,10 @@ vi.mock("@/features/tasks/use-tasks", () => ({
   useCreateTask: () => ({ mutate, isPending: false }),
   useTasks: () => ({ data: history }),
 }));
-vi.mock("@/providers/notification-provider", () => ({
+// Partial mock: tests share modules (isolate: false), so `toast` may already be
+// bound to this module; keeping the real `notify` stops it leaking elsewhere.
+vi.mock("@/providers/notification-provider", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/providers/notification-provider")>()),
   useNotifications: () => ({ addNotification: vi.fn() }),
 }));
 
