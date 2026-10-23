@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useEffect,
@@ -17,7 +18,6 @@ import { GlobalTaskComposer } from "@/components/system/global-task-composer";
 import { GlobalCreateButton } from "@/components/system/global-create-button";
 import { GlobalOrganizer } from "@/components/system/global-organizer";
 import { GlobalInstallPrompt } from "@/components/system/global-install-prompt";
-import { OnboardingTour } from "@/components/system/onboarding-tour";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useCategories } from "@/features/categories/use-categories";
@@ -34,6 +34,12 @@ interface AppShellProps {
   user?: ShellUser;
   showOnboarding?: boolean;
 }
+
+// Only new accounts (or "Como funciona") see the tour: load it just then.
+const OnboardingTour = dynamic(
+  () => import("@/components/system/onboarding-tour").then((mod) => mod.OnboardingTour),
+  { ssr: false },
+);
 
 const fallbackUser: ShellUser = { name: "Usuário", email: "" };
 const sidebarStorageKey = "flowy:sidebar-collapsed";
@@ -117,6 +123,8 @@ export function AppShell({
       syncPushSubscription().catch(() => {
         // Offline or blocked: tried again the next time the app opens.
       });
+      // Warm the task composer's code so the first "+" opens instantly.
+      void import("@/features/tasks/components/task-composer");
     }, 4000);
     return () => window.clearTimeout(timeout);
   }, []);

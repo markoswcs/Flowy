@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { Folder, Tag, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { CategoryManager } from "@/features/categories/components/category-manager";
-import { FolderManager } from "@/features/folders/components/folder-manager";
 import { cn } from "@/lib/utils";
 import { holdOverlay } from "@/lib/overlay";
+
+// Managers load only when the organizer opens.
+const CategoryManager = dynamic(
+  () => import("@/features/categories/components/category-manager").then((mod) => mod.CategoryManager),
+  { ssr: false },
+);
+const FolderManager = dynamic(
+  () => import("@/features/folders/components/folder-manager").then((mod) => mod.FolderManager),
+  { ssr: false },
+);
 
 export function GlobalOrganizer() {
   const [open, setOpen] = useState(false);

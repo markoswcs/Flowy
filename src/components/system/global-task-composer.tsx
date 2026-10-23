@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
-import { TaskComposer } from "@/features/tasks/components/task-composer";
 import { holdOverlay } from "@/lib/overlay";
+
+// Loaded when first opened (and warmed in the background by the app shell).
+const TaskComposer = dynamic(
+  () => import("@/features/tasks/components/task-composer").then((mod) => mod.TaskComposer),
+  { ssr: false, loading: () => <div className="h-64 rounded-3xl bg-card/80" /> },
+);
 
 export function GlobalTaskComposer() {
   const [open, setOpen] = useState(false);

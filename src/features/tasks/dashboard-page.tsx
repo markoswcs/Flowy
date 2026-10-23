@@ -1,8 +1,9 @@
 "use client";
 
 import { ReminderSetupCard } from "@/components/system/reminder-setup";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { AlertCircle, Calendar, CheckCircle2, Clock, CornerDownLeft, List, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, SlidersHorizontal, ListChecks, X } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle2, Clock, CornerDownLeft, List, Mic, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, SlidersHorizontal, ListChecks, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -12,16 +13,13 @@ import {
   useSmartTask,
   withDismissed,
 } from "@/features/tasks/components/smart-suggestions";
-import { VoiceTaskButton } from "@/features/tasks/components/voice-capture";
 import { BulkActionBar, TaskSelectionProvider, useTaskSelection } from "@/features/tasks/task-selection";
 
 import { Input } from "@/components/ui/input";
 import { GettingStarted } from "@/features/onboarding/getting-started";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
-import { TaskFilters } from "@/features/tasks/components/task-filters";
-import { TaskKanban } from "@/features/tasks/components/task-kanban";
-import { TaskMatrix } from "@/features/tasks/components/task-matrix";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TaskList } from "@/features/tasks/components/task-list";
 import { TaskViewSwitcher, type TaskView } from "@/features/tasks/components/task-view-switcher";
 import { buildDailyPhrase } from "@/features/tasks/daily-phrase";
@@ -34,6 +32,35 @@ import type {
   TaskScope,
   TaskStatus,
 } from "@/types/productivity";
+
+// Kanban (drag and drop), matrix and the filter panel are opened on demand, so
+// their code is only downloaded then instead of slowing every app launch.
+const boardSkeleton = () => <Skeleton className="h-80 w-full rounded-2xl" />;
+const TaskKanban = dynamic(
+  () => import("@/features/tasks/components/task-kanban").then((mod) => mod.TaskKanban),
+  { loading: boardSkeleton },
+);
+const TaskMatrix = dynamic(
+  () => import("@/features/tasks/components/task-matrix").then((mod) => mod.TaskMatrix),
+  { loading: boardSkeleton },
+);
+const TaskFilters = dynamic(() =>
+  import("@/features/tasks/components/task-filters").then((mod) => mod.TaskFilters),
+);
+
+// Speech recognition code arrives right after the page; until then the same
+// microphone icon holds its place so nothing shifts.
+const VoiceTaskButton = dynamic(
+  () => import("@/features/tasks/components/voice-capture").then((mod) => mod.VoiceTaskButton),
+  {
+    ssr: false,
+    loading: () => (
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground" aria-hidden="true">
+        <Mic className="size-4" />
+      </span>
+    ),
+  },
+);
 
 function useDebouncedValue(value: string, delay: number) {
   const [debounced, setDebounced] = useState(value);
