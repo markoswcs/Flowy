@@ -10,9 +10,10 @@ import type {
 } from "@/types/content";
 
 async function authenticatedUserId(client: SupabaseClient): Promise<string> {
-  const { data, error } = await client.auth.getUser();
-  if (error || !data.user) throw error ?? new Error("Sessão expirada.");
-  return data.user.id;
+  // Local session read; RLS still verifies the token on every request.
+  const { data, error } = await client.auth.getSession();
+  if (error || !data.session) throw error ?? new Error("Sessão expirada.");
+  return data.session.user.id;
 }
 
 export async function listBoards(client: SupabaseClient): Promise<Board[]> {

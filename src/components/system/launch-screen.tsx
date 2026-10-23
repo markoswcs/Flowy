@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "";
 
 /** Shortest time, from app launch, the screen stays up so it never just flickers. */
-const MIN_VISIBLE_MS = 900;
-const FADE_MS = 450;
+const MIN_VISIBLE_MS = 300;
+const FADE_MS = 220;
 
 /**
  * Opening screen of the installed app. It picks up where the system splash

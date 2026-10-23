@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import {
   type QueryKey,
   useMutation,
@@ -10,7 +9,6 @@ import {
 import { toast } from "@/lib/toast";
 import { notify } from "@/providers/notification-provider";
 
-import { createClient } from "@/lib/supabase/client";
 import { messageFromUnknownError } from "@/services/authenticated-client";
 import {
   createTask,
@@ -235,41 +233,4 @@ export function useRestoreCompletedTask() {
       void queryClient.invalidateQueries({ queryKey: ["trash"] });
     },
   });
-}
-
-export function useTasksRealtime() {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const supabase = createClient();
-    let active = true;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    void supabase.auth
-      .getUser()
-      .then(({ data }: { data: { user: { id: string } | null } }) => {
-        if (!active || !data.user) return;
-        channel = supabase
-          .channel(`tasks:${data.user.id}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "tasks",
-              filter: `user_id=eq.${data.user.id}`,
-            },
-            () => {
-              void queryClient.invalidateQueries({ queryKey: taskKeys.all });
-              void queryClient.invalidateQueries({ queryKey: ["trash"] });
-            },
-          )
-          .subscribe();
-      });
-
-    return () => {
-      active = false;
-      if (channel) void supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
 }

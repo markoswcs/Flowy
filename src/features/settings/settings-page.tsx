@@ -29,6 +29,7 @@ import { DeleteAccountButton } from "@/components/auth/delete-account-button";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { PushNotificationsSection } from "@/features/settings/push-notifications-section";
 import { normalizeThemePreference } from "@/lib/theme";
+import { clearTaskCache } from "@/features/tasks/task-cache";
 import { createClient } from "@/lib/supabase/client";
 import type { ThemePreference } from "@/types/content";
 
@@ -188,6 +189,7 @@ export function SettingsPage() {
       toast.error("Não foi possível sair.");
       return;
     }
+    clearTaskCache();
     router.replace("/login");
     router.refresh();
   }
@@ -379,7 +381,7 @@ export function SettingsPage() {
             <label className="text-sm font-medium">
               Visão inicial de tarefas
               <select
-                value={preferences.data?.default_task_view ?? "all"}
+                value={preferences.data?.default_task_view ?? "today"}
                 onChange={(event) =>
                   updatePreferences.mutate({
                     default_task_view: event.target.value as

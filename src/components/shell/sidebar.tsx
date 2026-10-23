@@ -21,6 +21,7 @@ import {
 } from "@/components/shell/navigation";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
+import { clearTaskCache } from "@/features/tasks/task-cache";
 import { cn, getInitials } from "@/lib/utils";
 
 export interface ShellFolder {
@@ -397,7 +398,7 @@ export function Sidebar({
                 </span>
               </span>
             </Link>
-            <form action={signOutAction}>
+            <form action={signOutAction} onSubmit={clearTaskCache}>
               <Button
                 type="submit"
                 variant="ghost"

@@ -26,9 +26,9 @@ export function RealtimeSync() {
     let channel: ReturnType<typeof client.channel> | null = null;
 
     client.auth
-      .getUser()
-      .then(({ data }: { data: { user: { id: string } | null } }) => {
-        const user = data.user;
+      .getSession()
+      .then(({ data }: { data: { session: { user: { id: string } } | null } }) => {
+        const user = data.session?.user;
         if (cancelled || !user) return;
         channel = client.channel(`flowy-sync:${user.id}`);
         Object.entries(tableQueryKeys).forEach(([table, keys]) => {

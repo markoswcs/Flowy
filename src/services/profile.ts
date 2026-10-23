@@ -12,8 +12,15 @@ export async function getCurrentUser(client: SupabaseClient): Promise<User> {
   return data.user;
 }
 
+/** Signed-in user from the local session, without an auth round trip. */
+async function sessionUser(client: SupabaseClient): Promise<User> {
+  const { data, error } = await client.auth.getSession();
+  if (error || !data.session) throw error ?? new Error("Sessão expirada.");
+  return data.session.user;
+}
+
 export async function getProfile(client: SupabaseClient): Promise<UserProfile> {
-  const user = await getCurrentUser(client);
+  const user = await sessionUser(client);
   const { data, error } = await client
     .from("profiles")
     .select("*")
@@ -27,7 +34,7 @@ export async function updateProfile(
   client: SupabaseClient,
   changes: Pick<Partial<UserProfile>, "display_name" | "avatar_url">,
 ): Promise<UserProfile> {
-  const user = await getCurrentUser(client);
+  const user = await sessionUser(client);
   const { data, error } = await client
     .from("profiles")
     .update(changes)
@@ -41,7 +48,7 @@ export async function updateProfile(
 export async function getPreferences(
   client: SupabaseClient,
 ): Promise<UserPreferences> {
-  const user = await getCurrentUser(client);
+  const user = await sessionUser(client);
   const { data, error } = await client
     .from("user_preferences")
     .select("*")
@@ -54,10 +61,13 @@ export async function getPreferences(
 export async function updatePreferences(
   client: SupabaseClient,
   changes: Partial<
-    Pick<UserPreferences, "theme" | "week_starts_on" | "default_task_view">
+    Pick<
+      UserPreferences,
+      "theme" | "week_starts_on" | "default_task_view" | "morning_digest"
+    >
   >,
 ): Promise<UserPreferences> {
-  const user = await getCurrentUser(client);
+  const user = await sessionUser(client);
   const { data, error } = await client
     .from("user_preferences")
     .update(changes)
@@ -72,7 +82,7 @@ export async function uploadAvatar(
   client: SupabaseClient,
   file: File,
 ): Promise<string> {
-  const user = await getCurrentUser(client);
+  const user = await sessionUser(client);
   const path = `${user.id}/avatar`;
   const { error } = await client.storage.from("avatars").upload(path, file, {
     upsert: true,
