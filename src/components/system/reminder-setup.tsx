@@ -1,15 +1,21 @@
 "use client";
 
 import { BellRing, Check, Download, Share, SquarePlus, X } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { TutorialScene } from "@/components/system/tutorial-scenes";
 import { usePushNotifications } from "@/features/settings/use-push-notifications";
 import { useInstallApp } from "@/hooks/use-install-app";
 import { holdOverlay } from "@/lib/overlay";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+
+// The illustrated steps only show inside the setup dialog.
+const TutorialScene = dynamic(
+  () => import("@/components/system/tutorial-scenes").then((mod) => mod.TutorialScene),
+  { ssr: false, loading: () => <div className="aspect-[4/3] w-full rounded-2xl bg-muted/40" /> },
+);
 
 const DISMISS_KEY = "flowy:reminder-setup-dismissed";
 /** A "Depois" hides the offer for a few days, then it comes back once more. */
