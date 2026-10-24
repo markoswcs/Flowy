@@ -15,6 +15,8 @@ interface DueReminder {
   user_id: string;
   title: string;
   due_time: string;
+  /** A repeating task left open on an earlier day: it shows under "Atrasadas". */
+  overdue?: boolean;
 }
 
 interface MorningDigestRow extends MorningDigest {
@@ -113,7 +115,7 @@ async function handle(request: NextRequest) {
         ...(await deliver(reminder.user_id, {
           title: `⏰ ${reminder.title}`,
           body: `Sua tarefa é agora, às ${reminder.due_time.slice(0, 5)}.`,
-          url: "/app?view=today",
+          url: reminder.overdue ? "/app?view=overdue" : "/app?view=today",
           tag: `task-${reminder.task_id}`,
         })),
       })),
