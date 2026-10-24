@@ -20,6 +20,11 @@ repositório (GitHub Private Vulnerability Reporting). Respondemos em até 7 dia
   (`security-extended`) rodam em cada push e PR.
 - Ao excluir a conta, o avatar e as imagens de diagramas do usuário são
   apagados do Storage antes do usuário.
+- O service worker guarda no aparelho uma cópia das páginas de `/app` para
+  abrir na hora; a sessão continua sendo conferida pelo servidor em cada
+  abertura. As cópias (e as listas salvas no `localStorage`) são apagadas ao
+  sair, ao excluir a conta, ao abrir `/login` e quando o servidor manda para
+  o login.
 
 ## Checklist do repositório no GitHub
 
