@@ -156,6 +156,49 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
   return ((data ?? []) as unknown as TaskJoinRow[]).map(normalizeTask);
 }
 
+export interface OpenTaskCounts {
+  total: number;
+  byFolder: Record<string, number>;
+  byCategory: Record<string, number>;
+}
+
+/** Open (not completed) tasks per folder and label, for the sidebar badges. */
+export async function countOpenTasks(): Promise<OpenTaskCounts> {
+  const { supabase, userId } = await getAuthenticatedClient();
+  const [tasks, taskCategories] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("folder_id")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .neq("status", "completed"),
+    // Only labels of open tasks count, matching the folder counts above,
+    // so this stays small instead of growing with every task ever tagged.
+    supabase
+      .from("task_categories")
+      .select("category_id, task:tasks!inner(id)")
+      .eq("user_id", userId)
+      .is("task.deleted_at", null)
+      .neq("task.status", "completed"),
+  ]);
+  if (tasks.error) throw tasks.error;
+  if (taskCategories.error) throw taskCategories.error;
+
+  const counts: OpenTaskCounts = { total: 0, byFolder: {}, byCategory: {} };
+  for (const task of tasks.data ?? []) {
+    counts.total += 1;
+    if (task.folder_id) {
+      counts.byFolder[task.folder_id] = (counts.byFolder[task.folder_id] ?? 0) + 1;
+    }
+  }
+  for (const row of taskCategories.data ?? []) {
+    if (row.category_id) {
+      counts.byCategory[row.category_id] = (counts.byCategory[row.category_id] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
 export const COMPLETED_VISIBLE_MS = 24 * 60 * 60 * 1000;
 
 export async function getTask(taskId: string): Promise<Task> {

@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   description: "Tarefas, notas e projetos em um só lugar.",
   applicationName: "Flowy",
   robots: { index: false, follow: false },
+  // public/sw.js compares this to tell when a saved page is from an older build.
+  other: {
+    "flowy-build": `${process.env.NEXT_PUBLIC_APP_COMMIT ?? ""}-${process.env.NEXT_PUBLIC_APP_BUILT_AT ?? ""}`,
+  },
 };
 
 export const viewport: Viewport = {
