@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
+import { clearDeviceCache } from "@/lib/device-cache";
 import type { Task, TaskFilters } from "@/types/productivity";
 
 import { localDateKey } from "./date-utils";
@@ -82,8 +83,12 @@ export function useTaskListCache(
   }, [key, tasks]);
 }
 
-/** Removes every cached list, so the next person on this device sees nothing. */
+/**
+ * Removes every cached list, the side menu copies and the offline pages, so
+ * the next person on this device sees nothing.
+ */
 export function clearTaskCache() {
+  clearDeviceCache();
   try {
     Object.keys(window.localStorage)
       .filter((key) => key.startsWith(PREFIX))

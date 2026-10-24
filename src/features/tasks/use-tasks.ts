@@ -11,6 +11,7 @@ import { notify } from "@/providers/notification-provider";
 
 import { messageFromUnknownError } from "@/services/authenticated-client";
 import {
+  countOpenTasks,
   createTask,
   getTask,
   listTasks,
@@ -56,6 +57,15 @@ export function useTasks(filters: TaskFilters = {}) {
     queryKey: taskKeys.list(filters),
     queryFn: () => listTasks(filters),
     staleTime: 20_000,
+  });
+}
+
+/** Sidebar badges. Under taskKeys.all, so every task change refreshes them. */
+export function useOpenTaskCounts() {
+  return useQuery({
+    queryKey: taskKeys.counts(),
+    queryFn: countOpenTasks,
+    staleTime: 30_000,
   });
 }
 

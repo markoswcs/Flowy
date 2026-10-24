@@ -20,19 +20,22 @@ import { GlobalOrganizer } from "@/components/system/global-organizer";
 import { GlobalInstallPrompt } from "@/components/system/global-install-prompt";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
-import { useCategories } from "@/features/categories/use-categories";
-import { useFolders } from "@/features/folders/use-folders";
+import { categoryKeys, useCategories } from "@/features/categories/use-categories";
+import { folderKeys, useFolders } from "@/features/folders/use-folders";
 import { syncPushSubscription } from "@/features/settings/use-push-notifications";
 import { useProfile } from "@/features/settings/use-settings";
+import { taskKeys } from "@/features/tasks/query-keys";
+import { useOpenTaskCounts } from "@/features/tasks/use-tasks";
+import { useDeviceCache } from "@/lib/device-cache";
 import { cn, getInitials } from "@/lib/utils";
 import { holdOverlay } from "@/lib/overlay";
 
 interface AppShellProps {
   children: ReactNode;
-  folders?: ShellFolder[];
-  categories?: ShellCategory[];
+  userId?: string;
   user?: ShellUser;
-  showOnboarding?: boolean;
+  /** The account already finished (or skipped) the tour. */
+  onboarded?: boolean;
 }
 
 // Only new accounts (or "Como funciona") see the tour: load it just then.
@@ -63,10 +66,9 @@ function getSidebarSnapshot() {
 
 export function AppShell({
   children,
-  folders = [],
-  categories = [],
+  userId,
   user = fallbackUser,
-  showOnboarding = false,
+  onboarded = true,
 }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -82,6 +84,13 @@ export function AppShell({
   const foldersQuery = useFolders();
   const categoriesQuery = useCategories();
   const profileQuery = useProfile();
+  const countsQuery = useOpenTaskCounts();
+  useDeviceCache("folders", userId, folderKeys.list(), foldersQuery.data);
+  useDeviceCache("categories", userId, categoryKeys.list(), categoriesQuery.data);
+  useDeviceCache("profile", userId, ["profile"], profileQuery.data);
+  useDeviceCache("task-counts", userId, taskKeys.counts(), countsQuery.data);
+  // New accounts with nothing to do yet get the tour, once the count is known.
+  const showOnboarding = !onboarded && countsQuery.data?.total === 0;
   const shellUser = useMemo(
     () => ({
       ...user,
@@ -90,32 +99,28 @@ export function AppShell({
     }),
     [profileQuery.data, user],
   );
-  const sidebarFolders = useMemo(() => {
-    if (!foldersQuery.data) return folders;
-    const taskCounts = new Map(
-      folders.map((folder) => [folder.id, folder.task_count]),
-    );
-    return foldersQuery.data.map((folder) => ({
-      id: folder.id,
-      name: folder.name,
-      color: folder.color,
-      icon: folder.icon,
-      parent_id: folder.parent_id,
-      task_count: taskCounts.get(folder.id) ?? 0,
-    }));
-  }, [folders, foldersQuery.data]);
-  const sidebarCategories = useMemo(() => {
-    if (!categoriesQuery.data) return categories;
-    const taskCounts = new Map(
-      categories.map((category) => [category.id, category.task_count]),
-    );
-    return categoriesQuery.data.map((category) => ({
-      id: category.id,
-      name: category.name,
-      color: category.color,
-      task_count: taskCounts.get(category.id) ?? 0,
-    }));
-  }, [categories, categoriesQuery.data]);
+  const sidebarFolders = useMemo<ShellFolder[]>(
+    () =>
+      (foldersQuery.data ?? []).map((folder) => ({
+        id: folder.id,
+        name: folder.name,
+        color: folder.color,
+        icon: folder.icon,
+        parent_id: folder.parent_id,
+        task_count: countsQuery.data?.byFolder[folder.id] ?? 0,
+      })),
+    [foldersQuery.data, countsQuery.data],
+  );
+  const sidebarCategories = useMemo<ShellCategory[]>(
+    () =>
+      (categoriesQuery.data ?? []).map((category) => ({
+        id: category.id,
+        name: category.name,
+        color: category.color,
+        task_count: countsQuery.data?.byCategory[category.id] ?? 0,
+      })),
+    [categoriesQuery.data, countsQuery.data],
+  );
 
   useEffect(() => {
     // After startup settles, so it never competes with the first paint.
