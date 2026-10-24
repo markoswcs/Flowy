@@ -37,6 +37,7 @@ async function tellClient(clientId, message) {
 }
 
 self.addEventListener('message', (event) => {
+  if (!event.origin || event.origin !== self.location.origin) return;
   if (event.data?.type !== 'flowy:ready' || !event.source) return;
   const message = pending.get(event.source.id);
   pending.delete(event.source.id);
