@@ -29,6 +29,28 @@ function isIos() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
 
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches;
+}
+
+const ASKED_KEY = "flowy:reminder-asked";
+
+function askedBefore(): boolean {
+  try {
+    return window.localStorage.getItem(ASKED_KEY) === "1";
+  } catch {
+    return true;
+  }
+}
+
+function markAsked() {
+  try {
+    window.localStorage.setItem(ASKED_KEY, "1");
+  } catch {
+    // Private mode: the card on the home screen still offers it.
+  }
+}
+
 function snoozed(): boolean {
   try {
     const at = Number(window.localStorage.getItem(DISMISS_KEY));
@@ -270,24 +292,125 @@ function SetupDialog({
 }
 
 /**
- * Home screen card for people who still don't get reminders: explains, in two
- * animated steps, installing the app and turning reminders on.
+ * Asked once, right after the installed app first opens: one tap turns
+ * reminders on. The browser's own permission prompt follows that tap.
+ */
+function AskOnceSheet({
+  push,
+  onDone,
+}: {
+  push: ReturnType<typeof usePushNotifications>;
+  onDone: () => void;
+}) {
+  useEffect(() => holdOverlay(), []);
+
+  async function enable() {
+    markAsked();
+    try {
+      await push.enable();
+      toast.success("Lembretes ativados");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível ativar.");
+    }
+    onDone();
+  }
+
+  function later() {
+    markAsked();
+    snooze();
+    onDone();
+  }
+
+  return createPortal(
+    <div className="fixed inset-0 z-[120] flex items-end justify-center p-3 sm:items-center" role="presentation">
+      <button
+        type="button"
+        aria-label="Fechar"
+        onClick={later}
+        className="flowy-glass-scrim absolute inset-0 animate-in fade-in"
+      />
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reminder-ask-title"
+        className="relative w-full max-w-sm animate-in rounded-3xl border border-border/60 bg-card p-5 text-center shadow-2xl fade-in slide-in-from-bottom-4"
+      >
+        <span className="mx-auto grid size-14 place-items-center rounded-2xl flowy-active">
+          <BellRing className="tut-swing-icon size-7" aria-hidden="true" />
+        </span>
+        <h2 id="reminder-ask-title" className="mt-4 text-lg font-semibold">
+          Quer que o Flowy te lembre?
+        </h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Um aviso na hora de cada tarefa e um resumo do dia às 8h. Dá para
+          desligar quando quiser em Configurações.
+        </p>
+        <div className="mt-5 grid gap-2">
+          <button
+            type="button"
+            onClick={() => void enable()}
+            disabled={push.busy}
+            className="min-h-12 rounded-2xl bg-primary text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-70"
+          >
+            Ativar lembretes
+          </button>
+          <button
+            type="button"
+            onClick={later}
+            className="min-h-11 rounded-2xl text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            Agora não
+          </button>
+        </div>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
+/**
+ * Home screen card for people who still don't get reminders. Where they can
+ * be turned on right here (installed app, computer) it is a one-tap "Ativar";
+ * elsewhere it explains, in two animated steps, installing and turning on.
  */
 export function ReminderSetupCard() {
   const push = usePushNotifications();
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(true);
+  const [direct, setDirect] = useState(false);
+  const [asking, setAsking] = useState(false);
 
   useEffect(() => {
     // Storage is read after mount so server and client markup match.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHidden(snoozed());
+    setDirect(isStandalone() || isDesktop());
   }, []);
 
   const needed =
     push.status !== "loading" &&
     push.status !== "enabled" &&
     push.status !== "unsupported";
+  const canEnableHere = direct && push.status === "disabled";
+
+  // The installed app asks once, a moment after it opens, unless something
+  // else (the welcome tour) is already on screen.
+  useEffect(() => {
+    if (push.status !== "disabled" || !isStandalone() || askedBefore() || snoozed()) return;
+    const timeout = window.setTimeout(() => {
+      if (!document.body.classList.contains("has-overlay")) setAsking(true);
+    }, 1500);
+    return () => window.clearTimeout(timeout);
+  }, [push.status]);
+
+  async function enableHere() {
+    try {
+      await push.enable();
+      toast.success("Lembretes ativados");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível ativar.");
+    }
+  }
 
   return (
     <>
@@ -301,17 +424,30 @@ export function ReminderSetupCard() {
               Receba lembretes no celular e no PC
             </strong>
             <span className="block text-muted-foreground">
-              2 passos em cada aparelho: instalar e ativar.
+              {canEnableHere
+                ? "Um toque e você recebe o aviso na hora de cada tarefa."
+                : "2 passos em cada aparelho: instalar e ativar."}
             </span>
           </p>
           <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="min-h-10 rounded-xl bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
-              Ver como
-            </button>
+            {canEnableHere ? (
+              <button
+                type="button"
+                onClick={() => void enableHere()}
+                disabled={push.busy}
+                className="min-h-10 rounded-xl bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-70"
+              >
+                Ativar
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="min-h-10 rounded-xl bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
+                Ver como
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -326,6 +462,9 @@ export function ReminderSetupCard() {
         </div>
       ) : null}
       {open ? <SetupDialog push={push} onClose={() => setOpen(false)} /> : null}
+      {asking && push.status === "disabled" ? (
+        <AskOnceSheet push={push} onDone={() => setAsking(false)} />
+      ) : null}
     </>
   );
 }
