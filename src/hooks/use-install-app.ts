@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useInstallApp() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  // The browser's prompt can be shown once per event; a second tap while it
+  // is open (or while Android builds the app) would only start another install.
+  const prompting = useRef(false);
 
   useEffect(() => {
     // Check if it's already installed
@@ -40,14 +43,22 @@ export function useInstallApp() {
   }, []);
 
   const installApp = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+    if (!deferredPrompt || prompting.current) return;
+    prompting.current = true;
+    const event = deferredPrompt;
+    setDeferredPrompt(null);
+    try {
+      await event.prompt();
+      const { outcome } = await event.userChoice;
       if (outcome === "accepted") {
         setIsInstallable(false);
         setIsInstalled(true);
       }
-      setDeferredPrompt(null);
+    } catch {
+      // The event was already used: Chrome sends a new one when install is possible again.
+      setIsInstallable(false);
+    } finally {
+      prompting.current = false;
     }
   };
 
