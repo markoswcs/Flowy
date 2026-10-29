@@ -8,7 +8,12 @@ vi.mock("@/lib/supabase/middleware", () => ({
 
 import { proxy } from "../../proxy";
 
-const old = (path: string) => new NextRequest(`https://flowy-mauve.vercel.app${path}`);
+// As on Vercel: the URL carries the deployment's host, the headers the typed one.
+const deploymentUrl = "https://flowy-abc123-markos-projects.vercel.app";
+const old = (path: string) =>
+  new NextRequest(`${deploymentUrl}${path}`, {
+    headers: { host: "flowy-mauve.vercel.app", "x-forwarded-host": "flowy-mauve.vercel.app" },
+  });
 
 describe("proxy on the retired address", () => {
   it("sends pages to the current address, keeping path and query", async () => {
@@ -23,7 +28,16 @@ describe("proxy on the retired address", () => {
   });
 
   it("leaves the current address alone", async () => {
-    const response = await proxy(new NextRequest("https://useflowy.vercel.app/app"));
+    const response = await proxy(
+      new NextRequest(`${deploymentUrl}/app`, { headers: { host: "useflowy.vercel.app" } }),
+    );
     expect(response.status).toBe(200);
+  });
+
+  it("matches the old address whatever the case or port", async () => {
+    const response = await proxy(
+      new NextRequest(`${deploymentUrl}/login`, { headers: { host: "Flowy-Mauve.vercel.app:443" } }),
+    );
+    expect(response.headers.get("location")).toBe("https://useflowy.vercel.app/login");
   });
 });

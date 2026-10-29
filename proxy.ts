@@ -9,10 +9,16 @@ import { updateSession } from "@/lib/supabase/middleware";
 const RETIRED_HOSTS = new Set(["flowy-mauve.vercel.app"]);
 const CURRENT_ORIGIN = "https://useflowy.vercel.app";
 
+/** The address the person typed. On Vercel, request.nextUrl carries the deployment's own host instead. */
+function requestedHost(request: NextRequest) {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.host;
+  return host.split(",")[0]!.trim().toLowerCase().replace(/:\d+$/, "");
+}
+
 export async function proxy(request: NextRequest) {
-  const { hostname, pathname, search } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
   if (
-    RETIRED_HOSTS.has(hostname) &&
+    RETIRED_HOSTS.has(requestedHost(request)) &&
     !pathname.startsWith("/api/") &&
     pathname !== "/sw.js"
   ) {
