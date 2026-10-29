@@ -6,7 +6,7 @@ vi.mock("@/lib/supabase/middleware", () => ({
   updateSession: vi.fn(() => new Response("session", { status: 200 })),
 }));
 
-import { proxy } from "../../proxy";
+import { proxy } from "@/proxy";
 
 // As on Vercel: the URL carries the deployment's host, the headers the typed one.
 const deploymentUrl = "https://flowy-abc123-markos-projects.vercel.app";
