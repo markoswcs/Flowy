@@ -6,12 +6,28 @@ const MAX_STATIC = 400;
 // `next dev` registers /sw.js?dev=1: its files change under the same names.
 const CACHING = !new URL(self.location.href).searchParams.has('dev');
 
+// Keep in sync with RETIRED_HOSTS in proxy.ts. A phone subscribed on an old
+// address and on the current one got every reminder twice; the worker on the
+// old address drops its subscription (the server then forgets it on the next
+// send), so reminders come only from the current address.
+const RETIRED = ['flowy-mauve.vercel.app'].includes(self.location.hostname);
+
+async function dropSubscription() {
+  const subscription = await self.registration.pushManager.getSubscription();
+  if (subscription) await subscription.unsubscribe();
+}
+
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      RETIRED ? dropSubscription().catch(() => undefined) : undefined,
+    ]),
+  );
 });
 
 /** Oldest entries go first: Cache Storage keeps insertion order. */
@@ -134,20 +150,26 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Flowy', {
-      body: data.body || '',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      tag: data.tag,
-      renotify: Boolean(data.tag),
-      data: { url: data.url || '/app' },
-    }),
+    Promise.all([
+      // A push must always show something, even on a retired address: this
+      // is the last one it gets.
+      self.registration.showNotification(data.title || 'Flowy', {
+        body: data.body || '',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: data.tag,
+        renotify: Boolean(data.tag),
+        data: { url: data.url || '/app' },
+      }),
+      RETIRED ? dropSubscription().catch(() => undefined) : undefined,
+    ]),
   );
 });
 
 // The browser may replace a subscription at any time. Subscribe again with the
 // same key right away; the app saves the new one on the account when it opens.
 self.addEventListener('pushsubscriptionchange', (event) => {
+  if (RETIRED) return;
   const options = event.oldSubscription && event.oldSubscription.options;
   if (!options || !options.applicationServerKey) return;
   event.waitUntil(
