@@ -109,7 +109,10 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
 
   switch (filters.scope) {
     case "today":
-      query = query.eq("due_date", today);
+      // Late tasks still to do belong to today too, so nothing falls behind unseen.
+      query = query.or(
+        `due_date.eq.${today},and(due_date.lt.${today},status.neq.completed)`,
+      );
       break;
     case "overdue":
       query = query.lt("due_date", today);

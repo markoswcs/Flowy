@@ -476,7 +476,8 @@ function DashboardContent({
               loading={tasksQuery.isLoading}
               error={tasksQuery.error}
               onRetry={() => tasksQuery.refetch()}
-              grouped={(filters.scope ?? "all") === "all" && !debouncedSearch}
+              // "Hoje" also brings late tasks, so it splits them out on top.
+              grouped={["all", "today"].includes(filters.scope ?? "all") && !debouncedSearch}
               emptyAction={
                 debouncedSearch ? null : (
                   <button
@@ -491,7 +492,9 @@ function DashboardContent({
               emptyTitle={
                 filters.scope === "completed"
                   ? "Nenhuma tarefa concluída."
-                  : "Você ainda não tem tarefas."
+                  : filters.scope === "today"
+                    ? "Nada para hoje nem atrasado."
+                    : "Você ainda não tem tarefas."
               }
               emptyDescription={
                 debouncedSearch
