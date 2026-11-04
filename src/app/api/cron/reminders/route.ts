@@ -4,19 +4,15 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { buildMorningDigest, type MorningDigest } from "@/lib/push/morning-digest";
+import { buildTaskReminder, type TaskReminder } from "@/lib/push/task-reminder";
 import { sendPush, type PushPayload, type StoredPushSubscription } from "@/lib/push/web-push";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-interface DueReminder {
-  task_id: string;
+interface DueReminder extends TaskReminder {
   user_id: string;
-  title: string;
-  due_time: string;
-  /** A repeating task left open on an earlier day: it shows under "Atrasadas". */
-  overdue?: boolean;
 }
 
 interface MorningDigestRow extends MorningDigest {
@@ -112,12 +108,7 @@ async function handle(request: NextRequest) {
     Promise.all(
       due.map(async (reminder) => ({
         id: reminder.task_id,
-        ...(await deliver(reminder.user_id, {
-          title: `⏰ ${reminder.title}`,
-          body: `Sua tarefa é agora, às ${reminder.due_time.slice(0, 5)}.`,
-          url: reminder.overdue ? "/app?view=overdue" : "/app?view=today",
-          tag: `task-${reminder.task_id}`,
-        })),
+        ...(await deliver(reminder.user_id, buildTaskReminder(reminder))),
       })),
     ),
     Promise.all(

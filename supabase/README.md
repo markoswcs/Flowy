@@ -37,6 +37,8 @@ A migration `20261015130000_add_task_push_reminders.sql` cria `push_subscription
 
 A mesma rota envia o **resumo da manhã** (migration `20261023130000_add_morning_digest.sql`): a partir das 8h no fuso de cada pessoa (janela até 11h), `claim_morning_digests()` marca de forma atômica `user_preferences.morning_digest_sent_on` e devolve quantas tarefas vencem hoje e quantas estão atrasadas — inclusive as sem horário — com os primeiros títulos. Quem não tem nada pendente não recebe push. A pessoa desliga em Configurações → Notificações (`user_preferences.morning_digest`). Se o envio falhar por instabilidade, a marcação é desfeita e o cron tenta de novo no minuto seguinte.
 
+Tarefas sem repetição que ficaram abertas depois do horário voltam a avisar a cada 24 horas ("atrasada há N dias"), por até 30 dias (`20261104140000_overdue_daily_reminders.sql`). Ao concluir uma tarefa repetida atrasada, ela vai para a primeira ocorrência depois de hoje, sem passar pelos dias perdidos (`next_repeat_date`, `20261104130000_skip_missed_repeats.sql`).
+
 Cada inscrição guarda a origem (endereço) em que foi feita (`push_subscriptions.origin`, migration `20261104120000_push_subscription_origin.sql`). Ao se inscrever num endereço, `register_push_subscription` remove a inscrição do mesmo navegador (mesma conta e user agent) feita em outro endereço, para o aparelho não receber cada aviso duas vezes depois de uma troca de domínio. Inscrições no mesmo endereço nunca são removidas.
 
 O job não faz nada enquanto os dois secrets abaixo não existirem no Vault. Depois de aplicar a migration, rode uma vez no SQL Editor do Supabase, usando a URL de produção e o mesmo valor de `CRON_SECRET` configurado na Vercel:
