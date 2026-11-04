@@ -75,6 +75,8 @@ async function registerSubscription(vapidKey: string) {
     p_auth: keys.auth,
     p_user_agent: navigator.userAgent,
     p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    // Lets the server drop this browser's subscription on another address.
+    p_origin: window.location.origin,
   });
   if (error) throw new Error("Não foi possível salvar este dispositivo.");
 }
