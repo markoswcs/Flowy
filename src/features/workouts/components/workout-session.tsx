@@ -1,15 +1,16 @@
 "use client";
 
-import { Check, ChevronDown, RefreshCw, SkipForward, Timer, Undo2 } from "lucide-react";
+import { Check, ChevronDown, Pencil, RefreshCw, SkipForward, Timer, Undo2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { notify } from "@/providers/notification-provider";
 import { cn } from "@/lib/utils";
 
+import { ExerciseFigure } from "../figure/exercise-figure";
 import { alternativesFor, formatDose, type PlannedExercise, type Session } from "../plan";
 import { FEELING_LABELS, type Feeling, type WorkoutLog, type WorkoutProfile } from "../types";
-import { useLogWorkout, useSwapExercise, useUndoWorkoutLog } from "../use-workouts";
+import { useLogWorkout, useSaveCustomSession, useSwapExercise, useUndoWorkoutLog } from "../use-workouts";
 
 const FEELING_MESSAGES: Record<Feeling, string> = {
   easy: "Boa! O próximo treino vai ser um pouco mais puxado.",
@@ -17,14 +18,42 @@ const FEELING_MESSAGES: Record<Feeling, string> = {
   hard: "Anotado: o próximo treino vai ser mais leve.",
 };
 
-function ExerciseRow({ item, profile, index }: { item: PlannedExercise; profile: WorkoutProfile; index: number }) {
+function ExerciseRow({
+  item,
+  profile,
+  index,
+  session,
+}: {
+  item: PlannedExercise;
+  profile: WorkoutProfile;
+  index: number;
+  session: Session;
+}) {
   const [open, setOpen] = useState(false);
   const [swapping, setSwapping] = useState(false);
   const swap = useSwapExercise();
+  const saveCustom = useSaveCustomSession();
+  const pending = swap.isPending || saveCustom.isPending;
   const alternatives = alternativesFor(item.exercise, profile);
   // The original exercise of this position, so swapping twice replaces the first swap.
   const original =
     Object.entries(profile.swaps).find(([, to]) => to === item.exercise.id)?.[0] ?? item.exercise.id;
+
+  function replaceWith(id: string) {
+    const done = { onSuccess: () => setSwapping(false) };
+    if (!session.custom) {
+      swap.mutate({ profile, from: original, to: id }, done);
+      return;
+    }
+    // An edited workout keeps its own list: change only this position.
+    const exercises = session.exercises.map(({ exercise, sets, amount, rest }, position) => ({
+      id: position === index ? id : exercise.id,
+      sets,
+      amount,
+      rest,
+    }));
+    saveCustom.mutate({ profile, key: session.key, exercises }, done);
+  }
 
   return (
     <li className="rounded-2xl border border-border/50 bg-background/40 p-3.5">
@@ -65,7 +94,8 @@ function ExerciseRow({ item, profile, index }: { item: PlannedExercise; profile:
       </div>
 
       {open ? (
-        <div className="mt-3 space-y-2 pl-11 text-sm animate-in fade-in slide-in-from-top-1">
+        <div className="mt-3 space-y-2 text-sm animate-in fade-in slide-in-from-top-1 sm:pl-11">
+          <ExerciseFigure exerciseId={item.exercise.id} name={item.exercise.name} className="mx-auto max-w-xs" />
           <ol className="list-decimal space-y-1 pl-4 text-muted-foreground">
             {item.exercise.steps.map((step) => (
               <li key={step}>{step}</li>
@@ -83,13 +113,8 @@ function ExerciseRow({ item, profile, index }: { item: PlannedExercise; profile:
               <button
                 key={alternative.id}
                 type="button"
-                disabled={swap.isPending}
-                onClick={() =>
-                  swap.mutate(
-                    { profile, from: original, to: alternative.id },
-                    { onSuccess: () => setSwapping(false) },
-                  )
-                }
+                disabled={pending}
+                onClick={() => replaceWith(alternative.id)}
                 className="rounded-full border border-border/60 px-3 py-1 text-xs font-medium hover:border-violet-400/60 hover:bg-violet-500/10"
               >
                 {alternative.name}
@@ -109,12 +134,14 @@ export function WorkoutSession({
   day,
   log,
   title = "Treino de hoje",
+  onEdit,
 }: {
   session: Session;
   profile: WorkoutProfile;
   day: string;
   log?: WorkoutLog;
   title?: string;
+  onEdit?: () => void;
 }) {
   const [askFeeling, setAskFeeling] = useState(false);
   const logWorkout = useLogWorkout();
@@ -142,8 +169,16 @@ export function WorkoutSession({
           <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground">
             <Timer className="size-4" aria-hidden="true" />
             ~{profile.minutes} min · {session.exercises.length} exercícios
+            {session.custom ? " · editado por você" : ""}
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        {onEdit ? (
+          <Button type="button" variant="outline" size="sm" onClick={onEdit} className="gap-1.5">
+            <Pencil className="size-3.5" />
+            Editar
+          </Button>
+        ) : null}
         {log ? (
           <span
             className={cn(
@@ -157,6 +192,7 @@ export function WorkoutSession({
               : "Pulado"}
           </span>
         ) : null}
+        </div>
       </header>
 
       <p className="mt-4 rounded-2xl bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground">
@@ -165,7 +201,7 @@ export function WorkoutSession({
 
       <ol className="mt-3 space-y-2">
         {session.exercises.map((item, index) => (
-          <ExerciseRow key={`${item.exercise.id}-${index}`} item={item} profile={profile} index={index} />
+          <ExerciseRow key={`${item.exercise.id}-${index}`} item={item} profile={profile} index={index} session={session} />
         ))}
       </ol>
 

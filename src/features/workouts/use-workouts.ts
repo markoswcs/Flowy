@@ -16,7 +16,7 @@ import {
 import { toast } from "@/lib/toast";
 
 import { nextIntensity } from "./plan";
-import type { Feeling, WorkoutProfile, WorkoutProfileInput } from "./types";
+import type { CustomExercise, Feeling, WorkoutProfile, WorkoutProfileInput } from "./types";
 
 export const workoutKeys = {
   all: ["workouts"] as const,
@@ -65,6 +65,32 @@ export function useSwapExercise() {
       updateWorkoutProfile({ swaps: { ...profile.swaps, [from]: to } }),
     onSuccess: (profile) => queryClient.setQueryData(workoutKeys.profile(), profile),
     onError: onError("Não foi possível trocar o exercício."),
+  });
+}
+
+/**
+ * Saves a workout edited by hand (its exercises, in order), or, with null,
+ * gives it back to the plan the Flowy builds.
+ */
+export function useSaveCustomSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      profile,
+      key,
+      exercises,
+    }: {
+      profile: WorkoutProfile;
+      key: string;
+      exercises: CustomExercise[] | null;
+    }) => {
+      const next = { ...(profile.custom_sessions ?? {}) };
+      if (exercises) next[key] = exercises;
+      else delete next[key];
+      return updateWorkoutProfile({ custom_sessions: next });
+    },
+    onSuccess: (profile) => queryClient.setQueryData(workoutKeys.profile(), profile),
+    onError: onError("Não foi possível salvar o treino."),
   });
 }
 

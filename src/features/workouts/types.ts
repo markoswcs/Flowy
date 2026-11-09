@@ -17,8 +17,20 @@ export interface WorkoutProfile {
   intensity: number;
   /** Exercises the person swapped: exercise id → replacement id. */
   swaps: Record<string, string>;
+  /** Workouts the person edited by hand: session key → its exercises, in order. */
+  custom_sessions: Record<string, CustomExercise[]>;
   created_at: string;
   updated_at: string;
+}
+
+/** One exercise of a workout edited by hand. */
+export interface CustomExercise {
+  id: string;
+  sets: number;
+  /** Repetitions, seconds or minutes, as the exercise's unit says. */
+  amount: number;
+  /** Rest between sets, in seconds. */
+  rest: number;
 }
 
 export type WorkoutProfileInput = Pick<
