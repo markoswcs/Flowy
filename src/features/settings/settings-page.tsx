@@ -6,6 +6,7 @@ import {
   Check,
   Loader2,
   LogOut,
+  Dumbbell,
   Sparkles,
 } from "lucide-react";
 import Image from "next/image";
@@ -231,6 +232,19 @@ export function SettingsPage() {
 
       <div className="space-y-10">
         <PushNotificationsSection />
+        <section aria-labelledby="modules-heading">
+          <h2 id="modules-heading" className="text-base font-semibold">Módulos</h2>
+          <SwitchRow
+            icon={<Dumbbell className="size-5" />}
+            title="Treinos"
+            description="Plano de treino montado para você, os dias em que treinou e como fazer cada exercício. Aparece no menu e no Hoje."
+            checked={preferences.data?.workouts_enabled === true}
+            disabled={!preferences.data || updatePreferences.isPending}
+            onToggle={() =>
+              updatePreferences.mutate({ workouts_enabled: !preferences.data?.workouts_enabled })
+            }
+          />
+        </section>
         <section aria-labelledby="motion-heading">
           <h2 id="motion-heading" className="text-base font-semibold">Movimento</h2>
           <SwitchRow

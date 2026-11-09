@@ -110,6 +110,8 @@ export interface UserPreferences {
   week_starts_on: 0 | 1;
   default_task_view: "all" | "today" | "upcoming";
   morning_digest: boolean;
+  /** Treinos module, off until the person turns it on. */
+  workouts_enabled: boolean;
   created_at: string;
   updated_at: string;
 }

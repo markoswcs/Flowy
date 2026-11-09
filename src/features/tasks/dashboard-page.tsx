@@ -17,6 +17,7 @@ import { BulkActionBar, TaskSelectionProvider, useTaskSelection } from "@/featur
 
 import { Input } from "@/components/ui/input";
 import { GettingStarted } from "@/features/onboarding/getting-started";
+import { TodayWorkoutCard } from "@/features/workouts/components/today-workout-card";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -436,6 +437,8 @@ function DashboardContent({
       </header>
 
       <GettingStarted />
+
+      {(filters.scope ?? "all") === "today" && !debouncedSearch ? <TodayWorkoutCard /> : null}
 
       <div className="space-y-4 sm:space-y-5">
 

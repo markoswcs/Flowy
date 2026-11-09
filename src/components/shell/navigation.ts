@@ -1,4 +1,5 @@
 import {
+  Dumbbell,
   Home,
   Network,
   NotebookPen,
@@ -22,6 +23,9 @@ export const mainNavigation: NavigationItem[] = [
   { label: "Mapas", href: SECTION_HREF.mapa, icon: Network },
   { label: "Desenhos", href: SECTION_HREF.desenho, icon: PenTool },
 ];
+
+/** Optional modules, listed only for people who turned them on. */
+export const workoutsNavigation: NavigationItem = { label: "Treinos", href: "/app/workouts", icon: Dumbbell };
 
 export const secondaryNavigation: NavigationItem[] = [
   { label: "Lixeira", href: "/app/trash", icon: Trash2 },
