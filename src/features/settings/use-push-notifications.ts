@@ -14,24 +14,40 @@ export type PushStatus =
   | "enabled";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-/** Set while the person wants reminders on this device, so a lost subscription is renewed. */
+/**
+ * "1" while the person wants reminders on this device, so a lost subscription
+ * is renewed; "0" once they turned them off here, so it never comes back alone.
+ */
 const WANTED_KEY = "flowy:push-wanted";
 
 function setWanted(wanted: boolean) {
   try {
-    if (wanted) window.localStorage.setItem(WANTED_KEY, "1");
-    else window.localStorage.removeItem(WANTED_KEY);
+    window.localStorage.setItem(WANTED_KEY, wanted ? "1" : "0");
   } catch {
     // Private mode: an existing subscription is still renewed on its own.
   }
 }
 
-function wanted() {
+function wantedChoice(): "yes" | "no" | "unknown" {
   try {
-    return window.localStorage.getItem(WANTED_KEY) === "1";
+    const value = window.localStorage.getItem(WANTED_KEY);
+    return value === "1" ? "yes" : value === "0" ? "no" : "unknown";
   } catch {
-    return false;
+    return "unknown";
   }
+}
+
+/**
+ * Whether the account still has a subscription saved for this browser. Turning
+ * reminders off deletes it, so one left over means the phone lost its
+ * subscription on its own (older installs never saved the choice above).
+ */
+async function serverExpectsThisDevice() {
+  const { count, error } = await createClient()
+    .from("push_subscriptions")
+    .select("endpoint", { count: "exact", head: true })
+    .eq("user_agent", navigator.userAgent);
+  return !error && (count ?? 0) > 0;
 }
 
 function isIos() {
@@ -93,8 +109,13 @@ export async function syncPushSubscription() {
     "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
   if (!supported || !VAPID_PUBLIC_KEY || Notification.permission !== "granted") return;
   const registration = await navigator.serviceWorker.ready;
-  // Never subscribe someone who turned reminders off here.
-  if (!(await registration.pushManager.getSubscription()) && !wanted()) return;
+  if (!(await registration.pushManager.getSubscription())) {
+    // The phone lost its subscription. Renew it unless the person turned
+    // reminders off here; never subscribe someone who chose that.
+    const choice = wantedChoice();
+    if (choice === "no") return;
+    if (choice === "unknown" && !(await serverExpectsThisDevice())) return;
+  }
   await registerSubscription(VAPID_PUBLIC_KEY);
 }
 

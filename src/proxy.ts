@@ -4,8 +4,9 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 // Addresses Flowy moved away from. Pages there go to the current address.
 // /api stays: the reminders cron still calls the old address. /sw.js stays so
-// the worker installed there keeps updating and delivering reminders; the
-// duplicate of a phone that subscribed on both addresses is removed by
+// the worker of an app installed there keeps updating: it keeps delivering
+// reminders and shows how to move to the new address (public/sw.js). The
+// duplicate of a phone subscribed on both addresses is removed by
 // register_push_subscription when it subscribes on the current one.
 const RETIRED_HOSTS = new Set(["flowy-mauve.vercel.app"]);
 const CURRENT_ORIGIN = "https://useflowy.vercel.app";
