@@ -63,7 +63,11 @@ export async function updatePreferences(
   changes: Partial<
     Pick<
       UserPreferences,
-      "theme" | "week_starts_on" | "default_task_view" | "morning_digest"
+      | "theme"
+      | "week_starts_on"
+      | "default_task_view"
+      | "morning_digest"
+      | "workouts_enabled"
     >
   >,
 ): Promise<UserPreferences> {

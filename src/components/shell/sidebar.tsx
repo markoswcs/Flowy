@@ -18,9 +18,11 @@ import { NavLink } from "@/components/shell/nav-link";
 import {
   mainNavigation,
   secondaryNavigation,
+  workoutsNavigation,
 } from "@/components/shell/navigation";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
+import { useWorkoutsEnabled } from "@/features/workouts/use-workouts";
 import { clearTaskCache } from "@/features/tasks/task-cache";
 import { cn, getInitials } from "@/lib/utils";
 
@@ -66,6 +68,7 @@ export function Sidebar({
   mobile = false,
 }: SidebarProps) {
   const pathname = usePathname();
+  const workouts = useWorkoutsEnabled();
   const [isFoldersOpen, setIsFoldersOpen] = useState(true);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(
@@ -206,7 +209,7 @@ export function Sidebar({
         className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-3 py-4"
       >
         <div className="space-y-1">
-          {mainNavigation.map((item) => (
+          {(workouts.enabled ? [...mainNavigation, workoutsNavigation] : mainNavigation).map((item) => (
             <NavLink
               key={item.href}
               item={item}

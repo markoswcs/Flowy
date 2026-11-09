@@ -8,6 +8,7 @@ import {
   Check,
   Columns3,
   Compass,
+  Dumbbell,
   Folder,
   Hash,
   Plus,
@@ -93,9 +94,9 @@ const spotSteps: SpotStep[] = [
   },
 ];
 
-type Phase = "welcome" | "theme" | "organize" | "task" | "spot" | "done";
+type Phase = "welcome" | "theme" | "organize" | "workouts" | "task" | "spot" | "done";
 
-const progressPhases: Phase[] = ["theme", "organize", "task", "spot"];
+const progressPhases: Phase[] = ["theme", "organize", "workouts", "task", "spot"];
 
 const themes: { value: ThemePreference; label: string; bg: string; card: string; accent: string }[] = [
   { value: "purple", label: "Roxo", bg: "#0d041e", card: "#1a1033", accent: "#8b5cf6" },
@@ -283,7 +284,8 @@ export function OnboardingTour({ name, replay = false, onClose }: OnboardingTour
         <WelcomeStep name={name} onStart={() => setPhase("theme")} onSkip={finish} />
       ) : null}
       {phase === "theme" ? <ThemeStep onNext={() => setPhase("organize")} onSkip={finish} /> : null}
-      {phase === "organize" ? <OrganizeStep onNext={() => setPhase("task")} onSkip={finish} /> : null}
+      {phase === "organize" ? <OrganizeStep onNext={() => setPhase("workouts")} onSkip={finish} /> : null}
+      {phase === "workouts" ? <WorkoutsStep onNext={() => setPhase("task")} onSkip={finish} /> : null}
       {phase === "task" ? (
         <TaskStep
           onNext={() => {
@@ -928,6 +930,39 @@ function DoneStep({ onFinish }: { onFinish: () => void }) {
         Começar a usar
         <ArrowRight className="size-4" />
       </Button>
+    </CenteredCard>
+  );
+}
+
+/** Treinos is optional: asked once here, and switchable later in Configurações. */
+function WorkoutsStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
+  const updatePreferences = useUpdatePreferences();
+
+  function answer(enabled: boolean) {
+    if (enabled) updatePreferences.mutate({ workouts_enabled: true });
+    onNext();
+  }
+
+  return (
+    <CenteredCard phase="workouts">
+      <StepHeader phase="workouts" label="Treinos" onSkip={onSkip} />
+      <span className="mt-4 grid size-12 place-items-center rounded-2xl flowy-active">
+        <Dumbbell className="size-6" aria-hidden="true" />
+      </span>
+      <h2 className="mt-3 text-xl font-bold tracking-tight">Quer acompanhar seus treinos também?</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        O Flowy monta um plano para você, mostra os dias em que treinou e explica cada exercício. Dá para ligar ou
+        desligar depois em Configurações.
+      </p>
+      <div className="mt-5 grid gap-2">
+        <Button type="button" onClick={() => answer(true)} className="h-12 w-full gap-2">
+          Sim, quero
+          <ArrowRight className="size-4" />
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => answer(false)} className="h-11 w-full">
+          Agora não
+        </Button>
+      </div>
     </CenteredCard>
   );
 }

@@ -50,6 +50,10 @@ select vault.create_secret('VALOR_DO_CRON_SECRET', 'flowy_cron_secret');
 
 Variáveis de ambiente do servidor (Vercel): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET` e `SUPABASE_SERVICE_ROLE_KEY`. `VAPID_SUBJECT` é opcional (padrão: `NEXT_PUBLIC_SITE_URL`). Gere um novo par VAPID com `npx web-push generate-vapid-keys`; trocar o par invalida as inscrições existentes. No iPhone, o push só funciona com o Flowy instalado na tela de início (iOS 16.4+).
 
+## Treinos (módulo opcional)
+
+`20261108120000_workouts.sql` cria `user_preferences.workouts_enabled` (desligado por padrão; ligado no tour de boas-vindas ou em Configurações → Módulos), `workout_profiles` (respostas do questionário, `intensity` ajustada por "fácil / na medida / difícil" e exercícios trocados) e `workout_logs` (um registro por dia: treinou ou pulou). O plano não é salvo: o app o monta por regras a partir do perfil (`src/features/workouts/plan.ts`).
+
 ## Aplicação
 
 Vincule o CLI ao projeto informado e aplique as migrations:
