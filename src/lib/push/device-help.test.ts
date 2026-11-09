@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { blockedHelp, deviceKind, installHelp, isInAppBrowser } from "./device-help";
+import {
+  blockedHelp,
+  deviceKind,
+  installHelp,
+  isInAppBrowser,
+  isPushServiceError,
+  pushServiceHelp,
+} from "./device-help";
 
 const IPHONE_SAFARI =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7 Mobile/15E148 Safari/604.1";
@@ -36,5 +43,20 @@ describe("device help", () => {
   it("asks to leave other apps first, then explains the iPhone home screen", () => {
     expect(installHelp("iphone", true)).toContain("Abrir no navegador");
     expect(installHelp("iphone", false)).toContain("Adicionar à Tela de Início");
+  });
+});
+
+describe("push service errors", () => {
+  it("recognizes the browser's push service failure", () => {
+    expect(isPushServiceError(new DOMException("Registration failed - push service error", "AbortError"))).toBe(true);
+    expect(isPushServiceError({ name: "Error", message: "Registration failed - push service error" })).toBe(true);
+    expect(isPushServiceError(new DOMException("Permission denied", "NotAllowedError"))).toBe(false);
+    expect(isPushServiceError(null)).toBe(false);
+  });
+
+  it("explains what to do on each browser", () => {
+    expect(pushServiceHelp(WINDOWS_CHROME, true)).toContain("Brave");
+    expect(pushServiceHelp(`${WINDOWS_CHROME} Electron/30.0`, false)).toContain("não tem serviço de lembretes");
+    expect(pushServiceHelp(WINDOWS_CHROME, false)).toContain("VPN");
   });
 });
