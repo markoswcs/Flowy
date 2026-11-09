@@ -33,8 +33,12 @@ export async function GET(request: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    // Not signed in. A password-reset link that failed says the link expired;
+    // anything else was a Google sign-in that did not finish, so the message
+    // says to try Google again.
+    const failure = next.startsWith("/redefinir-senha") ? "link-expirado" : "google";
     return NextResponse.redirect(
-      new URL(user ? next : "/login?erro=link-expirado", url.origin),
+      new URL(user ? next : `/login?erro=${failure}`, url.origin),
     );
   }
 

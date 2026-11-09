@@ -41,7 +41,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       : params.erro === "google"
         ? {
             status: "error" as const,
-            text: "Não foi possível entrar com o Google. Tente novamente.",
+            text: "O login com o Google não terminou. Toque de novo em Continuar com Google e escolha sua conta. No iPhone, faça isso pelo app na Tela de Início.",
           }
       : params.erro
         ? {
