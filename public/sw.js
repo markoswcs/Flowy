@@ -6,64 +6,12 @@ const MAX_STATIC = 400;
 // `next dev` registers /sw.js?dev=1: its files change under the same names.
 const CACHING = !new URL(self.location.href).searchParams.has('dev');
 
-// Keep in sync with RETIRED_HOSTS / CURRENT_ORIGIN in src/proxy.ts. An app
-// installed from an old address opened its saved copy forever and never got
-// updates; there the worker shows how to move instead (reminders keep coming).
-const CURRENT_ORIGIN = 'https://useflowy.vercel.app';
-const RETIRED = ['flowy-mauve.vercel.app'].includes(self.location.hostname);
-
-const MOVED_PAGE = `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0d041e"><title>O Flowy mudou de endereço</title>
-<style>
-body{margin:0;min-height:100dvh;background:#0d041e;color:#f4f0ff;font:16px/1.5 system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px max(20px,env(safe-area-inset-right)) 24px max(20px,env(safe-area-inset-left));box-sizing:border-box}
-main{max-width:420px;width:100%}
-h1{font-size:24px;line-height:1.25;margin:16px 0 8px}
-p{color:#c9bfe6;margin:0 0 16px}
-.logo{width:64px;height:64px;border-radius:18px}
-a.button{display:block;text-align:center;background:#8b5cf6;color:#fff;font-weight:600;text-decoration:none;padding:16px;border-radius:16px;margin:20px 0}
-section{background:#1a1033;border:1px solid #2e2150;border-radius:18px;padding:16px;margin-top:12px}
-h2{font-size:15px;margin:0 0 8px}
-ol{margin:0;padding-left:20px;color:#ddd5f5}li{margin:6px 0}
-small{display:block;color:#9d93bd;margin-top:16px}
-</style></head><body><main>
-<img class="logo" src="${CURRENT_ORIGIN}/icon-192.png" alt="">
-<h1>O Flowy mudou de endereço</h1>
-<p>Agora ele fica em <strong>useflowy.vercel.app</strong>. Suas tarefas e notas continuam lá: é só entrar com o mesmo e-mail ou com o Google.</p>
-<a class="button" href="${CURRENT_ORIGIN}/app" target="_blank" rel="noopener">Abrir o novo Flowy</a>
-<section><h2>No iPhone</h2><ol>
-<li>Toque no botão acima. Se abrir aqui dentro, toque em <strong>Abrir no Safari</strong>.</li>
-<li>No Safari, toque em <strong>Compartilhar</strong> (o quadrado com a seta para cima).</li>
-<li>Toque em <strong>Adicionar à Tela de Início</strong> e depois em <strong>Adicionar</strong>.</li>
-<li>Abra o Flowy pelo ícone novo, entre e toque em <strong>Ativar lembretes</strong>.</li>
-<li>Pode apagar este ícone antigo.</li></ol></section>
-<section><h2>No Android</h2><ol>
-<li>Toque no botão acima para abrir no Chrome.</li>
-<li>Toque em <strong>Instalar</strong> (ou no menu ⋮ → Instalar app).</li>
-<li>Abra o Flowy novo, entre e ative os lembretes.</li>
-<li>Pode desinstalar este app antigo.</li></ol></section>
-<small>Até lá, os lembretes continuam chegando por aqui.</small>
-</main></body></html>`;
-
-function movedPage() {
-  return new Response(MOVED_PAGE, {
-    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
-  });
-}
-
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    Promise.all([
-      self.clients.claim(),
-      // The saved pages of the old address would keep showing the old app.
-      RETIRED ? caches.delete(PAGE_CACHE) : undefined,
-    ]),
-  );
+  event.waitUntil(self.clients.claim());
 });
 
 /** Oldest entries go first: Cache Storage keeps insertion order. */
@@ -166,10 +114,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (request.mode !== 'navigate') return;
-  if (RETIRED) {
-    event.respondWith(movedPage());
-    return;
-  }
   if (url.pathname === '/app' || url.pathname.startsWith('/app/')) {
     event.respondWith(pageFromCache(event));
     return;
@@ -217,7 +161,6 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = new URL(event.notification.data?.url || '/app', self.location.origin).href;
-  // On the old address a tap shows how to move (the navigation gets the moved page).
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
