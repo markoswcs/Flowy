@@ -17,7 +17,7 @@ const MOVED_PAGE = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0d041e"><title>O Flowy mudou de endereço</title>
 <style>
-body{margin:0;min-height:100dvh;background:#0d041e;color:#f4f0ff;font:16px/1.5 system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px env(safe-area-inset-right) 24px env(safe-area-inset-left)}
+body{margin:0;min-height:100dvh;background:#0d041e;color:#f4f0ff;font:16px/1.5 system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px max(20px,env(safe-area-inset-right)) 24px max(20px,env(safe-area-inset-left));box-sizing:border-box}
 main{max-width:420px;width:100%}
 h1{font-size:24px;line-height:1.25;margin:16px 0 8px}
 p{color:#c9bfe6;margin:0 0 16px}
