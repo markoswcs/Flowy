@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Dumbbell, Flame, Minus, Moon, Settings2, SkipForward, X } from "lucide-react";
+import { Check, ChevronRight, Dumbbell, Flame, Minus, Moon, Pencil, Power, Settings2, SkipForward, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { useUpdatePreferences } from "@/features/settings/use-settings";
 import { localDateKey } from "@/features/tasks/date-utils";
 import { cn } from "@/lib/utils";
 
+import { WorkoutEditor } from "./components/workout-editor";
 import { WorkoutQuestionnaire } from "./components/questionnaire";
 import { WorkoutSession } from "./components/workout-session";
 import {
@@ -17,6 +18,7 @@ import {
   dayStatus,
   monthDays,
   sessionKeyFor,
+  sessionKeys,
   weekDays,
   type DayStatus,
 } from "./plan";
@@ -122,10 +124,10 @@ function MonthView({ profile, logs, today }: { profile: WorkoutProfile; logs: Ma
           );
         })}
       </div>
-      <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
+      <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-muted-foreground sm:flex sm:flex-wrap sm:gap-4">
         {legend.map((status) => (
           <span key={status} className="inline-flex items-center gap-1.5">
-            <span className={cn("size-3 rounded-full ring-1 ring-transparent", STATUS_STYLE[status].className)} />
+            <span className={cn("size-3 shrink-0 rounded-full ring-1 ring-transparent", STATUS_STYLE[status].className)} />
             {STATUS_STYLE[status].label}
           </span>
         ))}
@@ -145,8 +147,52 @@ function nextTraining(profile: WorkoutProfile, today: string) {
   return null;
 }
 
+/** Each workout of the week once, with the weekdays it falls on. */
+function WeekPlans({ profile, onEdit }: { profile: WorkoutProfile; onEdit: (key: string) => void }) {
+  const keys = sessionKeys(profile);
+  const days = [...new Set(profile.days)].sort((a, b) => a - b);
+  const byKey = new Map<string, number[]>();
+  days.forEach((weekday, index) => {
+    const key = keys[index % keys.length]!;
+    byKey.set(key, [...(byKey.get(key) ?? []), weekday]);
+  });
+  return (
+    <section className="rounded-3xl border border-border/60 bg-card/50 p-4 sm:p-6" aria-label="Seus treinos">
+      <h2 className="font-semibold">Seus treinos</h2>
+      <p className="mt-0.5 text-sm text-muted-foreground">Toque num treino para tirar, trocar ou adicionar exercícios.</p>
+      <ul className="mt-3 space-y-2">
+        {[...byKey].map(([key, weekdays]) => {
+          const session = buildSession(profile, key);
+          return (
+            <li key={key}>
+              <button
+                type="button"
+                onClick={() => onEdit(key)}
+                className="flex w-full items-center gap-3 rounded-2xl border border-border/50 bg-background/40 p-3 text-left transition-colors hover:border-violet-400/50 hover:bg-violet-500/5"
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-500/15 flowy-ink">
+                  <Pencil className="size-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium leading-snug">{session.name}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {weekdays.map((weekday) => WEEKDAY_SHORT[weekday]).join(", ")} · {session.exercises.length} exercícios
+                    {session.custom ? " · editado por você" : ""}
+                  </span>
+                </span>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 function Dashboard({ profile, logs }: { profile: WorkoutProfile; logs: WorkoutLog[] }) {
   const [editing, setEditing] = useState(false);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
   const update = useUpdatePreferences();
   const today = localDateKey();
   const byDay = useMemo(() => new Map(logs.map((log) => [log.day, log])), [logs]);
@@ -158,6 +204,20 @@ function Dashboard({ profile, logs }: { profile: WorkoutProfile; logs: WorkoutLo
 
   if (editing) {
     return <WorkoutQuestionnaire initial={profile} onSaved={() => setEditing(false)} onCancel={() => setEditing(false)} />;
+  }
+
+  if (editingKey) {
+    return (
+      <WorkoutEditor
+        key={editingKey}
+        session={buildSession(profile, editingKey)}
+        profile={profile}
+        onClose={() => {
+          setEditingKey(null);
+          window.scrollTo({ top: 0 });
+        }}
+      />
+    );
   }
 
   return (
@@ -176,7 +236,13 @@ function Dashboard({ profile, logs }: { profile: WorkoutProfile; logs: WorkoutLo
       <WeekStrip profile={profile} logs={byDay} today={today} />
 
       {todayKey ? (
-        <WorkoutSession session={buildSession(profile, todayKey)} profile={profile} day={today} log={byDay.get(today)} />
+        <WorkoutSession
+          session={buildSession(profile, todayKey)}
+          profile={profile}
+          day={today}
+          log={byDay.get(today)}
+          onEdit={() => setEditingKey(todayKey)}
+        />
       ) : (
         <section className="rounded-3xl border border-border/60 bg-card/50 p-5">
           <p className="flex items-center gap-2 font-semibold">
@@ -191,20 +257,23 @@ function Dashboard({ profile, logs }: { profile: WorkoutProfile; logs: WorkoutLo
         </section>
       )}
 
+      <WeekPlans profile={profile} onEdit={setEditingKey} />
+
       <MonthView profile={profile} logs={byDay} today={today} />
 
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" onClick={() => setEditing(true)} className="gap-2">
+      <div className="grid gap-2 sm:flex sm:flex-wrap">
+        <Button type="button" variant="outline" onClick={() => setEditing(true)} className="h-11 w-full gap-2 sm:w-auto">
           <Settings2 className="size-4" />
-          Ajustar plano
+          Ajustar plano (dias, objetivo, local)
         </Button>
         <Button
           type="button"
           variant="ghost"
           loading={update.isPending}
           onClick={() => update.mutate({ workouts_enabled: false })}
-          className="text-muted-foreground"
+          className="h-11 w-full gap-2 text-muted-foreground sm:w-auto"
         >
+          <Power className="size-4" />
           Desligar treinos
         </Button>
       </div>

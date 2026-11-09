@@ -7,6 +7,7 @@ import { buildSession } from "../plan";
 import type { WorkoutLog, WorkoutProfile } from "../types";
 
 const mutate = vi.fn();
+const saveCustom = vi.fn();
 let enabled = true;
 let logs: WorkoutLog[] = [];
 
@@ -23,6 +24,7 @@ const profile: WorkoutProfile = {
   limitations: [],
   intensity: 0,
   swaps: {},
+  custom_sessions: {},
   created_at: "2026-01-01T12:00:00Z",
   updated_at: "2026-01-01T12:00:00Z",
 };
@@ -34,6 +36,7 @@ vi.mock("../use-workouts", () => ({
   useWorkoutLogs: () => ({ data: logs, isLoading: false }),
   useLogWorkout: () => ({ mutate, isPending: false }),
   useSwapExercise: () => ({ mutate: vi.fn(), isPending: false }),
+  useSaveCustomSession: () => ({ mutate: saveCustom, isPending: false }),
   useUndoWorkoutLog: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
@@ -42,6 +45,7 @@ import { WorkoutSession } from "./workout-session";
 
 beforeEach(() => {
   mutate.mockReset();
+  saveCustom.mockReset();
   enabled = true;
   logs = [];
   currentProfile = profile;
@@ -91,5 +95,35 @@ describe("WorkoutSession", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Pular hoje/ }));
     expect(mutate.mock.calls[0]![0]).toMatchObject({ day: today, status: "skipped" });
+  });
+});
+
+describe("WorkoutEditor", () => {
+  it("takes an exercise out, adds one from the catalog and saves the list", async () => {
+    const { WorkoutEditor } = await import("./workout-editor");
+    const session = buildSession(profile, "full_a");
+    const onClose = vi.fn();
+    render(<WorkoutEditor session={session} profile={profile} onClose={onClose} />);
+
+    const first = session.exercises[0]!.exercise;
+    fireEvent.click(screen.getByRole("button", { name: `Tirar ${first.name}` }));
+    fireEvent.click(screen.getByRole("button", { name: /Adicionar exercício/ }));
+    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar exercício" }), { target: { value: "rosca" } });
+    fireEvent.click(screen.getByRole("button", { name: "Adicionar Rosca direta com halteres" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar treino" }));
+
+    const saved = saveCustom.mock.calls[0]![0] as { key: string; exercises: { id: string }[] };
+    expect(saved.key).toBe("full_a");
+    const ids = saved.exercises.map(({ id }) => id);
+    expect(ids).not.toContain(first.id);
+    expect(ids.at(-1)).toBe("dumbbell-curl");
+    expect(ids).toHaveLength(session.exercises.length);
+  });
+
+  it("shows how to do the exercise as a drawing", () => {
+    const session = buildSession(profile, "full_a");
+    render(<WorkoutSession session={session} profile={profile} day={today} />);
+    fireEvent.click(screen.getAllByRole("button", { name: /Como fazer/ })[0]!);
+    expect(screen.getAllByRole("img", { name: new RegExp(session.exercises[0]!.exercise.name.replace(/[()]/g, ".")) }).length).toBeGreaterThan(0);
   });
 });

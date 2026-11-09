@@ -10,7 +10,7 @@ import type { Feeling, WorkoutGoal, WorkoutLevel, WorkoutLog, WorkoutProfile } f
 type PlanProfile = Pick<
   WorkoutProfile,
   "goal" | "level" | "days" | "minutes" | "place" | "limitations" | "intensity" | "swaps"
->;
+> & { custom_sessions?: WorkoutProfile["custom_sessions"] };
 
 export interface PlannedExercise {
   exercise: Exercise;
@@ -25,6 +25,8 @@ export interface Session {
   key: string;
   name: string;
   exercises: PlannedExercise[];
+  /** The person edited this workout by hand. */
+  custom: boolean;
 }
 
 const TEMPLATES: Record<string, { name: string; slots: Slot[] }> = {
@@ -87,14 +89,15 @@ export function alternativesFor(exercise: Exercise, profile: PlanProfile): Exerc
 }
 
 function candidatesFor(slot: Slot, profile: PlanProfile) {
-  const bySlot = EXERCISES.filter((exercise) => exercise.slot === slot);
+  const bySlot = EXERCISES.filter((exercise) => exercise.slot === slot && !exercise.catalogOnly);
   const strict = bySlot.filter((exercise) => allowed(exercise, profile));
   if (strict.length) return strict;
   // Nothing fits the place: any place still respects level and pains.
   return bySlot.filter((exercise) => allowed(exercise, profile, false));
 }
 
-function dose(exercise: Exercise, profile: PlanProfile): Omit<PlannedExercise, "exercise"> {
+/** Sets, amount and rest the plan gives this exercise for this person. */
+export function dose(exercise: Exercise, profile: PlanProfile): Omit<PlannedExercise, "exercise"> {
   const level = LEVEL_NUMBER[profile.level];
   const intensity = profile.intensity;
   const rest = REST[profile.goal];
@@ -116,6 +119,18 @@ export function exerciseCount(minutes: number, slots: number) {
 export function buildSession(profile: PlanProfile, key: string): Session {
   const { template, variant } = parseKey(key);
   const { name, slots } = TEMPLATES[template] ?? TEMPLATES.full_a!;
+  const suffix = variant > 0 ? ` (variação ${variant + 1})` : "";
+
+  // Edited by hand: exactly what the person chose, in their order.
+  const custom = profile.custom_sessions?.[key];
+  if (custom) {
+    const exercises = custom.flatMap(({ id, sets, amount, rest }) => {
+      const exercise = EXERCISE_BY_ID.get(id);
+      return exercise ? [{ exercise, sets, amount, rest }] : [];
+    });
+    return { key, name: `${name}${suffix}`, exercises, custom: true };
+  }
+
   const used = new Set<string>();
   const occurrences = new Map<Slot, number>();
   const exercises: PlannedExercise[] = [];
@@ -135,8 +150,7 @@ export function buildSession(profile: PlanProfile, key: string): Session {
     exercises.push({ exercise, ...dose(exercise, profile) });
   }
 
-  const suffix = variant > 0 ? ` (variação ${variant + 1})` : "";
-  return { key, name: `${name}${suffix}`, exercises };
+  return { key, name: `${name}${suffix}`, exercises, custom: false };
 }
 
 function dateKey(date: Date) {

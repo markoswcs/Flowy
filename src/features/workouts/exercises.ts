@@ -1,7 +1,20 @@
 import type { Limitation, WorkoutPlace } from "./types";
 
 /** Movement a session asks for; any exercise of the same slot can replace another. */
-export type Slot = "squat" | "lunge" | "hinge" | "push" | "pull" | "core" | "cardio";
+export type Slot = "squat" | "lunge" | "hinge" | "push" | "pull" | "core" | "cardio" | "arms" | "calves";
+
+/** Groups of the catalog, in the order they are listed. */
+export const SLOT_LABELS: Record<Slot, string> = {
+  squat: "Pernas",
+  lunge: "Avanço e degrau",
+  hinge: "Glúteos e posterior",
+  push: "Peito e ombros",
+  pull: "Costas",
+  arms: "Braços",
+  calves: "Panturrilha",
+  core: "Abdômen",
+  cardio: "Cardio",
+};
 
 export interface Exercise {
   id: string;
@@ -16,6 +29,8 @@ export interface Exercise {
   unit: "reps" | "seconds" | "minutes";
   steps: string[];
   tip: string;
+  /** Only added by hand from the catalog: the automatic plan never picks it. */
+  catalogOnly?: true;
 }
 
 const ALL: WorkoutPlace[] = ["home", "gym", "outdoor"];
@@ -507,6 +522,231 @@ export const EXERCISES: Exercise[] = [
       "Levante e dê um pequeno salto com os braços para cima.",
     ],
     tip: "Tire o salto e a prancha para uma versão mais leve.",
+  },
+  // Só no catálogo: a pessoa adiciona quando quiser.
+  {
+    id: "barbell-squat",
+    name: "Agachamento com barra",
+    slot: "squat",
+    places: ["gym"],
+    level: 2,
+    avoid: ["knee", "back"],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Apoie a barra no alto das costas, abaixo da nuca, e segure firme.",
+      "Pés na largura dos ombros: desça levando o quadril para trás.",
+      "Desça até as coxas ficarem paralelas ao chão e suba empurrando o chão.",
+    ],
+    tip: "Peito aberto e olhar à frente durante todo o movimento.",
+  },
+  {
+    id: "leg-extension",
+    name: "Cadeira extensora",
+    slot: "squat",
+    places: ["gym"],
+    level: 1,
+    avoid: ["knee"],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Sente com as costas apoiadas e o rolo na frente dos tornozelos.",
+      "Estique as pernas até quase travar os joelhos.",
+      "Volte devagar, sem deixar o peso bater.",
+    ],
+    tip: "Segure nas alças para o quadril não sair do banco.",
+  },
+  {
+    id: "hip-thrust",
+    name: "Elevação pélvica com barra",
+    slot: "hinge",
+    places: ["gym"],
+    level: 2,
+    avoid: [],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Apoie o alto das costas num banco, barra sobre o quadril e pés no chão.",
+      "Suba o quadril até o corpo ficar reto dos ombros aos joelhos.",
+      "Aperte o glúteo em cima por um segundo e desça devagar.",
+    ],
+    tip: "Use uma almofada na barra para não machucar o quadril.",
+  },
+  {
+    id: "deadlift",
+    name: "Levantamento terra",
+    slot: "hinge",
+    places: ["gym"],
+    level: 3,
+    avoid: ["back"],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Pés sob a barra, na largura do quadril; segure a barra logo fora das pernas.",
+      "Coluna reta e peito aberto: levante empurrando o chão com as pernas.",
+      "Fique em pé com o quadril encaixado e desça a barra rente às pernas.",
+    ],
+    tip: "A barra sobe e desce encostando nas pernas, nunca longe do corpo.",
+  },
+  {
+    id: "barbell-bench-press",
+    name: "Supino reto com barra",
+    slot: "push",
+    places: ["gym"],
+    level: 2,
+    avoid: ["shoulder"],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Deite no banco com os olhos embaixo da barra e os pés firmes no chão.",
+      "Segure um pouco mais aberto que os ombros e desça a barra até o peito.",
+      "Empurre de volta até esticar os braços.",
+    ],
+    tip: "Com carga alta, peça para alguém ficar de olho na barra.",
+  },
+  {
+    id: "lateral-raise",
+    name: "Elevação lateral com halteres",
+    slot: "push",
+    places: ["gym", "home"],
+    level: 1,
+    avoid: ["shoulder"],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Em pé, um halter em cada mão ao lado do corpo.",
+      "Abra os braços para os lados até a altura dos ombros, cotovelos levemente dobrados.",
+      "Desça devagar.",
+    ],
+    tip: "Peso leve: o movimento é do ombro, sem jogar o corpo.",
+  },
+  {
+    id: "bent-over-row",
+    name: "Remada curvada com barra",
+    slot: "pull",
+    places: ["gym"],
+    level: 2,
+    avoid: ["back"],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Joelhos levemente dobrados, incline o tronco à frente com a coluna reta.",
+      "Puxe a barra até a barriga, levando os cotovelos para trás.",
+      "Desça a barra devagar até esticar os braços.",
+    ],
+    tip: "O tronco fica parado: só os braços se movem.",
+  },
+  {
+    id: "pull-up",
+    name: "Barra fixa",
+    slot: "pull",
+    places: ["gym", "outdoor"],
+    level: 3,
+    avoid: ["shoulder"],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Pendure-se na barra com as mãos um pouco mais abertas que os ombros.",
+      "Puxe o corpo até o queixo passar da barra.",
+      "Desça devagar até esticar os braços.",
+    ],
+    tip: "Ainda não consegue subir? Suba num banquinho e faça só a descida, bem devagar.",
+  },
+  {
+    id: "dumbbell-curl",
+    name: "Rosca direta com halteres",
+    slot: "arms",
+    places: ["gym", "home"],
+    level: 1,
+    avoid: [],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Em pé, um halter em cada mão, palmas para a frente.",
+      "Dobre os cotovelos levando os halteres até os ombros.",
+      "Desça devagar até esticar os braços.",
+    ],
+    tip: "Cotovelos colados ao corpo, sem balançar o tronco.",
+  },
+  {
+    id: "triceps-pushdown",
+    name: "Tríceps na polia",
+    slot: "arms",
+    places: ["gym"],
+    level: 1,
+    avoid: [],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "De frente para a polia, segure a barra ou a corda na altura do peito.",
+      "Empurre para baixo até esticar os braços.",
+      "Volte devagar até a altura do peito.",
+    ],
+    tip: "Só o antebraço se move: os cotovelos ficam parados ao lado do corpo.",
+  },
+  {
+    id: "bench-dip",
+    name: "Tríceps no banco",
+    slot: "arms",
+    places: ALL,
+    level: 2,
+    avoid: ["shoulder", "wrist"],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "De costas para um banco ou cadeira firme, apoie as mãos na borda.",
+      "Com as pernas à frente, desça dobrando os cotovelos.",
+      "Empurre de volta até esticar os braços.",
+    ],
+    tip: "Joelhos dobrados deixam mais leve; pernas esticadas, mais difícil.",
+  },
+  {
+    id: "calf-raise",
+    name: "Panturrilha em pé",
+    slot: "calves",
+    places: ALL,
+    level: 1,
+    avoid: [],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Em pé, apoie uma das mãos na parede para o equilíbrio.",
+      "Suba na ponta dos pés o mais alto que conseguir.",
+      "Desça devagar até apoiar os calcanhares.",
+    ],
+    tip: "Na beira de um degrau, o movimento fica maior.",
+  },
+  {
+    id: "crunch",
+    name: "Abdominal curto",
+    slot: "core",
+    places: ["home", "gym"],
+    level: 1,
+    avoid: [],
+    unit: "reps",
+    catalogOnly: true,
+    steps: [
+      "Deite de costas com os joelhos dobrados e os pés no chão.",
+      "Mãos ao lado da cabeça: tire os ombros do chão contraindo a barriga.",
+      "Desça devagar, sem encostar a cabeça.",
+    ],
+    tip: "Não puxe o pescoço: as mãos só apoiam a cabeça.",
+  },
+  {
+    id: "jump-rope",
+    name: "Pular corda",
+    slot: "cardio",
+    places: ALL,
+    level: 2,
+    avoid: ["knee"],
+    unit: "seconds",
+    catalogOnly: true,
+    steps: [
+      "Segure a corda com os cotovelos perto do corpo.",
+      "Gire a corda com os punhos e pule baixo, na ponta dos pés.",
+      "Pare quando cansar e retome no mesmo ritmo.",
+    ],
+    tip: "Sem corda? Faça o mesmo movimento só imaginando a corda.",
   },
 ];
 

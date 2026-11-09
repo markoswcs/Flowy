@@ -30,7 +30,7 @@ export async function saveWorkoutProfile(input: WorkoutProfileInput): Promise<Wo
 }
 
 export async function updateWorkoutProfile(
-  changes: Partial<Pick<WorkoutProfile, "intensity" | "swaps">>,
+  changes: Partial<Pick<WorkoutProfile, "intensity" | "swaps" | "custom_sessions">>,
 ): Promise<WorkoutProfile> {
   const { supabase, userId } = await getAuthenticatedClient();
   const { data, error } = await supabase

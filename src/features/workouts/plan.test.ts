@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { EXERCISE_BY_ID } from "./exercises";
+import { EXERCISE_BY_ID, EXERCISES } from "./exercises";
 import {
   alternativesFor,
   buildSession,
@@ -26,6 +26,7 @@ const profile: WorkoutProfile = {
   limitations: [],
   intensity: 0,
   swaps: {},
+  custom_sessions: {},
   created_at: "2026-11-01T12:00:00Z",
   updated_at: "2026-11-01T12:00:00Z",
 };
@@ -92,6 +93,39 @@ describe("buildSession", () => {
     const replacement = alternativesFor(original, profile)[0]!;
     const swapped = buildSession({ ...profile, swaps: { [original.id]: replacement.id } }, "full_a");
     expect(swapped.exercises[0]!.exercise.id).toBe(replacement.id);
+  });
+
+  it("uses a workout edited by hand exactly, in its order", () => {
+    const edited = buildSession(
+      {
+        ...profile,
+        custom_sessions: {
+          full_a: [
+            { id: "dumbbell-curl", sets: 4, amount: 12, rest: 60 },
+            { id: "removed-from-the-app", sets: 1, amount: 1, rest: 0 },
+            { id: "plank", sets: 2, amount: 45, rest: 30 },
+          ],
+        },
+      },
+      "full_a",
+    );
+    expect(edited.custom).toBe(true);
+    expect(edited.exercises.map(({ exercise }) => exercise.id)).toEqual(["dumbbell-curl", "plank"]);
+    expect(edited.exercises[0]).toMatchObject({ sets: 4, amount: 12, rest: 60 });
+    expect(buildSession(profile, "full_b").custom).toBe(false);
+  });
+
+  it("never puts catalog-only exercises in the automatic plan", () => {
+    const catalogOnly = new Set(EXERCISES.filter((exercise) => exercise.catalogOnly).map(({ id }) => id));
+    expect(catalogOnly.size).toBeGreaterThan(0);
+    for (const goal of ["gain_muscle", "lose_weight"] as const) {
+      for (const place of ["home", "gym", "outdoor"] as const) {
+        const someone = { ...profile, goal, place, level: "advanced" as const, minutes: 90, days: [0, 1, 2, 3, 4, 5, 6] };
+        for (const key of sessionKeys(someone)) {
+          for (const { exercise } of buildSession(someone, key).exercises) expect(catalogOnly.has(exercise.id)).toBe(false);
+        }
+      }
+    }
   });
 });
 

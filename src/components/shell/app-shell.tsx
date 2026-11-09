@@ -248,7 +248,7 @@ export function AppShell({
             "scrollbar-thin min-w-0 flex-1 overflow-x-hidden",
             isNoteEditor
               ? "overflow-hidden p-0"
-              : "overflow-y-auto overscroll-y-contain px-4 pb-32 pt-[4.75rem] sm:px-6 md:px-8 md:py-12 md:pb-8",
+              : "overflow-y-auto overscroll-y-contain px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] pt-[4.75rem] sm:px-6 md:px-8 md:py-12 md:pb-8",
           )}
         >
           <div
