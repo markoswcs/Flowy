@@ -77,6 +77,25 @@ async function getSiteUrl() {
   return requestHeaders.get("origin") || configured || "http://localhost:3000";
 }
 
+/**
+ * The address this request came in on. Google sign-in and password reset keep a
+ * security code (PKCE) in a cookie of that address, so the way back must land
+ * on the same one: sending it to the configured address broke the sign-in of
+ * anyone on another one (old or new address after a move, previews).
+ * Supabase still only accepts addresses on its redirect allow list.
+ */
+async function getRequestOrigin() {
+  const requestHeaders = await headers();
+  const host = (requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "")
+    .split(",")[0]!
+    .trim();
+  if (!host) return getSiteUrl();
+  const protocol =
+    requestHeaders.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+    (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+  return `${protocol}://${host}`;
+}
+
 export async function signInAction(
   _state: AuthActionState,
   formData: FormData,
@@ -133,7 +152,7 @@ export async function requestPasswordResetAction(
   if (!parsed.success) return validationError(parsed.error);
 
   const supabase = await createClient();
-  const siteUrl = await getSiteUrl();
+  const siteUrl = await getRequestOrigin();
   const { error } = await supabase.auth.resetPasswordForEmail(
     parsed.data.email,
     {
@@ -229,7 +248,7 @@ export async function signInWithGoogleAction(formData: FormData) {
     typeof formData.get("next") === "string" ? (formData.get("next") as string) : null,
   );
   const supabase = await createClient();
-  const siteUrl = await getSiteUrl();
+  const siteUrl = await getRequestOrigin();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
