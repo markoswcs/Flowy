@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { usePushNotifications } from "@/features/settings/use-push-notifications";
 import { useInstallApp } from "@/hooks/use-install-app";
 import { holdOverlay } from "@/lib/overlay";
+import { blockedHelp, installHelp, isInAppBrowser } from "@/lib/push/device-help";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -110,6 +111,7 @@ function SetupDialog({
 }) {
   const install = useInstallApp();
   const [ios] = useState(isIos);
+  const [inApp] = useState(() => isInAppBrowser(navigator.userAgent));
   const [desktop] = useState(isDesktop);
   const installed = install.isInstalled;
   const [index, setIndex] = useState(installed ? 1 : 0);
@@ -154,13 +156,21 @@ function SetupDialog({
         >
           <Download className="size-4" /> Instalar agora
         </button>
+      ) : inApp ? (
+        <p className="rounded-2xl bg-amber-500/10 px-3 py-2.5 text-sm text-amber-600 dark:text-amber-400">
+          {installHelp(ios ? "iphone" : "android", true)}
+        </p>
       ) : ios ? (
         <ol className="space-y-2">
           <Hint icon={<Share className="size-4" />}>
-            Toque em <strong>Compartilhar</strong> no Safari
+            No <strong>Safari</strong>, toque em <strong>Compartilhar</strong>: o quadrado com a seta para cima, na
+            barra de baixo (ou no botão <strong>⋯</strong>)
           </Hint>
           <Hint icon={<SquarePlus className="size-4" />}>
-            Escolha <strong>Adicionar à Tela de Início</strong>
+            Role e toque em <strong>Adicionar à Tela de Início</strong>, depois em <strong>Adicionar</strong>
+          </Hint>
+          <Hint icon={<Check className="size-4" />}>
+            Feche o Safari e abra o Flowy pelo <strong>ícone novo</strong> na Tela de Início
           </Hint>
         </ol>
       ) : desktop ? (
@@ -194,8 +204,7 @@ function SetupDialog({
         </p>
       ) : push.status === "denied" ? (
         <p className="rounded-2xl bg-amber-500/10 px-3 py-2.5 text-sm text-amber-600 dark:text-amber-400">
-          As notificações estão bloqueadas. Libere nas configurações do
-          navegador ou do aparelho.
+          As notificações estão bloqueadas. {blockedHelp(ios ? "iphone" : desktop ? "desktop" : "android")}
         </p>
       ) : push.status === "unsupported" ? (
         <p className="rounded-2xl bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">

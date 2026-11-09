@@ -7,16 +7,26 @@ import { Button } from "@/components/ui/button";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { usePushNotifications, type PushStatus } from "@/features/settings/use-push-notifications";
 import { usePreferences, useUpdatePreferences } from "@/features/settings/use-settings";
+import { blockedHelp, deviceKind, installHelp, isInAppBrowser } from "@/lib/push/device-help";
 
-const descriptions: Record<PushStatus, string> = {
-  loading: "Verificando este dispositivo…",
-  unsupported: "Este navegador não suporta notificações push.",
-  "needs-install":
-    "No iPhone, adicione o Flowy à tela de início (Compartilhar → Adicionar à Tela de Início) e abra por lá.",
-  denied: "As notificações foram bloqueadas. Libere nas configurações do navegador para este site.",
-  disabled: "Receba um aviso neste dispositivo na hora de cada tarefa com horário.",
-  enabled: "Este dispositivo recebe um aviso na hora de cada tarefa com horário.",
-};
+function describe(status: PushStatus): string {
+  // Statuses other than "loading" only exist in the browser.
+  const userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  const kind = deviceKind(userAgent);
+  switch (status) {
+    case "loading":
+      return "Verificando este dispositivo…";
+    case "unsupported":
+    case "needs-install":
+      return installHelp(kind, isInAppBrowser(userAgent));
+    case "denied":
+      return `As notificações estão bloqueadas neste aparelho. ${blockedHelp(kind)}`;
+    case "disabled":
+      return "Receba um aviso neste dispositivo na hora de cada tarefa com horário.";
+    case "enabled":
+      return "Este dispositivo recebe um aviso na hora de cada tarefa com horário.";
+  }
+}
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Algo deu errado.";
@@ -71,7 +81,7 @@ export function PushNotificationsSection() {
       <SwitchRow
         icon={<Bell className="size-5" />}
         title="Lembretes de tarefas"
-        description={descriptions[status]}
+        description={describe(status)}
         checked={enabled}
         disabled={!canToggle || busy}
         onToggle={toggle}
