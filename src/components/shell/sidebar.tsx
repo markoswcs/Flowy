@@ -21,10 +21,11 @@ import {
   workoutsNavigation,
 } from "@/components/shell/navigation";
 import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/avatar";
 import { Logo } from "@/components/ui/logo";
 import { useWorkoutsEnabled } from "@/features/workouts/use-workouts";
 import { clearTaskCache } from "@/features/tasks/task-cache";
-import { cn, getInitials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface ShellFolder {
   id: string;
@@ -350,16 +351,11 @@ export function Sidebar({
             <Link
               href="/app/settings"
               onClick={onNavigate}
-              className="flex size-9 items-center justify-center rounded-full bg-accent bg-cover bg-center text-[11px] font-bold shadow-soft focus-visible:ring-2 focus-visible:ring-ring"
-              style={
-                user.avatarUrl
-                  ? { backgroundImage: `url(${user.avatarUrl})` }
-                  : undefined
-              }
+              className="rounded-full shadow-soft focus-visible:ring-2 focus-visible:ring-ring"
               title={user.name}
               aria-label={`Configurações de ${user.name}`}
             >
-              {user.avatarUrl ? null : getInitials(user.name)}
+              <Avatar name={user.name} url={user.avatarUrl} className="size-9" />
             </Link>
             {!mobile ? (
               <Button
@@ -381,17 +377,7 @@ export function Sidebar({
               onClick={onNavigate}
               className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-2 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors duration-200 border border-transparent hover:border-white/5"
             >
-              <span
-                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent bg-cover bg-center text-[11px] font-bold shadow-sm"
-                style={
-                  user.avatarUrl
-                    ? { backgroundImage: `url(${user.avatarUrl})` }
-                    : undefined
-                }
-                aria-hidden="true"
-              >
-                {user.avatarUrl ? null : getInitials(user.name)}
-              </span>
+              <Avatar name={user.name} url={user.avatarUrl} className="size-9 shadow-sm" />
               <span className="min-w-0 text-left">
                 <span className="block truncate text-sm font-semibold text-foreground">
                   {user.name}

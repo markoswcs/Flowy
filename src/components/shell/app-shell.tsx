@@ -19,6 +19,7 @@ import { GlobalCreateButton } from "@/components/system/global-create-button";
 import { GlobalOrganizer } from "@/components/system/global-organizer";
 import { GlobalInstallPrompt } from "@/components/system/global-install-prompt";
 import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/avatar";
 import { Logo } from "@/components/ui/logo";
 import { categoryKeys, useCategories } from "@/features/categories/use-categories";
 import { folderKeys, useFolders } from "@/features/folders/use-folders";
@@ -27,7 +28,7 @@ import { useProfile } from "@/features/settings/use-settings";
 import { taskKeys } from "@/features/tasks/query-keys";
 import { useOpenTaskCounts } from "@/features/tasks/use-tasks";
 import { useDeviceCache } from "@/lib/device-cache";
-import { cn, getInitials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { holdOverlay } from "@/lib/overlay";
 
 interface AppShellProps {
@@ -233,10 +234,9 @@ export function AppShell({
               onClick={() => setMobileMenu({ open: true, pathname })}
               aria-label="Abrir menu"
               aria-expanded={mobileOpen}
-              className="grid size-9 place-items-center rounded-full bg-accent bg-cover bg-center text-[11px] font-bold ring-2 ring-border/60 transition-transform active:scale-90"
-              style={shellUser.avatarUrl ? { backgroundImage: `url(${shellUser.avatarUrl})` } : undefined}
+              className="rounded-full ring-2 ring-border/60 transition-transform active:scale-90"
             >
-              {shellUser.avatarUrl ? null : getInitials(shellUser.name)}
+              <Avatar name={shellUser.name} url={shellUser.avatarUrl} className="size-9" />
             </button>
           </header>
         ) : null}

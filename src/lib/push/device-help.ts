@@ -39,3 +39,21 @@ export function installHelp(kind: DeviceKind, inApp: boolean): string {
   }
   return "Este navegador não recebe notificações. Abra o Flowy no Chrome ou instale o app.";
 }
+
+/** The browser could not reach its push service (Chrome/Edge: "push service error"). */
+export function isPushServiceError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const { name, message } = error as { name?: unknown; message?: unknown };
+  return name === "AbortError" || (typeof message === "string" && /push service/i.test(message));
+}
+
+/** What to do when the browser cannot reach its push service. */
+export function pushServiceHelp(userAgent: string, brave: boolean): string {
+  if (brave) {
+    return "O Brave bloqueia os lembretes por padrão. Abra Configurações → Privacidade e segurança, ligue “Usar serviços do Google para mensagens push” e tente de novo.";
+  }
+  if (!/Chrome|Edg|Firefox|Safari/i.test(userAgent) || /Electron|Claude\//i.test(userAgent)) {
+    return "Este navegador não tem serviço de lembretes. Abra o Flowy no Chrome ou no Edge, ou pelo app instalado, e ative por lá.";
+  }
+  return "O navegador não conseguiu falar com o serviço de lembretes. Confira a internet, desligue VPN ou bloqueador de anúncios e tente de novo. Se continuar, use o Chrome ou o Edge atualizados.";
+}

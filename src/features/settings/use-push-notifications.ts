@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { isPushServiceError, pushServiceHelp } from "@/lib/push/device-help";
 import { urlBase64ToUint8Array } from "@/lib/push/vapid";
 import { createClient } from "@/lib/supabase/client";
 
@@ -70,15 +71,33 @@ async function detectStatus(): Promise<PushStatus> {
   return subscription && Notification.permission === "granted" ? "enabled" : "disabled";
 }
 
+/**
+ * Subscribes this browser. "Registration failed - push service error" means the
+ * browser could not reach its push service; a stale subscription is a common
+ * cause, so it is dropped and one more try made before explaining in Portuguese.
+ */
+async function subscribe(registration: ServiceWorkerRegistration, vapidKey: string) {
+  const options = { userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapidKey) };
+  try {
+    return await registration.pushManager.subscribe(options);
+  } catch (error) {
+    if (!isPushServiceError(error)) throw error;
+    await (await registration.pushManager.getSubscription())?.unsubscribe().catch(() => false);
+    await new Promise((resolve) => window.setTimeout(resolve, 800));
+    try {
+      return await registration.pushManager.subscribe(options);
+    } catch (retryError) {
+      if (!isPushServiceError(retryError)) throw retryError;
+      throw new Error(pushServiceHelp(navigator.userAgent, "brave" in navigator));
+    }
+  }
+}
+
 /** Saves this browser's subscription (creating it if needed) on the signed-in account. */
 async function registerSubscription(vapidKey: string) {
   const registration = await navigator.serviceWorker.ready;
   const subscription =
-    (await registration.pushManager.getSubscription()) ??
-    (await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidKey),
-    }));
+    (await registration.pushManager.getSubscription()) ?? (await subscribe(registration, vapidKey));
 
   const { endpoint, keys } = subscription.toJSON();
   if (!endpoint || !keys?.p256dh || !keys.auth) {

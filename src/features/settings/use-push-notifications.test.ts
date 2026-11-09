@@ -101,3 +101,42 @@ describe("syncPushSubscription", () => {
     expect(subscribe).not.toHaveBeenCalled();
   });
 });
+
+describe("enable when the push service fails", () => {
+  it("drops a stale subscription and tries once more", async () => {
+    subscribe
+      .mockRejectedValueOnce(new DOMException("Registration failed - push service error", "AbortError"))
+      .mockResolvedValueOnce(fakeSubscription);
+    (window as unknown as Record<string, unknown>).Notification = {
+      permission: "granted",
+      requestPermission: async () => "granted",
+    };
+    const { renderHook, act } = await import("@testing-library/react");
+    const { usePushNotifications } = await import("./use-push-notifications");
+    const { result } = renderHook(() => usePushNotifications());
+    await act(async () => {
+      await result.current.enable();
+    });
+    expect(subscribe).toHaveBeenCalledTimes(2);
+    expect(rpc).toHaveBeenCalledOnce();
+  });
+
+  it("explains in Portuguese when it keeps failing", async () => {
+    subscribe.mockRejectedValue(new DOMException("Registration failed - push service error", "AbortError"));
+    (window as unknown as Record<string, unknown>).Notification = {
+      permission: "granted",
+      requestPermission: async () => "granted",
+    };
+    const { renderHook, act } = await import("@testing-library/react");
+    const { usePushNotifications } = await import("./use-push-notifications");
+    const { result } = renderHook(() => usePushNotifications());
+    let message = "";
+    await act(async () => {
+      await result.current.enable().catch((error: Error) => {
+        message = error.message;
+      });
+    });
+    expect(message).toMatch(/serviço de lembretes/);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
