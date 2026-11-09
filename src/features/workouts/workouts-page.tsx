@@ -212,10 +212,7 @@ function Dashboard({ profile, logs }: { profile: WorkoutProfile; logs: WorkoutLo
         key={editingKey}
         session={buildSession(profile, editingKey)}
         profile={profile}
-        onClose={() => {
-          setEditingKey(null);
-          window.scrollTo({ top: 0 });
-        }}
+        onClose={() => setEditingKey(null)}
       />
     );
   }

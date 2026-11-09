@@ -173,7 +173,7 @@ export function WorkoutSession({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-        {onEdit && !log ? (
+        {onEdit ? (
           <Button type="button" variant="outline" size="sm" onClick={onEdit} className="gap-1.5">
             <Pencil className="size-3.5" />
             Editar

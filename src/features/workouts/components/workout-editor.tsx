@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Minus, Plus, RotateCcw, Trash2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { notify } from "@/providers/notification-provider";
@@ -48,8 +48,8 @@ function Stepper({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
+    <div className="flex items-center justify-between gap-2 sm:flex-col sm:justify-start sm:gap-1">
+      <span className="text-xs font-medium text-muted-foreground sm:text-[11px]">{label}</span>
       <div className="flex items-center rounded-full border border-border/60 bg-background/60">
         <button
           type="button"
@@ -97,6 +97,12 @@ export function WorkoutEditor({
   );
   const [picking, setPicking] = useState(false);
   const save = useSaveCustomSession();
+  const top = useRef<HTMLElement>(null);
+
+  // Opened from the bottom of the page: start at the title.
+  useEffect(() => {
+    top.current?.scrollIntoView?.({ block: "start" });
+  }, []);
 
   const added = useMemo(() => {
     const counts = new Map<string, number>();
@@ -146,7 +152,11 @@ export function WorkoutEditor({
   }
 
   return (
-    <section className="rounded-3xl border border-border/60 bg-card/50 p-4 sm:p-6" aria-label={`Editar ${session.name}`}>
+    <section
+      ref={top}
+      className="scroll-mt-24 rounded-3xl border border-border/60 bg-card/50 p-4 sm:p-6"
+      aria-label={`Editar ${session.name}`}
+    >
       <header className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest flowy-ink">Editar treino</p>
@@ -199,7 +209,7 @@ export function WorkoutEditor({
                     </button>
                   </div>
                 </div>
-                <div className={cn("mt-3 grid gap-2", continuous ? "grid-cols-1" : "grid-cols-3")}>
+                <div className={cn("mt-3 grid gap-1.5 sm:gap-2", continuous ? "sm:grid-cols-1" : "sm:grid-cols-3")}>
                   {continuous ? null : (
                     <Stepper label="Séries" value={item.sets} step={1} min={1} max={10} onChange={(sets) => change(item.uid, { sets })} />
                   )}
