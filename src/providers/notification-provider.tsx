@@ -28,7 +28,9 @@ type NotificationsContextValue = {
   addNotification: (notification: NewNotification) => void;
 };
 
-const NotificationsContext = createContext<NotificationsContextValue | null>(null);
+const NotificationsContext = createContext<NotificationsContextValue | null>(
+  null,
+);
 const notificationEvent = "flowy:add-notification";
 // One banner at a time: a new message replaces the current one.
 const VISIBLE = 1;
@@ -81,9 +83,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     (id: string) => {
       window.clearTimeout(timers.current.get(id));
       setItems((current) =>
-        current.map((item) => (item.id === id ? { ...item, leaving: true } : item)),
+        current.map((item) =>
+          item.id === id ? { ...item, leaving: true } : item,
+        ),
       );
-      timers.current.set(id, window.setTimeout(() => remove(id), EXIT_MS));
+      timers.current.set(
+        id,
+        window.setTimeout(() => remove(id), EXIT_MS),
+      );
     },
     [remove],
   );
@@ -92,7 +99,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     (notification: NewNotification) => {
       const tone = notification.tone ?? "success";
       const id = crypto.randomUUID();
-      const timeout = notification.action ? 6000 : tone === "error" ? 5000 : 2600;
+      const timeout = notification.action
+        ? 8000
+        : tone === "error"
+          ? 5000
+          : 2600;
       setItems((current) => {
         // The same message again only restarts the visible one's timer.
         const same = current.find(
@@ -103,15 +114,27 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         );
         if (same) {
           window.clearTimeout(timers.current.get(same.id));
-          timers.current.set(same.id, window.setTimeout(() => dismiss(same.id), timeout));
+          timers.current.set(
+            same.id,
+            window.setTimeout(() => dismiss(same.id), timeout),
+          );
           return current;
         }
-        const replaced = current.filter((item) => !item.leaving).slice(VISIBLE - 1);
-        replaced.forEach((item) => window.clearTimeout(timers.current.get(item.id)));
-        timers.current.set(id, window.setTimeout(() => dismiss(id), timeout));
+        const replaced = current
+          .filter((item) => !item.leaving)
+          .slice(VISIBLE - 1);
+        replaced.forEach((item) =>
+          window.clearTimeout(timers.current.get(item.id)),
+        );
+        timers.current.set(
+          id,
+          window.setTimeout(() => dismiss(id), timeout),
+        );
         return [
           { ...notification, tone, id },
-          ...current.filter((item) => !replaced.includes(item)).slice(0, VISIBLE - 1),
+          ...current
+            .filter((item) => !replaced.includes(item))
+            .slice(0, VISIBLE - 1),
         ];
       });
     },
@@ -130,70 +153,91 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   return (
     <NotificationsContext.Provider value={value}>
       {children}
-      <div
-        className="pointer-events-none fixed inset-x-0 top-[max(0.75rem,env(safe-area-inset-top))] z-[300] flex flex-col items-center gap-2 px-3"
-        aria-live="polite"
-        role="status"
-      >
-        {items.map((item) => {
-          const tone = item.tone ?? "success";
-          // Confirmations are a title only; errors keep the explanation.
-          const description = tone === "error" ? item.description : undefined;
-          return (
-            <div
-              key={item.id}
-              className={cn(
-                "flowy-toast pointer-events-auto flex max-w-[min(100%,26rem)] items-center gap-2.5 flowy-glass flowy-glass-strong rounded-full border py-1.5 pl-1.5 pr-1.5 text-card-foreground shadow-soft",
-                description && "rounded-2xl",
-                item.leaving && "flowy-toast-leave",
-              )}
-            >
-              <span
-                className={cn(
-                  "grid size-6 shrink-0 place-items-center rounded-full",
-                  tone === "error"
-                    ? "bg-destructive/15 text-destructive"
-                    : "flowy-active",
-                )}
-              >
-                {TONE_ICON[tone]}
-              </span>
-              <div className="min-w-0 flex-1 pr-1">
-                <p className="truncate text-sm font-medium">{item.title}</p>
-                {description ? (
-                  <p className="line-clamp-2 text-xs text-muted-foreground">{description}</p>
-                ) : null}
-              </div>
-              {item.action ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    item.action?.onClick();
-                    dismiss(item.id);
-                  }}
-                  className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold flowy-ink transition-colors hover:bg-primary/10"
+      {/* Plain confirmations at the top; anything with an action (Desfazer)
+          at the bottom, within thumb reach and above the mobile bar. */}
+      {(["top", "bottom"] as const).map((place) => {
+        const list = items.filter(
+          (item) => (item.action ? "bottom" : "top") === place,
+        );
+        return (
+          <div
+            key={place}
+            className={cn(
+              "pointer-events-none fixed inset-x-0 z-[300] flex flex-col items-center gap-2 px-3",
+              place === "top"
+                ? "top-[max(0.75rem,env(safe-area-inset-top))]"
+                : "bottom-[calc(6.5rem+env(safe-area-inset-bottom))] md:bottom-6",
+            )}
+            aria-live="polite"
+            role="status"
+          >
+            {list.map((item) => {
+              const tone = item.tone ?? "success";
+              // Confirmations are a title only; errors keep the explanation.
+              const description =
+                tone === "error" ? item.description : undefined;
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "flowy-toast pointer-events-auto flex max-w-[min(100%,26rem)] items-center gap-2.5 flowy-glass flowy-glass-strong rounded-full border py-1.5 pl-1.5 pr-1.5 text-card-foreground shadow-soft",
+                    description && "rounded-2xl",
+                    item.leaving && "flowy-toast-leave",
+                  )}
                 >
-                  {item.action.label}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => dismiss(item.id)}
-                className="grid size-6 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                aria-label="Fechar aviso"
-              >
-                <X className="size-3" />
-              </button>
-            </div>
-          );
-        })}
-      </div>
+                  <span
+                    className={cn(
+                      "grid size-6 shrink-0 place-items-center rounded-full",
+                      tone === "error"
+                        ? "bg-destructive/15 text-destructive"
+                        : "flowy-active",
+                    )}
+                  >
+                    {TONE_ICON[tone]}
+                  </span>
+                  <div className="min-w-0 flex-1 pr-1">
+                    <p className="truncate text-sm font-medium">{item.title}</p>
+                    {description ? (
+                      <p className="line-clamp-2 text-xs text-muted-foreground">
+                        {description}
+                      </p>
+                    ) : null}
+                  </div>
+                  {item.action ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        item.action?.onClick();
+                        dismiss(item.id);
+                      }}
+                      className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold flowy-ink transition-colors hover:bg-primary/10"
+                    >
+                      {item.action.label}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => dismiss(item.id)}
+                    className="grid size-6 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    aria-label="Fechar aviso"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
     </NotificationsContext.Provider>
   );
 }
 
 export function useNotifications() {
   const context = useContext(NotificationsContext);
-  if (!context) throw new Error("useNotifications must be used within NotificationProvider");
+  if (!context)
+    throw new Error(
+      "useNotifications must be used within NotificationProvider",
+    );
   return context;
 }

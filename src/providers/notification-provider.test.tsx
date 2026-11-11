@@ -42,4 +42,12 @@ describe("NotificationProvider", () => {
     act(() => vi.advanceTimersByTime(500));
     expect(screen.queryByText("Movida para a lixeira")).toBeNull();
   });
+
+  it("puts Desfazer at the bottom of the screen and the rest at the top", () => {
+    act(() => notify("Tarefa concluída", { action: { label: "Desfazer", onClick: vi.fn() } }));
+    const banner = screen.getByText("Tarefa concluída").closest('[role="status"]')!;
+    expect(banner.className).toContain("bottom-");
+    act(() => notify("Nota salva"));
+    expect(screen.getByText("Nota salva").closest('[role="status"]')!.className).toContain("top-");
+  });
 });

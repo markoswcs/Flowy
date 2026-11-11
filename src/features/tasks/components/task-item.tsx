@@ -18,7 +18,7 @@ import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
-import { formatTaskDate, relativeTaskDate } from "@/features/tasks/date-utils";
+import { relativeTaskDate } from "@/features/tasks/date-utils";
 import { RecurrenceDaysPicker } from "@/features/tasks/components/recurrence-days-picker";
 import { TaskActionSheet } from "@/features/tasks/components/task-action-sheet";
 import { TaskScheduleFields } from "@/features/tasks/components/task-schedule-fields";
@@ -357,42 +357,39 @@ export function TaskItem({
 
   function toggleCompleted() {
     const nextCompleted = !completed;
+    const saving = updateMutation.mutateAsync({
+      id: task.id,
+      status: nextCompleted ? "completed" : "todo",
+      completed_at: nextCompleted ? new Date().toISOString() : null,
+    });
 
-    saveTask();
+    if (!nextCompleted) {
+      saving.then(() => addNotification({ title: "Tarefa reaberta", description: task.title })).catch(() => undefined);
+      return;
+    }
 
-    function saveTask() {
-    updateMutation.mutate(
-      {
-        id: task.id,
-        status: nextCompleted ? "completed" : "todo",
-        completed_at: nextCompleted ? new Date().toISOString() : null,
-      },
-      {
-        onSuccess: (updatedTask) => {
-          if (!nextCompleted) {
-            addNotification({ title: "Tarefa reaberta", description: task.title });
-            return;
-          }
-          if (task.recurrence) {
-            const nextDate = formatTaskDate(updatedTask.due_date);
-            addNotification({ title: "Próxima ocorrência agendada", description: `${recurrenceLabel(task.recurrence, task.recurrence_days)}${
-                nextDate ? ` • ${nextDate}` : ""
-              }${updatedTask.due_time ? ` às ${updatedTask.due_time.slice(0, 5)}` : ""}` });
-            return;
-          }
-          addNotification({
-            title: "Tarefa concluída",
-            description: task.title,
-            action: {
-              label: "Desfazer",
-              onClick: () =>
-                updateMutation.mutate({ id: task.id, status: "todo", completed_at: null }),
-            },
-          });
+    // The undo shows right away, at the bottom, so a slip of the finger is
+    // one tap away from being fixed. It waits for the save before reverting.
+    // A repeating task moved to its next date: undoing puts the old date back.
+    addNotification({
+      title: task.recurrence ? "Feita! Próxima vez agendada" : "Tarefa concluída",
+      description: task.title,
+      action: {
+        label: "Desfazer",
+        onClick: () => {
+          void saving
+            .then(() =>
+              updateMutation.mutateAsync({
+                id: task.id,
+                status: "todo",
+                completed_at: null,
+                ...(task.recurrence ? { due_date: task.due_date, due_time: task.due_time } : {}),
+              }),
+            )
+            .catch(() => undefined);
         },
       },
-    );
-    }
+    });
   }
 
   function moveToTrash() {
