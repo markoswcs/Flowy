@@ -85,7 +85,7 @@ function StreakChip() {
       >
         <Flame className="size-4" aria-hidden="true" />
         {days === 0
-          ? "Conclua uma tarefa para começar sua sequência"
+          ? "Comece sua sequência hoje"
           : `${days} ${days === 1 ? "dia seguido" : "dias seguidos"}`}
       </span>
       {golden ? (
