@@ -29,7 +29,6 @@ import { optimizeImage } from "@/lib/image-optimizer";
 import { DeleteAccountButton } from "@/components/auth/delete-account-button";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { PushNotificationsSection } from "@/features/settings/push-notifications-section";
-import { WhatsAppSection } from "@/features/settings/whatsapp-section";
 import { normalizeThemePreference } from "@/lib/theme";
 import { clearTaskCache } from "@/features/tasks/task-cache";
 import { createClient } from "@/lib/supabase/client";
@@ -233,7 +232,6 @@ export function SettingsPage() {
 
       <div className="space-y-10">
         <PushNotificationsSection />
-        <WhatsAppSection />
         <section aria-labelledby="modules-heading">
           <h2 id="modules-heading" className="text-base font-semibold">Módulos</h2>
           <SwitchRow
