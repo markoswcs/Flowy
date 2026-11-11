@@ -15,6 +15,33 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: '#0d041e',
     theme_color: '#0d041e',
     prefer_related_applications: false,
+    // Long-press the app icon (Android, Windows, Mac) to jump straight in.
+    shortcuts: [
+      {
+        name: 'Nova tarefa',
+        short_name: 'Nova tarefa',
+        url: '/app?view=today&nova=1',
+        icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+      },
+      {
+        name: 'Falar uma tarefa',
+        short_name: 'Falar',
+        url: '/app?view=today&nova=voz',
+        icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+      },
+      {
+        name: 'Tarefas de hoje',
+        short_name: 'Hoje',
+        url: '/app?view=today',
+        icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+      },
+      {
+        name: 'Modo foco',
+        short_name: 'Foco',
+        url: '/app/focus',
+        icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+      },
+    ],
     icons: [
       {
         src: '/icon-192.png',

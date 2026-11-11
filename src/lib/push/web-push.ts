@@ -6,11 +6,20 @@ export interface StoredPushSubscription {
   auth: string;
 }
 
+export interface PushAction {
+  action: string;
+  title: string;
+}
+
 export interface PushPayload {
   title: string;
   body: string;
   url?: string;
   tag?: string;
+  /** Task the buttons act on (see /api/notification-action). */
+  taskId?: string;
+  /** Buttons under the notification; phones show the first two. */
+  actions?: PushAction[];
 }
 
 let configured = false;

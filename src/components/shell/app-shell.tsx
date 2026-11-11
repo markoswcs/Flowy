@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { DayClearedCelebration } from "@/features/tasks/day-cleared";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -241,6 +242,7 @@ export function AppShell({
           </header>
         ) : null}
 
+        <DayClearedCelebration />
         <main
           id="main-content"
           tabIndex={-1}

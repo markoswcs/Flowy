@@ -140,7 +140,8 @@ self.addEventListener('push', (event) => {
       badge: '/icon-192.png',
       tag: data.tag,
       renotify: Boolean(data.tag),
-      data: { url: data.url || '/app' },
+      actions: Array.isArray(data.actions) ? data.actions : [],
+      data: { url: data.url || '/app', taskId: data.taskId || null },
     }),
   );
 });
@@ -158,21 +159,57 @@ self.addEventListener('pushsubscriptionchange', (event) => {
   );
 });
 
+function openApp(url) {
+  return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+    const existing = windows.find((client) => client.url.startsWith(self.location.origin));
+    if (existing) {
+      // Focus first, while the click still counts as a user gesture.
+      return existing
+        .focus()
+        .then((client) => (client || existing).navigate(url))
+        .catch(() => undefined);
+    }
+    return self.clients.openWindow(url);
+  });
+}
+
+// "Concluir", "+1 hora" and "Amanhã" act on the task without opening the app.
+// When that is not possible (signed out, repeating task, no connection) the
+// app opens on the task instead.
+async function runAction(action, taskId, url) {
+  try {
+    const response = await fetch('/api/notification-action', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ taskId, action }),
+    });
+    const result = response.ok ? await response.json() : { open: true };
+    if (result.open) return openApp(url);
+    const done = { done: 'Tarefa concluída ✅', later: 'Lembro de novo daqui a 1 hora ⏰', tomorrow: 'Passou para amanhã 📅' };
+    await self.registration.showNotification(done[action] || 'Feito', {
+      body: '',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: `task-${taskId}`,
+      silent: true,
+    });
+    // The confirmation leaves on its own.
+    await new Promise((resolve) => setTimeout(resolve, 4000));
+    const shown = await self.registration.getNotifications({ tag: `task-${taskId}` });
+    shown.forEach((item) => item.close());
+  } catch {
+    return openApp(url);
+  }
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = new URL(event.notification.data?.url || '/app', self.location.origin).href;
-
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
-      const existing = windows.find((client) => client.url.startsWith(self.location.origin));
-      if (existing) {
-        // Focus first, while the click still counts as a user gesture.
-        return existing
-          .focus()
-          .then((client) => (client || existing).navigate(url))
-          .catch(() => undefined);
-      }
-      return self.clients.openWindow(url);
-    }),
-  );
+  const data = event.notification.data || {};
+  const url = new URL(data.url || '/app', self.location.origin).href;
+  if (event.action && data.taskId) {
+    event.waitUntil(runAction(event.action, data.taskId, url));
+    return;
+  }
+  event.waitUntil(openApp(url));
 });

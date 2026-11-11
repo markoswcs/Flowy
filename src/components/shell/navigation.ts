@@ -5,6 +5,7 @@ import {
   NotebookPen,
   PenTool,
   Settings,
+  Target,
   Trash2,
   type LucideIcon,
 } from "lucide-react";
@@ -19,6 +20,7 @@ export interface NavigationItem {
 
 export const mainNavigation: NavigationItem[] = [
   { label: "Início", href: "/app", icon: Home },
+  { label: "Foco", href: "/app/focus", icon: Target },
   { label: "Notas", href: SECTION_HREF.nota, icon: NotebookPen },
   { label: "Mapas", href: SECTION_HREF.mapa, icon: Network },
   { label: "Desenhos", href: SECTION_HREF.desenho, icon: PenTool },

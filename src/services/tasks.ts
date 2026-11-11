@@ -395,3 +395,18 @@ export async function permanentlyDeleteTask(taskId: string): Promise<void> {
 
   if (error) throw error;
 }
+
+/** When tasks were completed since a day (yyyy-mm-dd), for the streak of days. */
+export async function listCompletionTimes(since: string): Promise<string[]> {
+  const { supabase, userId } = await getAuthenticatedClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("completed_at")
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .gte("completed_at", since)
+    .order("completed_at", { ascending: false })
+    .limit(1000);
+  if (error) throw error;
+  return ((data ?? []) as { completed_at: string }[]).map((row) => row.completed_at);
+}

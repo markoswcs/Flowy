@@ -14,7 +14,9 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
+import { celebrateIfDayCleared } from "@/features/tasks/day-cleared";
 
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -342,6 +344,7 @@ export function TaskItem({
 }: TaskItemProps) {
   const [editing, setEditing] = useState(false);
   const updateMutation = useUpdateTask();
+  const queryClient = useQueryClient();
   const deleteMutation = useSoftDeleteTask();
   const restoreMutation = useRestoreTask();
   const { addNotification } = useNotifications();
@@ -367,6 +370,8 @@ export function TaskItem({
       saving.then(() => addNotification({ title: "Tarefa reaberta", description: task.title })).catch(() => undefined);
       return;
     }
+    // The last one of the day gets a small party.
+    saving.then(() => celebrateIfDayCleared(queryClient, task)).catch(() => undefined);
 
     // The undo shows right away, at the bottom, so a slip of the finger is
     // one tap away from being fixed. It waits for the save before reverting.

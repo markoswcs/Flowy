@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildTaskReminder } from "./task-reminder";
+import { TASK_ACTIONS, buildTaskReminder } from "./task-reminder";
 
 const base = { task_id: "t1", title: "Pagar conta", due_time: "09:30:00" };
 
@@ -11,6 +11,8 @@ describe("buildTaskReminder", () => {
       body: "Sua tarefa é agora, às 09:30.",
       url: "/app?view=today",
       tag: "task-t1",
+      taskId: "t1",
+      actions: TASK_ACTIONS,
     });
   });
 

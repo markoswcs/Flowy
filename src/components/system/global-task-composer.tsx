@@ -34,6 +34,21 @@ export function GlobalTaskComposer() {
     window.addEventListener("flowy:open-task-composer", handleOpen);
     window.addEventListener("flowy:close-overlays", handleClose);
 
+    // Shortcuts on the app icon open straight into a new task: ?nova=1 (or
+    // ?nova=voz to start dictating). The address is cleaned right after.
+    const url = new URL(window.location.href);
+    const shortcut = url.searchParams.get("nova");
+    let shortcutTimer = 0;
+    if (shortcut) {
+      url.searchParams.delete("nova");
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      shortcutTimer = window.setTimeout(() =>
+        window.dispatchEvent(
+          new CustomEvent("flowy:open-task-composer", { detail: { voice: shortcut === "voz" } }),
+        ),
+      );
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") handleClose();
       
@@ -54,6 +69,7 @@ export function GlobalTaskComposer() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
+      window.clearTimeout(shortcutTimer);
       window.removeEventListener("flowy:open-task-composer", handleOpen);
       window.removeEventListener("flowy:close-overlays", handleClose);
       window.removeEventListener("keydown", handleKeyDown);
