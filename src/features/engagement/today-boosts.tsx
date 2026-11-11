@@ -1,7 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, CalendarClock, Check, Flame, Sparkles, Target } from "lucide-react";
+import {
+  BookOpen,
+  CalendarClock,
+  Check,
+  Flame,
+  Moon,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 
@@ -11,8 +19,11 @@ import { taskKeys } from "@/features/tasks/query-keys";
 import { useCreateTask, useTasks } from "@/features/tasks/use-tasks";
 import { notify } from "@/providers/notification-provider";
 import { cn } from "@/lib/utils";
-import { listCompletionTimes } from "@/services/tasks";
+import { listCompletionDays } from "@/services/tasks";
 
+import { ClassNowCard } from "@/features/classes/class-now-card";
+
+import { OPEN_DUMP_EVENT } from "./brain-dump";
 import {
   AURORA_STREAK,
   countdownLabel,
@@ -63,8 +74,8 @@ function since(days: number) {
 function StreakChip() {
   const today = localDateKey();
   const times = useQuery({
-    queryKey: [...taskKeys.all, "completion-times"],
-    queryFn: () => listCompletionTimes(since(60)),
+    queryKey: [...taskKeys.all, "completion-days"],
+    queryFn: () => listCompletionDays(since(60)),
     staleTime: 60_000,
   });
   const aurora = useAurora();
@@ -98,11 +109,15 @@ function StreakChip() {
           className="inline-flex items-center gap-1.5 rounded-full border border-pink-400/40 px-3 py-1.5 text-xs font-semibold text-pink-300 hover:bg-pink-500/10"
         >
           <Sparkles className="size-3.5" aria-hidden="true" />
-          {aurora ? "Desligar cores Aurora" : "Você ganhou as cores Aurora: usar"}
+          {aurora
+            ? "Desligar cores Aurora"
+            : "Você ganhou as cores Aurora: usar"}
         </button>
       ) : days > 0 ? (
         <span className="text-xs text-muted-foreground">
-          Mais {AURORA_STREAK - days} {AURORA_STREAK - days === 1 ? "dia" : "dias"} para ganhar as cores Aurora 🌈
+          Mais {AURORA_STREAK - days}{" "}
+          {AURORA_STREAK - days === 1 ? "dia" : "dias"} para ganhar as cores
+          Aurora 🌈
         </span>
       ) : null}
     </div>
@@ -124,16 +139,25 @@ function Deadlines() {
     setCreating(task.id);
     try {
       for (const session of sessions) {
-        await create.mutateAsync({ ...session, folder_id: task.folder_id, priority: "normal" });
+        await create.mutateAsync({
+          ...session,
+          folder_id: task.folder_id,
+          priority: "normal",
+        });
       }
-      notify(`Plano criado: ${sessions.length} ${sessions.length === 1 ? "sessão" : "sessões"} de estudo`);
+      notify(
+        `Plano criado: ${sessions.length} ${sessions.length === 1 ? "sessão" : "sessões"} de estudo`,
+      );
     } finally {
       setCreating(null);
     }
   }
 
   return (
-    <section className="rounded-3xl border border-border/60 bg-card/50 p-4" aria-label="Provas e entregas">
+    <section
+      className="rounded-3xl border border-border/60 bg-card/50 p-4"
+      aria-label="Provas e entregas"
+    >
       <h2 className="flex items-center gap-2 text-sm font-semibold">
         <CalendarClock className="size-4 flowy-ink" aria-hidden="true" />
         Provas e entregas
@@ -142,21 +166,32 @@ function Deadlines() {
         {list.map(({ task, days }) => {
           const planned = hasStudyPlan(task.title, all);
           return (
-            <li key={task.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-background/40 p-3">
+            <li
+              key={task.id}
+              className="flex flex-wrap items-center gap-3 rounded-2xl bg-background/40 p-3"
+            >
               <span
                 className={cn(
                   "grid size-12 shrink-0 place-items-center rounded-2xl text-center leading-none",
-                  days <= 2 ? "bg-destructive/15 text-destructive" : "bg-violet-500/15 flowy-ink",
+                  days <= 2
+                    ? "bg-destructive/15 text-destructive"
+                    : "bg-violet-500/15 flowy-ink",
                 )}
               >
                 <span>
-                  <span className="block text-lg font-bold tabular-nums">{days}</span>
-                  <span className="block text-[10px] font-medium">{days === 1 ? "dia" : "dias"}</span>
+                  <span className="block text-lg font-bold tabular-nums">
+                    {days}
+                  </span>
+                  <span className="block text-[10px] font-medium">
+                    {days === 1 ? "dia" : "dias"}
+                  </span>
                 </span>
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{task.title}</p>
-                <p className="text-xs text-muted-foreground">{countdownLabel(days)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {countdownLabel(days)}
+                </p>
               </div>
               {days >= 1 ? (
                 planned ? (
@@ -193,14 +228,25 @@ export function TodayBoosts() {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <StreakChip />
-        <Link
-          href="/app/focus"
-          className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-3.5 py-1.5 text-sm font-semibold flowy-ink transition-colors hover:bg-violet-500/25"
-        >
-          <Target className="size-4" aria-hidden="true" />
-          Modo foco
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(OPEN_DUMP_EVENT))}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+          >
+            <Moon className="size-4" aria-hidden="true" />
+            Esvaziar a cabeça
+          </button>
+          <Link
+            href="/app/focus"
+            className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-3.5 py-1.5 text-sm font-semibold flowy-ink transition-colors hover:bg-violet-500/25"
+          >
+            <Target className="size-4" aria-hidden="true" />
+            Modo foco
+          </Link>
+        </div>
       </div>
+      <ClassNowCard />
       <Deadlines />
     </div>
   );

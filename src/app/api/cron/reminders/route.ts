@@ -11,6 +11,14 @@ import { getSupabaseEnv } from "@/lib/supabase/env";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** 21h: a nudge to empty the head before sleeping (opens the quick dump). */
+const EVENING_PROMPT: PushPayload = {
+  title: "🌙 Algo para amanhã?",
+  body: "Anote agora o que não pode esquecer e durma tranquilo.",
+  url: "/app?view=upcoming&despejar=1",
+  tag: "evening-prompt",
+};
+
 interface DueReminder extends TaskReminder {
   user_id: string;
 }
@@ -49,9 +57,10 @@ async function handle(request: NextRequest) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const [remindersResult, digestsResult] = await Promise.all([
+  const [remindersResult, digestsResult, eveningResult] = await Promise.all([
     admin.rpc("claim_due_task_reminders"),
     admin.rpc("claim_morning_digests"),
+    admin.rpc("claim_evening_prompts"),
   ]);
   if (remindersResult.error) {
     console.error("Falha ao buscar lembretes.", remindersResult.error);
@@ -62,20 +71,27 @@ async function handle(request: NextRequest) {
     console.error("Falha ao buscar resumos da manhã.", digestsResult.error);
   }
 
+  // Same for the evening prompt (migration 20261111150000).
+  if (eveningResult.error) {
+    console.error("Falha ao buscar avisos da noite.", eveningResult.error);
+  }
+  const evenings = ((eveningResult.data ?? []) as { user_id: string }[]).map((row) => row.user_id);
+
   const due = (remindersResult.data ?? []) as DueReminder[];
   const digests = ((digestsResult.data ?? []) as MorningDigestRow[])
     .map((digest) => ({ userId: digest.user_id, payload: buildMorningDigest(digest) }))
     .filter((digest): digest is { userId: string; payload: PushPayload } =>
       Boolean(digest.payload),
     );
-  if (due.length === 0 && digests.length === 0) {
-    return NextResponse.json({ reminders: 0, digests: 0, sent: 0 });
+  if (due.length === 0 && digests.length === 0 && evenings.length === 0) {
+    return NextResponse.json({ reminders: 0, digests: 0, evenings: 0, sent: 0 });
   }
 
   const userIds = [
     ...new Set([
       ...due.map((reminder) => reminder.user_id),
       ...digests.map((digest) => digest.userId),
+      ...evenings,
     ]),
   ];
   const { data: subscriptions, error: subscriptionsError } = await admin
@@ -104,7 +120,7 @@ async function handle(request: NextRequest) {
     return { ...result, retry };
   }
 
-  const [reminderResults, digestResults] = await Promise.all([
+  const [reminderResults, digestResults, eveningResults] = await Promise.all([
     Promise.all(
       due.map(async (reminder) => ({
         id: reminder.task_id,
@@ -117,9 +133,12 @@ async function handle(request: NextRequest) {
         ...(await deliver(digest.userId, digest.payload)),
       })),
     ),
+    Promise.all(
+      evenings.map(async (userId) => ({ id: userId, ...(await deliver(userId, EVENING_PROMPT)) })),
+    ),
   ]);
 
-  const results = [...reminderResults, ...digestResults];
+  const results = [...reminderResults, ...digestResults, ...eveningResults];
   const sent = results.reduce((total, result) => total + result.sent, 0);
   const expired = results.flatMap((result) => result.expired);
   const retryTasks = reminderResults.filter((result) => result.retry).map((result) => result.id);
@@ -138,9 +157,15 @@ async function handle(request: NextRequest) {
       .in("user_id", retryDigests);
   }
 
+  const retryEvenings = eveningResults.filter((result) => result.retry).map((result) => result.id);
+  if (retryEvenings.length > 0) {
+    await admin.from("user_preferences").update({ evening_prompt_sent_on: null }).in("user_id", retryEvenings);
+  }
+
   return NextResponse.json({
     reminders: due.length,
     digests: digests.length,
+    evenings: evenings.length,
     sent,
     expired: expired.length,
     retry: retryTasks.length + retryDigests.length,

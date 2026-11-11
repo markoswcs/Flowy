@@ -78,10 +78,8 @@ export function hasStudyPlan(title: string, tasks: Pick<Task, "title" | "deleted
  * Days in a row with at least one task done, up to today. Today only counts
  * once something is done, so the streak is not lost in the morning.
  */
-export function streak(completedAt: (string | null)[], today: string): number {
-  const days = new Set(
-    completedAt.filter((value): value is string => Boolean(value)).map((value) => dayKey(new Date(value))),
-  );
+export function streak(doneDays: string[], today: string): number {
+  const days = new Set(doneDays);
   let count = 0;
   let cursor = days.has(today) ? today : addDays(today, -1);
   while (days.has(cursor)) {

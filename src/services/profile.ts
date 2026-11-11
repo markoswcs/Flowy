@@ -67,6 +67,7 @@ export async function updatePreferences(
       | "week_starts_on"
       | "default_task_view"
       | "morning_digest"
+      | "evening_prompt"
       | "workouts_enabled"
     >
   >,

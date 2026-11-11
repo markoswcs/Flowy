@@ -20,6 +20,7 @@ import { useCreateNote, useNotes } from "@/features/notes/use-notes";
 import { TaskComposer } from "@/features/tasks/components/task-composer";
 import { TaskList } from "@/features/tasks/components/task-list";
 import { useTasks } from "@/features/tasks/use-tasks";
+import { ShareListButton } from "@/features/sharing/share-list-button";
 import { cn } from "@/lib/utils";
 
 export function FolderPage({ folderId }: { folderId: string }) {
@@ -130,7 +131,8 @@ export function FolderPage({ folderId }: { folderId: string }) {
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <ShareListButton folderId={folder.id} folderName={folder.name} />
             <Button type="button" variant="outline" onClick={openFolderEditor}>
               <Pencil className="size-4" aria-hidden="true" />
               Editar pasta

@@ -396,9 +396,22 @@ export async function permanentlyDeleteTask(taskId: string): Promise<void> {
   if (error) throw error;
 }
 
-/** When tasks were completed since a day (yyyy-mm-dd), for the streak of days. */
-export async function listCompletionTimes(since: string): Promise<string[]> {
+/**
+ * Days (yyyy-mm-dd) with at least one task done since a day, for the streak.
+ * Read from the completion log, which also keeps repeating tasks; before
+ * that log exists, from the completion time of tasks still marked done.
+ */
+export async function listCompletionDays(since: string): Promise<string[]> {
   const { supabase, userId } = await getAuthenticatedClient();
+  const log = await supabase
+    .from("task_completion_days")
+    .select("day")
+    .eq("user_id", userId)
+    .gte("day", since)
+    .order("day", { ascending: false })
+    .limit(400);
+  if (!log.error) return ((log.data ?? []) as { day: string }[]).map((row) => row.day);
+
   const { data, error } = await supabase
     .from("tasks")
     .select("completed_at")
@@ -408,5 +421,5 @@ export async function listCompletionTimes(since: string): Promise<string[]> {
     .order("completed_at", { ascending: false })
     .limit(1000);
   if (error) throw error;
-  return ((data ?? []) as { completed_at: string }[]).map((row) => row.completed_at);
+  return ((data ?? []) as { completed_at: string }[]).map((row) => localDateValue(new Date(row.completed_at)));
 }

@@ -6,10 +6,13 @@ import {
   Check,
   Loader2,
   LogOut,
+  ChevronRight,
   Dumbbell,
+  GraduationCap,
   Sparkles,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -244,6 +247,21 @@ export function SettingsPage() {
               updatePreferences.mutate({ workouts_enabled: !preferences.data?.workouts_enabled })
             }
           />
+          <Link
+            href="/app/classes"
+            className="mt-2 flex items-center gap-3 rounded-2xl px-1 py-3 transition-colors hover:bg-muted/30"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
+              <GraduationCap className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-medium">Grade de aulas</span>
+              <span className="block text-sm text-muted-foreground">
+                Suas aulas fixas da semana. No Hoje aparece a de agora e a próxima.
+              </span>
+            </span>
+            <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+          </Link>
         </section>
         <section aria-labelledby="motion-heading">
           <h2 id="motion-heading" className="text-base font-semibold">Movimento</h2>

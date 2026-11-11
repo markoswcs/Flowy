@@ -51,7 +51,7 @@ describe("tests and deadlines", () => {
 });
 
 describe("streak", () => {
-  const at = (day: string) => `${day}T15:00:00`;
+  const at = (day: string) => day;
 
   it("counts days in a row with something done", () => {
     expect(streak([at("2026-11-11"), at("2026-11-10"), at("2026-11-10"), at("2026-11-09")], "2026-11-11")).toBe(3);
@@ -60,6 +60,6 @@ describe("streak", () => {
   it("keeps yesterday's streak alive until today has something done", () => {
     expect(streak([at("2026-11-10"), at("2026-11-09")], "2026-11-11")).toBe(2);
     expect(streak([at("2026-11-08")], "2026-11-11")).toBe(0);
-    expect(streak([null], "2026-11-11")).toBe(0);
+    expect(streak([], "2026-11-11")).toBe(0);
   });
 });

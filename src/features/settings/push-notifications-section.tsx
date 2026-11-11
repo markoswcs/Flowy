@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Sunrise } from "lucide-react";
+import { Bell, Moon, Sunrise } from "lucide-react";
 import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
@@ -94,6 +94,25 @@ export function PushNotificationsSection() {
           checked={digestOn}
           disabled={!preferences.data || updatePreferences.isPending}
           onToggle={toggleDigest}
+        />
+      ) : null}
+      {enabled ? (
+        <SwitchRow
+          icon={<Moon className="size-5" />}
+          title="Aviso da noite"
+          description="Às 21h, um lembrete para anotar o que não pode esquecer amanhã. Um toque e você escreve tudo de uma vez."
+          checked={preferences.data?.evening_prompt === true}
+          disabled={!preferences.data || updatePreferences.isPending}
+          onToggle={() =>
+            updatePreferences.mutate(
+              { evening_prompt: !preferences.data?.evening_prompt },
+              {
+                onSuccess: () =>
+                  toast.success(preferences.data?.evening_prompt ? "Aviso da noite desativado" : "Aviso da noite ativado"),
+                onError: () => toast.error("Não foi possível salvar a preferência."),
+              },
+            )
+          }
         />
       ) : null}
       {enabled ? (
