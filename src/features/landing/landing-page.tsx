@@ -3,11 +3,8 @@ import {
   Bell,
   CalendarDays,
   Check,
-  Columns3,
   Folder,
-  Grid2x2,
   Home,
-  LayoutList,
   Lock,
   Mic,
   Moon,
@@ -21,6 +18,7 @@ import {
   Smartphone,
   Sparkles,
   Sun,
+  Target,
   WifiOff,
   Workflow,
 } from "lucide-react";
@@ -145,17 +143,6 @@ function AppMock() {
               Boa tarde, Ana
             </p>
           </div>
-          <div className="hidden shrink-0 items-center gap-0.5 rounded-full border border-white/10 p-0.5 text-[10px] text-white/50 md:flex">
-            <span className={cn(styles.mockActive, "flex items-center gap-1 rounded-full px-2 py-1")}>
-              <LayoutList className="size-3" /> Lista
-            </span>
-            <span className="flex items-center gap-1 px-2 py-1">
-              <Columns3 className="size-3" /> Kanban
-            </span>
-            <span className="flex items-center gap-1 px-2 py-1">
-              <Grid2x2 className="size-3" /> Matriz
-            </span>
-          </div>
         </div>
 
         <div className="mt-4 flex gap-1 text-[10px] text-white/45">
@@ -257,19 +244,19 @@ const features = [
     ),
   },
   {
-    icon: Columns3,
-    title: "Lista, Kanban e Matriz",
-    body: "O mesmo trabalho, visto do jeito que fizer sentido agora.",
+    icon: Target,
+    title: "Modo foco",
+    body: "Só a tarefa mais importante na tela, com 25 minutos de foco.",
     span: "",
     art: (
-      <div className="mt-6 grid grid-cols-3 gap-2">
-        {["A fazer", "Fazendo", "Feito"].map((column, index) => (
-          <div key={column} className="rounded-xl bg-white/[0.03] p-2">
-            <p className="mb-2 truncate text-[9px] uppercase tracking-widest text-white/40">{column}</p>
-            {index === 0 ? <div className={cn(styles.kanbanCard, "h-6 rounded-md bg-violet-400/40")} /> : null}
-            <div className="mt-1.5 h-6 rounded-md bg-white/10" />
-          </div>
-        ))}
+      <div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+        <span className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-violet-400/60 text-xs font-bold tabular-nums text-violet-200">
+          25:00
+        </span>
+        <div className="min-w-0 text-xs">
+          <p className="truncate font-semibold">Estudar para a prova</p>
+          <p className="text-white/45">Uma coisa de cada vez</p>
+        </div>
       </div>
     ),
   },

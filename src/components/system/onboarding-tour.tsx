@@ -6,7 +6,6 @@ import {
   Bell,
   CalendarDays,
   Check,
-  Columns3,
   Compass,
   Dumbbell,
   Folder,
@@ -73,12 +72,6 @@ const spotSteps: SpotStep[] = [
     title: "Foque no que importa",
     body: "Hoje, Atrasadas, Próximas ou Concluídas: um toque e pronto.",
     icon: <CalendarDays className="size-4" />,
-  },
-  {
-    target: "views",
-    title: "Veja do seu jeito",
-    body: "Lista, Kanban ou Matriz de prioridades.",
-    icon: <Columns3 className="size-4" />,
   },
   {
     target: "nav",

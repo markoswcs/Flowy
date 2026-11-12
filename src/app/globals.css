@@ -1924,9 +1924,3 @@
   }
 }
 
-/* Aurora: colors earned with 7 days in a row (see features/engagement). */
-html.flowy-aurora {
-  --primary: 322 81% 60%;
-  --ring: 322 81% 60%;
-  --logo-mark-background: linear-gradient(135deg, #f472b6, #8b5cf6 55%, #22d3ee);
-}

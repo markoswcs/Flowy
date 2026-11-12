@@ -68,10 +68,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       "reduce-motion",
       window.localStorage.getItem("flowy:reduce-motion") === "true",
     );
-    document.documentElement.classList.toggle(
-      "flowy-aurora",
-      window.localStorage.getItem("flowy:aurora") === "1",
-    );
     const active = timers.current;
     return () => active.forEach((timer) => window.clearTimeout(timer));
   }, []);

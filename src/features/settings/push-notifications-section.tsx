@@ -3,8 +3,8 @@
 import { Bell, Moon, Sunrise } from "lucide-react";
 import { toast } from "@/lib/toast";
 
-import { Button } from "@/components/ui/button";
 import { SwitchRow } from "@/components/ui/switch-row";
+import { ReminderCheckPanel } from "@/features/settings/reminder-check-panel";
 import { usePushNotifications, type PushStatus } from "@/features/settings/use-push-notifications";
 import { usePreferences, useUpdatePreferences } from "@/features/settings/use-settings";
 import { blockedHelp, deviceKind, installHelp, isInAppBrowser } from "@/lib/push/device-help";
@@ -33,7 +33,8 @@ function errorMessage(error: unknown) {
 }
 
 export function PushNotificationsSection() {
-  const { status, busy, enable, disable, sendTest } = usePushNotifications();
+  const push = usePushNotifications();
+  const { status, busy, enable, disable } = push;
   const enabled = status === "enabled";
   const canToggle = status === "enabled" || status === "disabled";
   const preferences = usePreferences();
@@ -66,14 +67,6 @@ export function PushNotificationsSection() {
     }
   }
 
-  async function test() {
-    try {
-      await sendTest();
-      toast.success("Notificação de teste enviada.");
-    } catch (error) {
-      toast.error(errorMessage(error));
-    }
-  }
 
   return (
     <section aria-labelledby="notifications-heading">
@@ -115,11 +108,7 @@ export function PushNotificationsSection() {
           }
         />
       ) : null}
-      {enabled ? (
-        <Button type="button" variant="outline" size="sm" className="mt-3" loading={busy} onClick={test}>
-          Enviar notificação de teste
-        </Button>
-      ) : null}
+      <ReminderCheckPanel push={push} />
     </section>
   );
 }

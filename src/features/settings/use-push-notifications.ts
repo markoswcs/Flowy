@@ -193,6 +193,18 @@ export function usePushNotifications() {
     }
   }, []);
 
+  /** Saves this device again (lost on the server, or a new timezone). */
+  const repair = useCallback(async () => {
+    if (!VAPID_PUBLIC_KEY) throw new Error("Notificações não configuradas no servidor.");
+    setBusy(true);
+    try {
+      await registerSubscription(VAPID_PUBLIC_KEY);
+      setWanted(true);
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
   const sendTest = useCallback(async () => {
     setBusy(true);
     try {
@@ -206,5 +218,5 @@ export function usePushNotifications() {
     }
   }, []);
 
-  return { status, busy, enable, disable, sendTest };
+  return { status, busy, enable, disable, repair, sendTest };
 }

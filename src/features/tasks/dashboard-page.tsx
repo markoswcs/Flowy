@@ -21,9 +21,7 @@ import { TodayBoosts } from "@/features/engagement/today-boosts";
 import { TodayWorkoutCard } from "@/features/workouts/components/today-workout-card";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
-import { Skeleton } from "@/components/ui/skeleton";
 import { TaskList } from "@/features/tasks/components/task-list";
-import { TaskViewSwitcher, type TaskView } from "@/features/tasks/components/task-view-switcher";
 import { buildDailyPhrase } from "@/features/tasks/daily-phrase";
 import { useTaskListCache } from "@/features/tasks/task-cache";
 import { useCreateTask, useTasks } from "@/features/tasks/use-tasks";
@@ -35,17 +33,7 @@ import type {
   TaskStatus,
 } from "@/types/productivity";
 
-// Kanban (drag and drop), matrix and the filter panel are opened on demand, so
-// their code is only downloaded then instead of slowing every app launch.
-const boardSkeleton = () => <Skeleton className="h-80 w-full rounded-2xl" />;
-const TaskKanban = dynamic(
-  () => import("@/features/tasks/components/task-kanban").then((mod) => mod.TaskKanban),
-  { loading: boardSkeleton },
-);
-const TaskMatrix = dynamic(
-  () => import("@/features/tasks/components/task-matrix").then((mod) => mod.TaskMatrix),
-  { loading: boardSkeleton },
-);
+// The filter panel is opened on demand, so its code is only downloaded then.
 const TaskFilters = dynamic(() =>
   import("@/features/tasks/components/task-filters").then((mod) => mod.TaskFilters),
 );
@@ -78,7 +66,6 @@ interface DashboardPageProps {
   userId?: string;
   initialOrganizer?: "folders" | "categories" | null;
   initialScope?: TaskScope;
-  initialLayout?: "list" | "kanban" | "matrix";
 }
 
 const scopes = [
@@ -108,7 +95,6 @@ function DashboardContent({
   displayName,
   userId,
   initialScope = "today",
-  initialLayout = "list",
 }: DashboardPageProps) {
   const { addNotification } = useNotifications();
   const createTask = useCreateTask();
@@ -116,7 +102,6 @@ function DashboardContent({
     scope: initialScope,
   });
   const [statusBarOpen, setStatusBarOpen] = useState(false);
-  const [layout, setLayout] = useState<TaskView>(initialLayout);
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 250);
   // An empty search is left out so "Todas" shares its query (and cache) with
   // the list used for the daily phrase instead of fetching the same rows twice.
@@ -273,9 +258,6 @@ function DashboardContent({
               <Sparkles className="mt-0.5 size-3.5 shrink-0 flowy-ink" />
               <span className="line-clamp-2">{personalPhrase ?? phrase}</span>
             </p>
-          </div>
-          <div data-tour="views" className="shrink-0 pt-0.5 sm:pt-1.5">
-            <TaskViewSwitcher activeView={layout} onChange={setLayout} />
           </div>
         </div>
 
@@ -457,26 +439,8 @@ function DashboardContent({
           />
         )}
 
-        <div key={layout} className="animate-in fade-in slide-in-from-bottom-1 duration-300">
-        {layout === "kanban" ? (
-          <TaskKanban
-            tasks={tasksQuery.data}
-            folders={folders}
-            categories={categories}
-            loading={tasksQuery.isLoading}
-            error={tasksQuery.error}
-            onRetry={() => tasksQuery.refetch()}
-          />
-        ) : layout === "matrix" ? (
-          <TaskMatrix
-            tasks={tasksQuery.data}
-            folders={folders}
-            categories={categories}
-            loading={tasksQuery.isLoading}
-            error={tasksQuery.error}
-            onRetry={() => tasksQuery.refetch()}
-          />
-        ) : (
+        <div className="animate-in fade-in slide-in-from-bottom-1 duration-300">
+        {(
           <section className="mt-4 animate-slide-up-fade [animation-delay:200ms]" aria-live="polite">
             <TaskList
               tasks={tasksQuery.data}

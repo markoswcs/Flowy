@@ -69,13 +69,6 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
       userId={user.id}
       initialOrganizer={initialOrganizer}
       initialScope={initialScope}
-      initialLayout={
-        values.layout === "kanban"
-          ? "kanban"
-          : values.layout === "matrix"
-            ? "matrix"
-            : "list"
-      }
     />
   );
 }

@@ -7,11 +7,10 @@ import {
   Check,
   Flame,
   Moon,
-  Sparkles,
   Target,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { localDateKey } from "@/features/tasks/date-utils";
@@ -25,7 +24,6 @@ import { ClassNowCard } from "@/features/classes/class-now-card";
 
 import { OPEN_DUMP_EVENT } from "./brain-dump";
 import {
-  AURORA_STREAK,
   countdownLabel,
   countdowns,
   hasStudyPlan,
@@ -33,44 +31,13 @@ import {
   studyPlan,
 } from "./engagement";
 
-export const AURORA_KEY = "flowy:aurora";
-const auroraListeners = new Set<() => void>();
-
-function auroraOn() {
-  try {
-    return window.localStorage.getItem(AURORA_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function setAurora(on: boolean) {
-  try {
-    window.localStorage.setItem(AURORA_KEY, on ? "1" : "0");
-  } catch {
-    // Private mode: it lasts until the page reloads.
-  }
-  document.documentElement.classList.toggle("flowy-aurora", on);
-  auroraListeners.forEach((listener) => listener());
-}
-
-function useAurora() {
-  return useSyncExternalStore(
-    (listener) => {
-      auroraListeners.add(listener);
-      return () => auroraListeners.delete(listener);
-    },
-    auroraOn,
-    () => false,
-  );
-}
-
 function since(days: number) {
   const date = new Date();
   date.setDate(date.getDate() - days);
   return localDateKey(date);
 }
 
+/** Days in a row with at least one task done; says so in plain words. */
 function StreakChip() {
   const today = localDateKey();
   const times = useQuery({
@@ -78,49 +45,34 @@ function StreakChip() {
     queryFn: () => listCompletionDays(since(60)),
     staleTime: 60_000,
   });
-  const aurora = useAurora();
   if (!times.data) return null;
   const days = streak(times.data, today);
-  const golden = days >= AURORA_STREAK;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <p
+      className={cn(
+        "inline-flex items-center gap-2 text-sm",
+        days ? "text-foreground" : "text-muted-foreground",
+      )}
+      title="Dias seguidos em que você concluiu pelo menos uma tarefa"
+    >
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold",
-          golden
-            ? "bg-gradient-to-r from-amber-400/25 via-pink-500/25 to-violet-500/25 text-amber-300 ring-1 ring-amber-400/40"
-            : "bg-orange-500/15 text-orange-400",
+          "grid size-8 shrink-0 place-items-center rounded-full",
+          days ? "bg-orange-500/15 text-orange-400" : "bg-muted/60 text-muted-foreground",
         )}
-        title="Dias seguidos com pelo menos uma tarefa concluída"
       >
         <Flame className="size-4" aria-hidden="true" />
-        {days === 0
-          ? "Comece sua sequência hoje"
-          : `${days} ${days === 1 ? "dia seguido" : "dias seguidos"}`}
       </span>
-      {golden ? (
-        <button
-          type="button"
-          onClick={() => {
-            setAurora(!aurora);
-            if (!aurora) notify("Cores Aurora ativadas 🌈");
-          }}
-          className="inline-flex items-center gap-1.5 rounded-full border border-pink-400/40 px-3 py-1.5 text-xs font-semibold text-pink-300 hover:bg-pink-500/10"
-        >
-          <Sparkles className="size-3.5" aria-hidden="true" />
-          {aurora
-            ? "Desligar cores Aurora"
-            : "Você ganhou as cores Aurora: usar"}
-        </button>
-      ) : days > 0 ? (
-        <span className="text-xs text-muted-foreground">
-          Mais {AURORA_STREAK - days}{" "}
-          {AURORA_STREAK - days === 1 ? "dia" : "dias"} para ganhar as cores
-          Aurora 🌈
+      {days ? (
+        <span>
+          <span className="font-semibold">{days} {days === 1 ? "dia" : "dias"}</span>{" "}
+          <span className="text-muted-foreground">seguidos concluindo tarefas</span>
         </span>
-      ) : null}
-    </div>
+      ) : (
+        <span>Conclua uma tarefa para começar sua sequência</span>
+      )}
+    </p>
   );
 }
 
@@ -222,26 +174,27 @@ function Deadlines() {
   );
 }
 
+// Both shortcuts look alike and plain: they open something, they are not a state.
+const shortcut =
+  "inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border/60 px-3.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground";
+
 /** Extras of the "Hoje" view: the streak, the way into Foco and tests coming up. */
 export function TodayBoosts() {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <StreakChip />
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event(OPEN_DUMP_EVENT))}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            className={shortcut}
           >
-            <Moon className="size-4" aria-hidden="true" />
+            <Moon className="size-4 shrink-0" aria-hidden="true" />
             Esvaziar a cabeça
           </button>
-          <Link
-            href="/app/focus"
-            className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/15 px-3.5 py-1.5 text-sm font-semibold flowy-ink transition-colors hover:bg-violet-500/25"
-          >
-            <Target className="size-4" aria-hidden="true" />
+          <Link href="/app/focus" className={shortcut}>
+            <Target className="size-4 shrink-0" aria-hidden="true" />
             Modo foco
           </Link>
         </div>

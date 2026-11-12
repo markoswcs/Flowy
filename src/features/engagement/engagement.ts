@@ -89,5 +89,3 @@ export function streak(doneDays: string[], today: string): number {
   return count;
 }
 
-/** A week in a row unlocks the Aurora colors. */
-export const AURORA_STREAK = 7;
