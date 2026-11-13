@@ -163,7 +163,7 @@ export function TaskEditor({
           aria-label="Título da tarefa"
           maxLength={300}
           className="w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-base font-semibold leading-snug text-foreground placeholder:text-muted-foreground shadow-none outline-none focus:border-transparent focus:outline-none focus:ring-0"
-          autoFocus
+          // No autoFocus: opening a task to look at it should not pop the keyboard.
           required
         />
         <textarea
@@ -341,16 +341,21 @@ function TaskEditorSheet({ onClose, children }: { onClose: () => void; children:
   }, [onClose]);
 
   return createPortal(
-    <div className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true">
+    // On phones the editor sits at the top: no empty gap above it, and the
+    // keyboard (when the person taps a field) never covers what they edit.
+    <div
+      className="fixed inset-0 z-[150] flex items-start justify-center px-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:items-center sm:p-6"
+      role="dialog"
+      aria-modal="true"
+    >
       <button
         type="button"
         aria-label="Fechar edição"
         onClick={onClose}
         className="flowy-glass-scrim absolute inset-0 animate-in fade-in"
       />
-      <div className="relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden flowy-glass flowy-glass-strong rounded-t-[1.75rem] border animate-in slide-in-from-bottom-8 duration-300 sm:rounded-[1.75rem]">
-        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30 sm:hidden" aria-hidden="true" />
-        <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pt-6">
+      <div className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden flowy-glass flowy-glass-strong rounded-[1.75rem] border animate-in slide-in-from-top-4 duration-300 sm:max-h-[92dvh] sm:slide-in-from-bottom-8">
+        <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-1 pt-4 sm:px-6 sm:pt-6">
           {children}
         </div>
       </div>
