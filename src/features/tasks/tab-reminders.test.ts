@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { dueInTab, firedId } from "./tab-reminders";
+import { dueInTab, firedId } from "./tab-reminders-logic";
 
 const task = (over: Partial<Parameters<typeof firedId>[0]> = {}) => ({
   id: "a",
