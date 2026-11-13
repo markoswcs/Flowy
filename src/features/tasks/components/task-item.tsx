@@ -341,10 +341,9 @@ function TaskEditorSheet({ onClose, children }: { onClose: () => void; children:
   }, [onClose]);
 
   return createPortal(
-    // On phones the editor sits at the top: no empty gap above it, and the
-    // keyboard (when the person taps a field) never covers what they edit.
+    // Centered on phones too: no big empty gap above or below it.
     <div
-      className="fixed inset-0 z-[150] flex items-start justify-center px-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:items-center sm:p-6"
+      className="fixed inset-0 z-[150] flex items-center justify-center px-2 py-[max(0.75rem,env(safe-area-inset-top))] sm:p-6"
       role="dialog"
       aria-modal="true"
     >
@@ -354,7 +353,7 @@ function TaskEditorSheet({ onClose, children }: { onClose: () => void; children:
         onClick={onClose}
         className="flowy-glass-scrim absolute inset-0 animate-in fade-in"
       />
-      <div className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden flowy-glass flowy-glass-strong rounded-[1.75rem] border animate-in slide-in-from-top-4 duration-300 sm:max-h-[92dvh] sm:slide-in-from-bottom-8">
+      <div className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden flowy-glass flowy-glass-strong rounded-[1.75rem] border animate-in fade-in zoom-in-95 duration-300 sm:max-h-[92dvh]">
         <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-1 pt-4 sm:px-6 sm:pt-6">
           {children}
         </div>
