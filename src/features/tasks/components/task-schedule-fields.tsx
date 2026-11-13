@@ -1,8 +1,9 @@
 "use client";
 
-import type { MouseEvent, ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { BellRing, CalendarDays, Clock3, X } from "lucide-react";
 
+import { DatePickerSheet, TimePickerSheet } from "@/features/tasks/components/schedule-pickers";
 import { localDateKey, tomorrowDateKey } from "@/features/tasks/date-utils";
 import { cn } from "@/lib/utils";
 
@@ -26,16 +27,6 @@ function formatDateLabel(value: string): string {
     .format(date)
     .replace(".", "");
   return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")} · ${weekday}`;
-}
-
-// Native pickers only open from their own icon on desktop; showPicker opens them
-// from anywhere on the tile. Unsupported browsers keep the default behaviour.
-function openPicker(event: MouseEvent<HTMLInputElement>) {
-  try {
-    event.currentTarget.showPicker?.();
-  } catch {
-    // Some browsers reject showPicker outside trusted gestures.
-  }
 }
 
 function ScheduleTile({
@@ -103,8 +94,8 @@ function ScheduleTile({
   );
 }
 
-const nativeInputClass =
-  "absolute inset-0 z-0 h-full w-full cursor-pointer appearance-none opacity-0";
+// The whole tile opens Flowy's picker (the phone's own clock was hard to use).
+const tileButtonClass = "absolute inset-0 z-0 h-full w-full cursor-pointer rounded-2xl outline-none";
 
 export function TaskScheduleFields({
   dueDate,
@@ -117,6 +108,7 @@ export function TaskScheduleFields({
   const tomorrow = tomorrowDateKey();
   const dateId = `${idPrefix}-date`;
   const timeId = `${idPrefix}-time`;
+  const [open, setOpen] = useState<"date" | "time" | null>(null);
 
   function changeDate(value: string) {
     onDueDateChange(value);
@@ -131,6 +123,8 @@ export function TaskScheduleFields({
 
   return (
     <div className="space-y-2">
+      {open === "date" ? <DatePickerSheet value={dueDate} onChange={changeDate} onClose={() => setOpen(null)} /> : null}
+      {open === "time" ? <TimePickerSheet value={dueTime} onChange={changeTime} onClose={() => setOpen(null)} /> : null}
       <div className="grid grid-cols-2 gap-2">
         <ScheduleTile
           id={dateId}
@@ -141,14 +135,7 @@ export function TaskScheduleFields({
           onClear={() => changeDate("")}
           clearLabel="Remover data"
         >
-          <input
-            id={dateId}
-            type="date"
-            value={dueDate}
-            onChange={(event) => changeDate(event.target.value)}
-            onClick={openPicker}
-            className={nativeInputClass}
-          />
+          <button id={dateId} type="button" aria-label="Escolher data" onClick={() => setOpen("date")} className={tileButtonClass} />
         </ScheduleTile>
 
         <ScheduleTile
@@ -160,14 +147,7 @@ export function TaskScheduleFields({
           onClear={() => onDueTimeChange("")}
           clearLabel="Remover horário"
         >
-          <input
-            id={timeId}
-            type="time"
-            value={dueTime}
-            onChange={(event) => changeTime(event.target.value)}
-            onClick={openPicker}
-            className={nativeInputClass}
-          />
+          <button id={timeId} type="button" aria-label="Escolher horário" onClick={() => setOpen("time")} className={tileButtonClass} />
         </ScheduleTile>
       </div>
 
