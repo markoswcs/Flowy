@@ -88,6 +88,8 @@ export function TaskEditor({
   onClose,
 }: Omit<TaskItemProps, "compact"> & { onClose: () => void }) {
   const updateMutation = useUpdateTask();
+  const trashMutation = useSoftDeleteTask();
+  const restoreTask = useRestoreTask();
   const { addNotification } = useNotifications();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
@@ -285,6 +287,27 @@ export function TaskEditor({
         <Button
           type="button"
           variant="ghost"
+          loading={trashMutation.isPending}
+          onClick={() =>
+            trashMutation.mutate(task.id, {
+              onSuccess: () => {
+                onClose();
+                addNotification({
+                  title: task.recurrence ? "Tarefa excluída, não repete mais" : "Movida para a lixeira",
+                  description: task.title,
+                  action: { label: "Desfazer", onClick: () => restoreTask.mutate(task.id) },
+                });
+              },
+            })
+          }
+          className="mr-auto h-10 gap-1.5 rounded-xl px-3 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+          Excluir
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
           onClick={onClose}
           className="h-10 rounded-xl px-4 text-sm hover:bg-muted/50"
         >
@@ -397,10 +420,25 @@ export function TaskItem({
     });
   }
 
+  function stopRepeating() {
+    const before = { recurrence: task.recurrence, recurrence_days: task.recurrence_days };
+    updateMutation.mutate(
+      { id: task.id, recurrence: null, recurrence_days: null },
+      {
+        onSuccess: () =>
+          addNotification({
+            title: "Não repete mais",
+            description: task.title,
+            action: { label: "Desfazer", onClick: () => updateMutation.mutate({ id: task.id, ...before }) },
+          }),
+      },
+    );
+  }
+
   function moveToTrash() {
     deleteMutation.mutate(task.id, {
       onSuccess: () => {
-        addNotification({ title: "Movida para a lixeira", description: task.title,
+        addNotification({ title: task.recurrence ? "Tarefa excluída, não repete mais" : "Movida para a lixeira", description: task.title,
           action: {
             label: "Desfazer",
             onClick: () => restoreMutation.mutate(task.id),
@@ -607,6 +645,7 @@ export function TaskItem({
           onToggle={toggleCompleted}
           onSelect={() => selection?.start(task.id)}
           onTrash={moveToTrash}
+          onStopRepeating={task.recurrence ? stopRepeating : undefined}
         />
       ) : null}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CheckSquare, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { Check, CheckSquare, Pencil, Repeat2, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
@@ -17,6 +17,7 @@ export function TaskActionSheet({
   onToggle,
   onSelect,
   onTrash,
+  onStopRepeating,
 }: {
   title: string;
   completed: boolean;
@@ -26,6 +27,8 @@ export function TaskActionSheet({
   onToggle: () => void;
   onSelect: () => void;
   onTrash: () => void;
+  /** Only for repeating tasks: keeps this one, ends the series. */
+  onStopRepeating?: () => void;
 }) {
   useEffect(() => {
     const release = holdOverlay();
@@ -70,8 +73,13 @@ export function TaskActionSheet({
               Selecionar várias
             </SheetAction>
           ) : null}
+          {onStopRepeating ? (
+            <SheetAction icon={<Repeat2 className="size-[18px]" />} onClick={run(onStopRepeating)}>
+              Parar de repetir
+            </SheetAction>
+          ) : null}
           <SheetAction danger icon={<Trash2 className="size-[18px]" />} onClick={run(onTrash)}>
-            Mover para a lixeira
+            {onStopRepeating ? "Excluir (para de repetir)" : "Mover para a lixeira"}
           </SheetAction>
         </div>
       </div>
