@@ -37,7 +37,7 @@ export function installHelp(kind: DeviceKind, inApp: boolean): string {
   if (kind === "iphone") {
     return "No iPhone, os lembretes só chegam com o Flowy na Tela de Início: no Safari, toque em Compartilhar (quadrado com seta ↑) → Adicionar à Tela de Início, e abra pelo ícone.";
   }
-  return "Este navegador não recebe notificações. Abra o Flowy no Chrome ou instale o app.";
+  return "Este navegador não recebe lembretes com o site fechado. Abra o Flowy no Chrome ou no Edge e ative por lá. " + TAB_FALLBACK;
 }
 
 /** The browser could not reach its push service (Chrome/Edge: "push service error"). */
@@ -47,13 +47,37 @@ export function isPushServiceError(error: unknown): boolean {
   return name === "AbortError" || (typeof message === "string" && /push service/i.test(message));
 }
 
+/** Which desktop browser this is, for help that names the right menu. */
+export function browserName(userAgent: string, brave: boolean): string | null {
+  if (brave) return "Brave";
+  if (/Ddg\//.test(userAgent)) return "DuckDuckGo";
+  if (/Vivaldi/.test(userAgent)) return "Vivaldi";
+  if (/OPR\//.test(userAgent)) return "Opera";
+  if (/Edg\//.test(userAgent)) return "Edge";
+  if (/Firefox\//.test(userAgent)) return "Firefox";
+  if (/Chrome\//.test(userAgent)) return "Chrome";
+  if (/Safari\//.test(userAgent)) return "Safari";
+  return null;
+}
+
+/** Said whenever push cannot work here: Flowy still reminds while it is open. */
+export const TAB_FALLBACK =
+  "Enquanto isso, deixe o Flowy aberto numa aba: os avisos aparecem na hora, com som.";
+
 /** What to do when the browser cannot reach its push service. */
 export function pushServiceHelp(userAgent: string, brave: boolean): string {
-  if (brave) {
-    return "O Brave bloqueia os lembretes por padrão. Abra Configurações → Privacidade e segurança, ligue “Usar serviços do Google para mensagens push” e tente de novo.";
+  const name = browserName(userAgent, brave);
+  if (name === "Brave") {
+    return `O Brave bloqueia os lembretes por padrão. Abra brave://settings/privacy, ligue “Usar serviços do Google para mensagens push”, reinicie o Brave e tente de novo. ${TAB_FALLBACK}`;
   }
-  if (!/Chrome|Edg|Firefox|Safari/i.test(userAgent) || /Electron|Claude\//i.test(userAgent)) {
-    return "Este navegador não tem serviço de lembretes. Abra o Flowy no Chrome ou no Edge, ou pelo app instalado, e ative por lá.";
+  if (name === "Vivaldi" || name === "DuckDuckGo") {
+    return `O ${name} não recebe lembretes com o site fechado. Para receber sempre, abra o Flowy no Chrome ou no Edge e ative por lá. ${TAB_FALLBACK}`;
   }
-  return "O navegador não conseguiu falar com o serviço de lembretes. Confira a internet, desligue VPN ou bloqueador de anúncios e tente de novo. Se continuar, use o Chrome ou o Edge atualizados.";
+  if (name === "Firefox") {
+    return `O Firefox não recebe lembretes em janela privada. Abra numa janela normal e tente de novo. ${TAB_FALLBACK}`;
+  }
+  if (!name || /Electron|Claude\//i.test(userAgent)) {
+    return `Este navegador não tem serviço de lembretes. Abra o Flowy no Chrome ou no Edge e ative por lá. ${TAB_FALLBACK}`;
+  }
+  return `O navegador não conseguiu falar com o serviço de lembretes. Confira a internet, desligue VPN ou bloqueador de anúncios e tente de novo. ${TAB_FALLBACK}`;
 }

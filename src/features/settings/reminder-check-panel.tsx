@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Stethoscope } from "lucide-react";
+import { AlertTriangle, CheckCircle2, PlayCircle, Stethoscope } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -124,6 +125,15 @@ export function ReminderCheckPanel({ push }: { push: ReturnType<typeof usePushNo
                 <div className="min-w-0 flex-1 text-sm">
                   <p className={cn("font-medium", !check.ok && "text-foreground")}>{check.title}</p>
                   <p className="text-muted-foreground">{check.detail}</p>
+                  {check.fix === "install" ? (
+                    <Link
+                      href="/instalar"
+                      className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                    >
+                      <PlayCircle className="size-4" aria-hidden="true" />
+                      Ver o vídeo de como instalar
+                    </Link>
+                  ) : null}
                   {check.fix === "enable" || check.fix === "repair" ? (
                     <Button
                       type="button"

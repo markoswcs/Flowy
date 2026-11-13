@@ -1,7 +1,10 @@
 "use client";
 
-import { Bell, Moon, Sunrise } from "lucide-react";
+import { Bell, Moon, PlayCircle, Sunrise } from "lucide-react";
+import Link from "next/link";
 import { toast } from "@/lib/toast";
+
+import { Button } from "@/components/ui/button";
 
 import { SwitchRow } from "@/components/ui/switch-row";
 import { ReminderCheckPanel } from "@/features/settings/reminder-check-panel";
@@ -108,7 +111,31 @@ export function PushNotificationsSection() {
           }
         />
       ) : null}
+      {status === "unsupported" && typeof Notification !== "undefined" && Notification.permission === "default" ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="mt-3"
+          onClick={() =>
+            void Notification.requestPermission().then((permission) =>
+              permission === "granted"
+                ? toast.success("Pronto: com o Flowy aberto, os avisos aparecem na hora")
+                : toast.error("Permissão não concedida"),
+            )
+          }
+        >
+          Permitir avisos com o Flowy aberto
+        </Button>
+      ) : null}
       <ReminderCheckPanel push={push} />
+      <Link
+        href="/instalar"
+        className="mt-3 flex items-center gap-2 text-sm font-medium flowy-ink hover:underline"
+      >
+        <PlayCircle className="size-4" aria-hidden="true" />
+        Vídeo: como instalar no celular (para mandar a quem precisar)
+      </Link>
     </section>
   );
 }

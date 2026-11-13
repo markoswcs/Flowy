@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Flowy: como instalar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600;700&display=block" rel="stylesheet">
+<!--
+  The install tutorial, drawn frame by frame: render(t) sets every element for
+  the second t, so scripts/install-video/record.mjs can seek and capture each
+  frame. Open with ?os=iphone or ?os=android (&play to watch it live).
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 360px; height: 640px; overflow: hidden; background: #0c0818; }
+  body { font-family: Inter, system-ui, sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden;
+    background: radial-gradient(120% 70% at 50% 0%, #3b1d7a 0%, #170d33 55%, #0c0818 100%); }
+  .glow { position: absolute; border-radius: 50%; filter: blur(50px); opacity: .55; }
+  .abs { position: absolute; }
+
+  /* Captions */
+  #brand { position: absolute; top: 18px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 7px;
+    font: 600 12px/1 Inter; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+  #brand img { width: 18px; height: 18px; border-radius: 5px; }
+  .cap { position: absolute; top: 46px; left: 20px; right: 20px; text-align: center; }
+  .cap .chip { display: inline-block; padding: 4px 10px; border-radius: 99px; background: rgba(167,139,250,.18);
+    color: #c4b5fd; font: 700 11px/1.2 Inter; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px; }
+  .cap h1 { font: 800 23px/1.12 "Bricolage Grotesque", Inter; letter-spacing: -.01em; }
+  .cap h1 em { font-style: normal; color: #c4b5fd; }
+  .cap p { margin-top: 7px; font: 500 13.5px/1.35 Inter; color: rgba(255,255,255,.72); }
+
+  /* Phone */
+  #phone { position: absolute; left: 64px; top: 170px; width: 232px; height: 478px; border-radius: 38px;
+    background: #050308; padding: 8px; box-shadow: 0 0 0 1.5px #3a3550, 0 30px 60px -10px rgba(0,0,0,.8), 0 0 80px -20px rgba(139,92,246,.6); }
+  #screen { position: relative; width: 216px; height: 462px; border-radius: 31px; overflow: hidden; background: #000; }
+  .layer { position: absolute; inset: 0; opacity: 0; }
+  .island { position: absolute; top: 7px; left: 50%; width: 62px; height: 18px; margin-left: -31px; border-radius: 12px; background: #000; z-index: 50; }
+  .android .island { width: 9px; height: 9px; margin-left: -4px; top: 9px; }
+  .status { position: absolute; top: 0; left: 0; right: 0; height: 30px; display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px 0 24px; font: 600 10.5px Inter; z-index: 40; }
+  .status .r { display: flex; gap: 4px; align-items: center; }
+  .bat { width: 17px; height: 8px; border-radius: 2.5px; border: 1px solid currentColor; position: relative; }
+  .bat::after { content: ""; position: absolute; inset: 1px 4px 1px 1px; background: currentColor; border-radius: 1px; }
+  .bars { display: flex; gap: 1px; align-items: flex-end; height: 8px; }
+  .bars i { width: 2.5px; background: currentColor; border-radius: 1px; }
+
+  /* Lock screen */
+  .wall { position: absolute; inset: 0; background: linear-gradient(160deg, #6d4ce0 0%, #3b2a8a 45%, #10203f 100%); }
+  .wall::after { content: ""; position: absolute; width: 260px; height: 260px; left: -60px; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(244,114,182,.55), transparent 65%); }
+  .clock { position: absolute; left: 0; right: 0; top: 52px; text-align: center; font: 300 58px/1 Inter; letter-spacing: -1px; }
+  .date { position: absolute; left: 0; right: 0; top: 40px; text-align: center; font: 600 12px Inter; opacity: .85; }
+  .android .clock { text-align: left; padding-left: 20px; font-weight: 400; font-size: 52px; top: 58px; }
+  .android .date { text-align: left; padding-left: 22px; top: 120px; }
+  .notif { position: absolute; left: 9px; right: 9px; top: 150px; border-radius: 18px; padding: 10px 11px; display: flex; gap: 9px;
+    background: rgba(245,243,255,.82); color: #111; backdrop-filter: blur(12px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  .android .notif { border-radius: 22px; background: #f3efff; top: 160px; }
+  .notif img { width: 30px; height: 30px; border-radius: 8px; flex: none; }
+  .notif .h { display: flex; justify-content: space-between; font: 600 9.5px Inter; color: #555; letter-spacing: .02em; }
+  .notif b { display: block; font: 700 12.5px/1.25 Inter; margin-top: 2px; }
+  .notif span.s { font: 500 11px Inter; color: #333; }
+  .notif .acts { display: flex; gap: 6px; margin-top: 6px; }
+  .notif .acts i { font: 600 9.5px Inter; font-style: normal; padding: 4px 8px; border-radius: 99px; background: rgba(109,76,224,.14); color: #4c1d95; }
+
+  /* Browser */
+  .page { position: absolute; inset: 0; background: #0f0a1e; }
+  .page .logo { position: absolute; top: 110px; left: 50%; margin-left: -30px; width: 60px; height: 60px; border-radius: 16px; }
+  .page h2 { position: absolute; top: 184px; left: 0; right: 0; text-align: center; font: 800 24px "Bricolage Grotesque", Inter; }
+  .page p { position: absolute; top: 218px; left: 24px; right: 24px; text-align: center; font: 500 11.5px/1.4 Inter; color: rgba(255,255,255,.6); }
+  .page .btn { position: absolute; top: 262px; left: 34px; right: 34px; height: 34px; border-radius: 12px; background: #7c3aed;
+    display: grid; place-items: center; font: 700 12px Inter; }
+  .page .btn2 { top: 304px; background: rgba(255,255,255,.08); }
+  .sbar { position: absolute; left: 0; right: 0; bottom: 0; height: 92px; background: rgba(28,24,40,.96); border-top: 1px solid rgba(255,255,255,.08); }
+  .addr { position: absolute; left: 12px; right: 12px; top: 9px; height: 34px; border-radius: 12px; background: rgba(255,255,255,.1);
+    display: flex; align-items: center; justify-content: center; gap: 5px; font: 500 11.5px Inter; color: rgba(255,255,255,.92); }
+  .addr .aa { position: absolute; left: 10px; font: 600 11px Inter; color: rgba(255,255,255,.75); }
+  .tools { position: absolute; left: 6px; right: 6px; top: 50px; height: 30px; display: flex; justify-content: space-around; align-items: center; color: #4f9dff; }
+  .tools svg { width: 19px; height: 19px; }
+  .cbar { position: absolute; left: 0; right: 0; top: 28px; height: 44px; background: #1c1828; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; }
+  .cbar .pill { flex: 1; height: 30px; border-radius: 99px; background: rgba(255,255,255,.09); display: flex; align-items: center; padding: 0 11px; gap: 6px;
+    font: 500 11px Inter; color: rgba(255,255,255,.9); }
+  .cbar .tab { flex: none; width: 17px; height: 17px; border: 1.6px solid #ddd; border-radius: 4px; font: 700 9px/14px Inter; text-align: center; }
+  .cbar .dots { width: 22px; height: 26px; display: grid; place-items: center; }
+  .cbar .dots svg { width: 18px; height: 18px; }
+
+  /* iOS share sheet */
+  .dim { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 330px; background: #1f1d26; border-radius: 18px 18px 0 0; padding: 12px 10px; }
+  .sheet .head { display: flex; gap: 9px; align-items: center; padding: 2px 4px 12px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .sheet .head img { width: 34px; height: 34px; border-radius: 9px; }
+  .sheet .head b { display: block; font: 700 12px Inter; }
+  .sheet .head span { font: 500 10px Inter; color: rgba(255,255,255,.55); }
+  .people { display: flex; gap: 12px; padding: 12px 4px; }
+  .people i { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg,#4b5563,#1f2937); }
+  .rows { margin-top: 4px; border-radius: 12px; background: #2a2833; overflow: hidden; }
+  .row { height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; font: 500 11.5px Inter;
+    border-bottom: 1px solid rgba(255,255,255,.06); }
+  .row:last-child { border-bottom: 0; }
+  .row svg { width: 16px; height: 16px; opacity: .85; }
+  .row.hl { background: rgba(124,58,237,.0); }
+
+  /* iOS add screen */
+  .add { position: absolute; inset: 0; background: #1c1b22; }
+  .add .top { position: absolute; top: 40px; left: 0; right: 0; height: 28px; padding: 0 12px; font: 500 11.5px Inter; color: #4f9dff; }
+  .add .top span { position: absolute; top: 6px; } .add .top span:first-child { left: 12px; } .add .top #addBtn { right: 12px; }
+  .add .top b { position: absolute; left: 66px; right: 66px; text-align: center; color: #fff; font-weight: 700; font-size: 10px; line-height: 1.25; }
+  .add .card { position: absolute; top: 80px; left: 10px; right: 10px; border-radius: 12px; background: #2a2833; padding: 12px; display: flex; gap: 12px; }
+  .add .card img { width: 52px; height: 52px; border-radius: 13px; }
+  .add .card .f { flex: 1; font: 600 13px Inter; padding-top: 4px; }
+  .add .card .f small { display: block; margin-top: 10px; font: 500 10px Inter; color: rgba(255,255,255,.5); padding-top: 8px; border-top: 1px solid rgba(255,255,255,.08); }
+  .add .note { position: absolute; top: 170px; left: 18px; right: 18px; font: 500 10px/1.4 Inter; color: rgba(255,255,255,.5); }
+
+  /* Android menu and dialogs */
+  .menu { position: absolute; top: 32px; right: 6px; width: 150px; border-radius: 14px; background: #2b2738; padding: 6px 0; box-shadow: 0 10px 30px rgba(0,0,0,.5); transform-origin: top right; }
+  .menu .icons { display: flex; justify-content: space-around; padding: 4px 6px 8px; border-bottom: 1px solid rgba(255,255,255,.08); color: #ddd; }
+  .menu .icons svg { width: 15px; height: 15px; }
+  .menu .it { height: 31px; display: flex; align-items: center; gap: 10px; padding: 0 14px; font: 500 11px Inter; }
+  .menu .it svg { width: 15px; height: 15px; opacity: .8; }
+  .dialog { position: absolute; left: 18px; right: 18px; top: 150px; border-radius: 24px; background: #2b2738; padding: 18px 16px 12px; }
+  .dialog .ttl { font: 600 15px Inter; margin-bottom: 12px; }
+  .dialog .appinfo { display: flex; gap: 10px; align-items: center; }
+  .dialog .appinfo img { width: 38px; height: 38px; border-radius: 10px; }
+  .dialog .appinfo b { display: block; font: 600 12.5px Inter; }
+  .dialog .appinfo span { font: 500 10px Inter; color: rgba(255,255,255,.55); }
+  .dialog .btns { display: flex; justify-content: flex-end; gap: 6px; margin-top: 16px; }
+  .dialog .btns i { font: 600 11.5px Inter; font-style: normal; color: #c4b5fd; padding: 8px 10px; border-radius: 99px; }
+  .perm { text-align: center; top: 130px; }
+  .perm .bell { width: 28px; height: 28px; margin: 0 auto 10px; color: #c4b5fd; }
+  .perm .ttl { font-size: 13.5px; line-height: 1.3; }
+  .perm .stack i { display: block; margin-top: 6px; padding: 9px; border-radius: 99px; font: 600 11.5px Inter; font-style: normal; background: rgba(196,181,253,.14); color: #e9e3ff; }
+
+  /* iOS alert */
+  .alert { position: absolute; left: 30px; right: 30px; top: 150px; border-radius: 14px; background: rgba(44,42,52,.97); text-align: center; overflow: hidden; }
+  .alert .tx { padding: 14px 12px 12px; }
+  .alert b { display: block; font: 700 12px/1.3 Inter; }
+  .alert span { display: block; margin-top: 5px; font: 500 10px/1.35 Inter; color: rgba(255,255,255,.75); }
+  .alert .bt { display: flex; border-top: 1px solid rgba(255,255,255,.12); }
+  .alert .bt i { flex: 1; padding: 10px 0; font: 500 12px Inter; font-style: normal; color: #4f9dff; }
+  .alert .bt i + i { border-left: 1px solid rgba(255,255,255,.12); font-weight: 700; }
+
+  /* Home screen */
+  .grid { position: absolute; top: 44px; left: 14px; right: 14px; display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 14px; justify-items: center; }
+  .grid .ic { width: 38px; height: 38px; border-radius: 10px; }
+  .grid .lb { width: 26px; height: 4px; margin-top: 5px; border-radius: 2px; background: rgba(255,255,255,.35); }
+  .android .grid .ic { border-radius: 50%; }
+  .dock { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 60px; border-radius: 22px; background: rgba(255,255,255,.18); display: flex; justify-content: space-around; align-items: center; }
+  .dock i { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,.55); }
+  .android .dock { background: transparent; } .android .dock i { border-radius: 50%; }
+  .flowyicon { position: absolute; display: flex; flex-direction: column; align-items: center; }
+  .flowyicon img { width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 0 0 0 rgba(196,181,253,.0); }
+  .android .flowyicon img { border-radius: 50%; }
+  .flowyicon span { margin-top: 3px; font: 600 8.5px Inter; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+
+  /* App */
+  .app { position: absolute; inset: 0; background: #0f0a1e; }
+  .app .hi { position: absolute; top: 44px; left: 16px; font: 800 18px "Bricolage Grotesque", Inter; }
+  .app .task { position: absolute; left: 14px; right: 14px; height: 38px; border-radius: 12px; background: rgba(255,255,255,.05);
+    display: flex; align-items: center; gap: 9px; padding: 0 11px; font: 500 11px Inter; }
+  .app .task i { width: 14px; height: 14px; border-radius: 50%; border: 1.6px solid rgba(196,181,253,.7); }
+  .app .task span { margin-left: auto; color: #c4b5fd; font-weight: 600; font-size: 10px; }
+  .ask { position: absolute; left: 10px; right: 10px; bottom: 12px; border-radius: 22px; background: #221a3d; padding: 16px 14px 12px; text-align: center; border: 1px solid rgba(167,139,250,.3); }
+  .ask .b { width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 12px; background: rgba(139,92,246,.25); display: grid; place-items: center; color: #c4b5fd; }
+  .ask .b svg { width: 21px; height: 21px; }
+  .ask b { display: block; font: 700 13.5px Inter; }
+  .ask span { display: block; margin-top: 4px; font: 500 10px/1.35 Inter; color: rgba(255,255,255,.6); }
+  .ask .go { margin-top: 11px; height: 34px; border-radius: 12px; background: #7c3aed; display: grid; place-items: center; font: 700 12px Inter; }
+
+  /* Finger */
+  #finger { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; z-index: 99;
+    background: rgba(255,255,255,.85); box-shadow: 0 4px 14px rgba(0,0,0,.45), inset 0 0 0 2px rgba(124,58,237,.6); }
+  #ripple { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; z-index: 98; border: 2.5px solid #c4b5fd; }
+  .why { position: absolute; left: 18px; right: 18px; top: 248px; border-radius: 16px; padding: 10px 12px; background: rgba(15,10,30,.75);
+    font: 600 11px/1.35 Inter; text-align: center; color: #fff; border: 1px solid rgba(196,181,253,.35); }
+  .why b { color: #c4b5fd; }
+  #confetti i { position: absolute; width: 6px; height: 10px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="glow" style="width:260px;height:260px;left:-90px;top:250px;background:#7c3aed"></div>
+  <div class="glow" style="width:220px;height:220px;right:-90px;top:420px;background:#db2777;opacity:.35"></div>
+  <div id="brand"><img src="../../public/icon-192.png" alt="">Flowy</div>
+  <div id="caps"></div>
+  <div id="phone"><div id="screen">
+    <div class="island"></div>
+    <div id="layers"></div>
+    <div id="ripple"></div>
+    <div id="finger"></div>
+  </div></div>
+  <div id="confetti"></div>
+</div>
+<script>
+const OS = new URLSearchParams(location.search).get("os") === "android" ? "android" : "iphone";
+const IOS = OS === "iphone";
+document.getElementById("screen").classList.toggle("android", !IOS);
+const ICON = "../../public/icon-192.png";
+
+const ico = {
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m15 5-7 7 7 7"/></svg>',
+  fwd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".4"><path d="m9 5 7 7-7 7"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v14"/></svg>',
+  tabs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v10"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 4H6a2 2 0 0 0-2 2v10"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/></svg>',
+  dots: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>',
+  install: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M12 7v7m-3-3 3 3 3-3"/></svg>',
+  hist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m-4-4 4 4 4-4M5 20h14"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2m10-10 2-2"/></svg>',
+  newtab: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="9" height="9"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+};
+
+const status = (dark) => `<div class="status" style="color:${dark ? "#111" : "#fff"}"><span>9:41</span><span class="r"><span class="bars"><i style="height:3px"></i><i style="height:5px"></i><i style="height:7px"></i><i style="height:8px"></i></span><span class="bat"></span></span></div>`;
+const notifHtml = (id, title, body, extra = "") => `<div class="notif" id="${id}"><img src="${ICON}"><div style="flex:1;min-width:0"><div class="h"><span>FLOWY</span><span>agora</span></div><b>${title}</b><span class="s">${body}</span>${extra}</div></div>`;
+const loginPage = `<div class="page"><img class="logo" src="${ICON}"><h2>Flowy</h2><p>Suas tarefas, lembretes e foco do dia num lugar só.</p><div class="btn">Entrar</div><div class="btn btn2">Criar conta grátis</div></div>`;
+
+const COLORS = ["#f59e0b","#10b981","#3b82f6","#ef4444","#8b5cf6","#ec4899","#14b8a6","#f97316","#6366f1","#84cc16","#06b6d4","#e11d48","#a855f7","#22c55e","#0ea5e9"];
+const homeGrid = `<div class="grid">${COLORS.map((c) => `<div><div class="ic" style="background:linear-gradient(135deg,${c},${c}99)"></div><div class="lb"></div></div>`).join("")}<div></div></div>`;
+
+const L = {};
+function layer(id, html) { L[id] = html; }
+
+layer("lock", `<div class="wall"></div>${status()}<div class="date">quinta-feira, 13 de novembro</div><div class="clock">9:41</div>
+  ${notifHtml("n1", "Reunião com a Ana", "Hoje · 15:00")}
+  <div class="why" id="why">${IOS ? "No iPhone, <b>só app instalado</b> na Tela de Início recebe notificação." : "Instalado, o Flowy avisa <b>mesmo com o Chrome fechado</b>."}</div>
+  ${notifHtml("n2", "Pagar o boleto da luz", "Agora · 15:00", '<div class="acts"><i>✓ Concluir</i><i>+1 hora</i></div>')}`);
+
+if (IOS) {
+  layer("browser", `${loginPage}${status()}<div class="sbar"><div class="addr"><span class="aa">aA</span>${ico.lock}useflowy.vercel.app</div>
+    <div class="tools"><span>${ico.back}</span><span>${ico.fwd}</span><span id="shareBtn">${ico.share}</span><span>${ico.book}</span><span>${ico.tabs}</span></div></div>`);
+  layer("sheet", `<div class="dim"></div><div class="sheet" id="sheet"><div class="head"><img src="${ICON}"><div><b>Flowy</b><span>useflowy.vercel.app</span></div></div>
+    <div class="people"><i></i><i></i><i></i><i></i></div>
+    <div class="rows"><div class="row">Copiar ${ico.copy}</div><div class="row">Adicionar aos Favoritos ${ico.star}</div>
+    <div class="row" id="addRow">Adicionar à Tela de Início ${ico.plus}</div><div class="row">Buscar na Página ${ico.search}</div></div></div>`);
+  layer("add", `<div class="add">${status()}<div class="top"><span>Cancelar</span><b>Adicionar à Tela de Início</b><span id="addBtn" style="font-weight:700">Adicionar</span></div>
+    <div class="card"><img src="${ICON}"><div class="f">Flowy<small>useflowy.vercel.app</small></div></div>
+    <div class="note">Um ícone será adicionado à sua Tela de Início para você abrir este site como um app.</div></div>`);
+} else {
+  layer("browser", `${loginPage}${status()}<div class="cbar"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#ddd" stroke-width="2"><path d="M3 11 12 4l9 7v9H3z"/></svg>
+    <div class="pill">${ico.lock}useflowy.vercel.app</div><div class="tab">1</div><div class="dots" id="dotsBtn">${ico.dots}</div></div>`);
+  layer("menu", `<div class="menu" id="menu"><div class="icons">${ico.fwd}${ico.star}${ico.down}${ico.search}</div>
+    <div class="it">${ico.newtab}Nova guia</div><div class="it">${ico.hist}Histórico</div><div class="it">${ico.down}Downloads</div>
+    <div class="it" id="installRow">${ico.install}Instalar app</div><div class="it">${ico.gear}Configurações</div></div>`);
+  layer("add", `<div class="dim"></div><div class="dialog" id="dlg"><div class="ttl">Instalar app</div><div class="appinfo"><img src="${ICON}"><div><b>Flowy</b><span>useflowy.vercel.app</span></div></div>
+    <div class="btns"><i>Cancelar</i><i id="addBtn" style="background:#7c3aed;color:#fff">Instalar</i></div></div>`);
+}
+
+layer("home", `<div class="wall"></div>${status()}${homeGrid}<div class="flowyicon" id="fic" style="left:159px;top:227px"><img src="${ICON}"><span>Flowy</span></div><div class="dock"><i></i><i></i><i></i><i></i></div>`);
+layer("app", `<div class="app">${status()}<div class="hi">Bom dia, Ana ☀️</div>
+  <div class="task" style="top:80px"><i></i>Reunião com a Ana<span>15:00</span></div>
+  <div class="task" style="top:124px"><i></i>Pagar o boleto da luz<span>15:00</span></div>
+  <div class="task" style="top:168px"><i></i>Estudar inglês<span>19:00</span></div>
+  <div class="ask" id="ask"><div class="b">${ico.bell}</div><b>Quer que o Flowy te lembre?</b><span>Um aviso na hora de cada tarefa.</span><div class="go" id="goBtn">Ativar lembretes</div></div></div>`);
+layer("perm", IOS
+  ? `<div class="dim"></div><div class="alert" id="alert"><div class="tx"><b>“Flowy” Gostaria de Enviar Notificações</b><span>Elas podem incluir alertas, sons e indicadores nos ícones.</span></div><div class="bt"><i>Não Permitir</i><i id="allowBtn">Permitir</i></div></div>`
+  : `<div class="dim"></div><div class="dialog perm" id="alert"><div class="bell">${ico.bell}</div><div class="ttl">Permitir que <b>Flowy</b> envie notificações?</div><div class="stack"><i id="allowBtn">Permitir</i><i>Não permitir</i></div></div>`);
+
+document.getElementById("layers").innerHTML = Object.entries(L).map(([id, html]) => `<div class="layer" id="L-${id}">${html}</div>`).join("");
+
+// Timeline (seconds). Each scene shows a layer stack and a caption.
+const S = IOS ? [
+  { a: 0, b: 4.2, layers: ["lock"], chip: "Lembretes do Flowy", h: "Receba o aviso de <em>cada tarefa</em>", p: "Como instalar no iPhone. Leva 30 segundos." },
+  { a: 4.2, b: 9.2, layers: ["lock"], chip: "Por que instalar?", h: "No iPhone, o aviso só chega com o <em>app instalado</em>", p: "O Flowy é um site: instalando, ele vira um app na sua Tela de Início." },
+  { a: 9.2, b: 13, layers: ["browser"], chip: "Passo 1", h: "Abra o Flowy no <em>Safari</em>", p: "useflowy.vercel.app" },
+  { a: 13, b: 17, layers: ["browser", "sheet"], chip: "Passo 2", h: "Toque em <em>Compartilhar</em>", p: "O quadrado com a seta para cima. Não achou? Toque antes em ⋯" },
+  { a: 17, b: 21, layers: ["browser", "sheet"], chip: "Passo 3", h: "Toque em <em>Adicionar à Tela de Início</em>", p: "Se não aparecer, role a lista para baixo." },
+  { a: 21, b: 24.6, layers: ["add"], chip: "Passo 4", h: "Toque em <em>Adicionar</em>", p: "Pronto, o Flowy agora é um app." },
+  { a: 24.6, b: 29, layers: ["home"], chip: "Passo 5", h: "Abra pelo <em>ícone novo</em>", p: "Daqui pra frente, sempre pelo ícone, não pelo Safari." },
+  { a: 29, b: 35.5, layers: ["app", "perm"], chip: "Passo 6", h: "Toque em <em>Ativar lembretes</em> e depois em <em>Permitir</em>", p: "Sem o “Permitir”, o iPhone não deixa o aviso chegar." },
+  { a: 35.5, b: 41, layers: ["lock"], chip: "Pronto!", h: "Agora o Flowy te avisa <em>na hora</em> 🎉", p: "Dá até para concluir a tarefa direto pela notificação." },
+] : [
+  { a: 0, b: 4.2, layers: ["lock"], chip: "Lembretes do Flowy", h: "Receba o aviso de <em>cada tarefa</em>", p: "Como instalar no Android. Leva 20 segundos." },
+  { a: 4.2, b: 9.2, layers: ["lock"], chip: "Por que instalar?", h: "Instalado, o aviso chega <em>mesmo com tudo fechado</em>", p: "O Flowy é um site: instalando, ele vira um app no seu celular." },
+  { a: 9.2, b: 12.6, layers: ["browser"], chip: "Passo 1", h: "Abra o Flowy no <em>Chrome</em>", p: "useflowy.vercel.app" },
+  { a: 12.6, b: 16.2, layers: ["browser", "menu"], chip: "Passo 2", h: "Toque nos <em>3 pontinhos ⋮</em>", p: "No canto de cima, à direita." },
+  { a: 16.2, b: 19, layers: ["browser", "menu"], chip: "Passo 3", h: "Toque em <em>Instalar app</em>", p: "Em alguns celulares aparece “Adicionar à tela inicial”." },
+  { a: 19, b: 23, layers: ["browser", "add"], chip: "Passo 4", h: "Toque em <em>Instalar</em>", p: "Pronto, o Flowy agora é um app." },
+  { a: 23, b: 27, layers: ["home"], chip: "Passo 5", h: "Abra pelo <em>ícone novo</em>", p: "Ele fica junto dos seus outros apps." },
+  { a: 27, b: 33.5, layers: ["app", "perm"], chip: "Passo 6", h: "Toque em <em>Ativar lembretes</em> e depois em <em>Permitir</em>", p: "Sem o “Permitir”, o celular bloqueia o aviso." },
+  { a: 33.5, b: 39, layers: ["lock"], chip: "Pronto!", h: "Agora o Flowy te avisa <em>na hora</em> 🎉", p: "Dá até para concluir a tarefa direto pela notificação." },
+];
+const DURATION = S[S.length - 1].b;
+window.DURATION = DURATION;
+
+document.getElementById("caps").innerHTML = S.map((s, i) => `<div class="cap" id="C${i}"><span class="chip">${s.chip}</span><h1>${s.h}</h1><p>${s.p}</p></div>`).join("");
+
+// Finger path in screen coordinates: [t, x, y]; taps at given seconds.
+const share = [107, 422], addRow = [108, 296], addBtn = IOS ? [186, 52] : [158, 249], icon = [178, 247], goBtn = [108, 432], allow = IOS ? [146, 238] : [108, 248];
+const dots = [199, 50], installRow = [130, 186];
+const F = IOS ? {
+  path: [[13.2, 150, 520], [14.4, ...share], [15.6, ...share], [16.3, 170, 360], [18.6, 170, 360], [19.6, ...addRow], [20.8, ...addRow], [21.6, 150, 120], [22.4, ...addBtn], [23.8, ...addBtn], [25.4, 170, 420], [26.4, ...icon], [28, ...icon], [29.6, 160, 520], [30.4, ...goBtn], [31.6, ...goBtn], [32.4, 170, 330], [33.2, ...allow], [34.8, ...allow]],
+  taps: [14.8, 20.2, 22.8, 27, 30.8, 33.6],
+  show: [[13.2, 35]],
+} : {
+  path: [[12.8, 140, 300], [13.8, ...dots], [15.2, ...dots], [16.4, 150, 200], [17.4, ...installRow], [18.8, ...installRow], [19.6, 130, 330], [20.6, ...addBtn], [22.2, ...addBtn], [23.8, 170, 420], [24.8, ...icon], [26.4, ...icon], [27.6, 160, 520], [28.4, ...goBtn], [29.6, ...goBtn], [30.4, 170, 330], [31.2, ...allow], [32.8, ...allow]],
+  taps: [14.2, 18, 21.2, 25.4, 28.8, 31.6],
+  show: [[12.8, 33]],
+};
+
+const clamp = (v) => Math.max(0, Math.min(1, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const outBack = (x) => { const c1 = 1.9, c3 = c1 + 1; return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const $ = (id) => document.getElementById(id);
+const set = (el, o, tr = "") => { if (!el) return; el.style.opacity = o; el.style.transform = tr; };
+
+function fingerAt(t) {
+  const p = F.path;
+  if (t <= p[0][0]) return [p[0][1], p[0][2]];
+  for (let i = 1; i < p.length; i++) {
+    if (t <= p[i][0]) {
+      const k = ease(prog(t, p[i - 1][0], p[i][0]));
+      return [p[i - 1][1] + (p[i][1] - p[i - 1][1]) * k, p[i - 1][2] + (p[i][2] - p[i - 1][2]) * k];
+    }
+  }
+  const last = p[p.length - 1];
+  return [last[1], last[2]];
+}
+const tapped = (t, at) => t >= at;
+const pressing = (t, at) => t >= at - 0.12 && t < at + 0.18;
+
+function render(t) {
+  // Captions: fade and rise in, fade out.
+  S.forEach((s, i) => {
+    const vis = Math.min(prog(t, s.a, s.a + 0.45), 1 - prog(t, s.b - 0.3, s.b));
+    const k = ease(prog(t, s.a, s.a + 0.6));
+    set($("C" + i), i === S.length - 1 && t >= s.b ? 1 : vis, `translateY(${(1 - k) * 14}px)`);
+  });
+
+  // Layers: union of layers in the current scene, crossfading at the edges.
+  const opacity = {};
+  S.forEach((s) => s.layers.forEach((id) => {
+    const v = Math.min(prog(t, s.a - 0.15, s.a + 0.25), 1 - prog(t, s.b - 0.1, s.b + 0.25));
+    const first = s === S[0] ? 1 : v;
+    opacity[id] = Math.max(opacity[id] ?? 0, s === S[0] && t < s.b ? 1 : first);
+  }));
+  Object.keys(L).forEach((id) => set($("L-" + id), opacity[id] ?? 0));
+
+  // Lock screen notifications: one at the start, one at the end.
+  const s0 = S[0], s1 = S[1], sl = S[S.length - 1];
+  const n1 = outBack(prog(t, s0.a + 0.8, s0.a + 1.6));
+  set($("n1"), t < sl.a ? clamp(n1 * 2) : 0, `translateY(${(1 - n1) * -60}px) scale(${0.9 + 0.1 * n1})`);
+  const w = ease(prog(t, s1.a + 0.6, s1.a + 1.2));
+  set($("why"), t >= s1.a && t < sl.a ? w : 0, `translateY(${(1 - w) * 12}px)`);
+  const n2 = outBack(prog(t, sl.a + 0.6, sl.a + 1.4));
+  set($("n2"), t >= sl.a ? clamp(n2 * 2) : 0, `translateY(${(1 - n2) * -60}px) scale(${0.9 + 0.1 * n2})`);
+  const ring = t >= sl.a + 1.4 ? Math.sin((t - sl.a - 1.4) * 22) * Math.max(0, 1 - (t - sl.a - 1.4) / 0.8) * 3 : 0;
+  if (t >= sl.a) $("n2").style.transform += ` rotate(${ring}deg)`;
+
+  // Taps.
+  const [t1, t2, t3, t4, t5, t6] = F.taps;
+  if (IOS) {
+    const sh = ease(prog(t, t1 + 0.25, t1 + 0.75));
+    $("sheet").style.transform = `translateY(${(1 - sh) * 340}px)`;
+    $("L-sheet").querySelector(".dim").style.opacity = sh;
+    $("addRow").style.background = pressing(t, t2) || (t >= t2 && t < t2 + 0.6) ? "rgba(124,58,237,.55)" : t >= 18.6 ? "rgba(124,58,237,.18)" : "transparent";
+    $("shareBtn").style.color = pressing(t, t1) ? "#c4b5fd" : "";
+    $("addBtn").style.opacity = pressing(t, t3) ? 0.45 : 1;
+  } else {
+    const m = ease(prog(t, t1 + 0.1, t1 + 0.45));
+    $("menu").style.transform = `scale(${0.6 + 0.4 * m})`;
+    $("menu").style.opacity = m;
+    $("dotsBtn").style.background = pressing(t, t1) ? "rgba(255,255,255,.18)" : "";
+    $("dotsBtn").style.borderRadius = "50%";
+    $("installRow").style.background = pressing(t, t2) || (t >= t2 && t < t2 + 0.5) ? "rgba(124,58,237,.55)" : t >= 16.6 ? "rgba(124,58,237,.18)" : "transparent";
+    const d = outBack(prog(t, S[5].a + 0.1, S[5].a + 0.6));
+    $("dlg").style.transform = `scale(${0.85 + 0.15 * d})`;
+    $("L-add").querySelector(".dim").style.opacity = clamp(d);
+    $("addBtn").style.opacity = pressing(t, t3) ? 0.5 : 1;
+  }
+  // Home: the Flowy icon pops in, then glows before the tap.
+  const homeScene = S[6];
+  const pop = outBack(prog(t, homeScene.a + 0.3, homeScene.a + 0.9));
+  $("fic").style.transform = `scale(${pop * (pressing(t, t4) ? 0.88 : 1)})`;
+  $("fic").querySelector("img").style.boxShadow = t > homeScene.a + 0.9 ? `0 0 0 ${3 + 2 * Math.sin(t * 6)}px rgba(196,181,253,.55)` : "none";
+  // App: ask card rises, the permission prompt follows the tap.
+  const appScene = S[7];
+  const ask = ease(prog(t, appScene.a + 0.2, appScene.a + 0.7));
+  $("ask").style.transform = `translateY(${(1 - ask) * 220}px)`;
+  $("goBtn").style.opacity = pressing(t, t5) ? 0.6 : 1;
+  const pm = outBack(prog(t, t5 + 0.25, t5 + 0.7));
+  set($("L-perm"), t >= t5 + 0.25 && t < t6 + 0.5 ? clamp(pm) * (opacity.perm ?? 0) : (t >= t6 + 0.5 ? (1 - prog(t, t6 + 0.5, t6 + 0.8)) * (opacity.perm ?? 0) : 0));
+  $("alert").style.transform = `scale(${1.08 - 0.08 * clamp(pm)})`;
+  $("allowBtn").style.background = pressing(t, t6) ? "rgba(124,58,237,.6)" : "";
+
+  // Finger and ripple.
+  const on = F.show.some(([a, b]) => t >= a && t <= b);
+  const fin = F.show.map(([a, b]) => Math.min(prog(t, a, a + 0.3), 1 - prog(t, b - 0.3, b))).reduce((x, y) => Math.max(x, y), 0);
+  const [fx, fy] = fingerAt(t);
+  const down = F.taps.some((at) => pressing(t, at));
+  const finger = $("finger");
+  finger.style.left = fx + "px"; finger.style.top = fy + "px";
+  finger.style.opacity = on ? fin : 0;
+  finger.style.transform = `scale(${down ? 0.78 : 1})`;
+  const last = F.taps.filter((at) => t >= at).pop();
+  const r = last === undefined ? 1 : prog(t, last, last + 0.55);
+  const ripple = $("ripple");
+  ripple.style.left = fx + "px"; ripple.style.top = fy + "px";
+  ripple.style.opacity = r < 1 ? 1 - r : 0;
+  ripple.style.transform = `scale(${0.6 + r * 1.8})`;
+
+  // Confetti at the end.
+  const c = prog(t, sl.a + 0.4, sl.a + 3.4);
+  document.querySelectorAll("#confetti i").forEach((el, i) => {
+    const seed = (i * 97) % 360, x = (i * 53) % 360, sway = Math.sin(c * 8 + i) * 14;
+    el.style.left = x + sway + "px";
+    el.style.top = -20 + c * (520 + (i % 5) * 60) + "px";
+    el.style.opacity = c > 0 && c < 1 ? 1 - c * 0.6 : 0;
+    el.style.transform = `rotate(${seed + c * 720}deg)`;
+  });
+}
+document.getElementById("confetti").innerHTML = Array.from({ length: 36 }, (_, i) => `<i style="background:${["#c4b5fd","#f472b6","#fbbf24","#34d399","#60a5fa"][i % 5]}"></i>`).join("");
+window.render = render;
+render(0);
+
+if (new URLSearchParams(location.search).has("play")) {
+  const start = performance.now();
+  const loop = () => { const t = ((performance.now() - start) / 1000) % (DURATION + 1); render(t); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

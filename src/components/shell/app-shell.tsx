@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { DayClearedCelebration } from "@/features/tasks/day-cleared";
 import { BrainDump } from "@/features/engagement/brain-dump";
+import { TabReminders } from "@/features/tasks/tab-reminders";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -245,6 +246,7 @@ export function AppShell({
 
         <DayClearedCelebration />
         <BrainDump />
+        <TabReminders />
         <main
           id="main-content"
           tabIndex={-1}

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { InstallVideo } from "@/components/system/install-video";
 import { usePushNotifications } from "@/features/settings/use-push-notifications";
 import { useInstallApp } from "@/hooks/use-install-app";
 import { holdOverlay } from "@/lib/overlay";
@@ -250,7 +251,7 @@ function SetupDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="reminder-setup-title"
-        className="flowy-glass flowy-glass-strong relative w-full max-w-md animate-in rounded-t-[1.75rem] border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] fade-in slide-in-from-bottom-6 sm:rounded-3xl"
+        className="flowy-glass flowy-glass-strong relative max-h-[94dvh] w-full max-w-md animate-in overflow-y-auto rounded-t-[1.75rem] border p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] fade-in slide-in-from-bottom-6 sm:rounded-3xl"
       >
         <button
           type="button"
@@ -267,9 +268,14 @@ function SetupDialog({
           key={index}
           className="mt-4 flex animate-in flex-col items-center gap-4 text-center fade-in slide-in-from-right-4"
         >
-          <div className="grid w-full place-items-center rounded-3xl bg-gradient-to-br from-primary/15 to-fuchsia-500/10 py-3 ring-1 ring-primary/20">
-            <TutorialScene id={step.scene} />
-          </div>
+          {index === 0 && !desktop && !installed ? (
+            // On a phone, the install step is the video: it shows each tap.
+            <InstallVideo compact initial={ios ? "iphone" : "android"} />
+          ) : (
+            <div className="grid w-full place-items-center rounded-3xl bg-gradient-to-br from-primary/15 to-fuchsia-500/10 py-3 ring-1 ring-primary/20">
+              <TutorialScene id={step.scene} />
+            </div>
+          )}
           <h2 id="reminder-setup-title" className="text-xl font-semibold">
             {step.title}
           </h2>
@@ -435,7 +441,7 @@ export function ReminderSetupCard() {
             <span className="block text-muted-foreground">
               {canEnableHere
                 ? "Um toque e você recebe o aviso na hora de cada tarefa."
-                : "2 passos em cada aparelho: instalar e ativar."}
+                : "Veja no vídeo: instalar e ativar leva 40 segundos."}
             </span>
           </p>
           <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
