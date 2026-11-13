@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, Coffee, Pause, Play, SkipForward, Target } from "lucide-react";
+import { Check, Coffee, LogOut, Pause, Play, SkipForward, Target } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -99,6 +100,7 @@ async function ring(title: string, body: string) {
  * screen, with a 25-minute focus timer and a 5-minute break.
  */
 export function FocusPage() {
+  const router = useRouter();
   const today = localDateKey();
   const tasks = useTasks({ scope: "today" });
   const update = useUpdateTask();
@@ -149,12 +151,27 @@ export function FocusPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-5">
-      <header>
-        <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
-          <Target className="size-6 flowy-ink" aria-hidden="true" />
-          Foco
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Uma coisa de cada vez. O resto espera.</p>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
+            <Target className="size-6 flowy-ink" aria-hidden="true" />
+            Foco
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Uma coisa de cada vez. O resto espera.</p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 shrink-0 gap-2"
+          onClick={() => {
+            // Leaving ends the session: the timer stops too.
+            saveTimer(null);
+            router.push("/app?view=today");
+          }}
+        >
+          <LogOut className="size-4" aria-hidden="true" />
+          Sair do foco
+        </Button>
       </header>
 
       {tasks.isLoading ? (
