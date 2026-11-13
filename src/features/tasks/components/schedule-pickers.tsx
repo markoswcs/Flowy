@@ -1,11 +1,11 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { localDateKey } from "@/features/tasks/date-utils";
-import { HOURS, MINUTES, QUICK_TIMES, inOneHour, monthGrid, quickDates } from "@/features/tasks/pickers";
+import { HOURS, QUICK_TIMES, inOneHour, monthGrid, quickDates } from "@/features/tasks/pickers";
 import { holdOverlay } from "@/lib/overlay";
 import { cn } from "@/lib/utils";
 
@@ -136,7 +136,81 @@ export function DatePickerSheet({
   );
 }
 
-/** Flowy's own time picker: shortcuts, then hour and minute as big buttons (24 h). */
+const ITEM = 44;
+const VISIBLE = 5;
+
+/**
+ * One iPhone-style wheel: a column that scrolls and snaps, the middle row is
+ * the chosen value. Tapping a row scrolls it to the middle.
+ */
+function Wheel({
+  values,
+  value,
+  onChange,
+  label,
+}: {
+  values: string[];
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const initial = useRef(Math.max(0, values.indexOf(value)));
+
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = initial.current * ITEM;
+  }, []);
+
+  function settle() {
+    const element = ref.current;
+    if (!element) return;
+    const index = Math.min(values.length - 1, Math.max(0, Math.round(element.scrollTop / ITEM)));
+    if (values[index] !== value) onChange(values[index]!);
+  }
+
+  return (
+    <div
+      ref={ref}
+      role="listbox"
+      aria-label={label}
+      tabIndex={0}
+      onScroll={settle}
+      onKeyDown={(event) => {
+        const step = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
+        if (!step) return;
+        event.preventDefault();
+        ref.current?.scrollBy({ top: step * ITEM, behavior: "smooth" });
+      }}
+      className="relative z-10 h-full flex-1 snap-y snap-mandatory overflow-y-scroll overscroll-contain outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      style={{
+        paddingBlock: ITEM * Math.floor(VISIBLE / 2),
+        maskImage: "linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent)",
+      }}
+    >
+      {values.map((option, index) => (
+        <div
+          key={option}
+          role="option"
+          aria-selected={option === value}
+          aria-label={option}
+          onClick={() => ref.current?.scrollTo({ top: index * ITEM, behavior: "smooth" })}
+          className={cn(
+            "grid snap-center cursor-pointer place-items-center text-[22px] tabular-nums transition-colors",
+            option === value ? "font-semibold text-foreground" : "text-muted-foreground/70",
+          )}
+          style={{ height: ITEM }}
+        >
+          {option}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const ALL_MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
+
+/** Flowy's time picker, like the iPhone's: two wheels (24 h) and "Definir". */
 export function TimePickerSheet({
   value,
   onChange,
@@ -146,75 +220,42 @@ export function TimePickerSheet({
   onChange: (value: string) => void;
   onClose: () => void;
 }) {
-  const [hour, setHour] = useState(value ? value.slice(0, 2) : "");
-  const [minute, setMinute] = useState(value ? value.slice(3, 5) : "00");
+  // Without a time yet, the wheels start an hour from now.
+  const [start] = useState(() => value || inOneHour(new Date()));
+  const [hour, setHour] = useState(start.slice(0, 2));
+  const [minute, setMinute] = useState(start.slice(3, 5));
   const pick = (time: string) => {
     onChange(time);
     onClose();
   };
-  // Minutes off the 5-minute grid (typed elsewhere) still show as chosen.
-  const minutes = MINUTES.includes(minute) ? MINUTES : [...MINUTES, minute].sort();
 
   return (
     <PickerSheet title="Horário" onClose={onClose}>
-      <p className="text-center text-4xl font-bold tabular-nums tracking-tight" aria-live="polite">
-        <span className={hour ? "" : "text-muted-foreground/40"}>{hour || "--"}</span>
-        <span className="text-muted-foreground/60">:</span>
-        {minute}
-      </p>
+      <div className="relative flex items-stretch justify-center gap-2 px-6" style={{ height: ITEM * VISIBLE }}>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-3 top-1/2 -translate-y-1/2 rounded-xl bg-muted/60"
+          style={{ height: ITEM }}
+        />
+        <Wheel label="Hora" values={HOURS} value={hour} onChange={setHour} />
+        <span aria-hidden="true" className="relative z-10 self-center text-[22px] font-semibold">:</span>
+        <Wheel label="Minutos" values={ALL_MINUTES} value={minute} onChange={setMinute} />
+      </div>
+
+      <button
+        type="button"
+        onClick={() => pick(`${hour}:${minute}`)}
+        className="mt-4 h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground"
+      >
+        Definir {hour}:{minute}
+      </button>
       <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-        <Chip onClick={() => pick(inOneHour(new Date()))}>Daqui 1 hora</Chip>
         {QUICK_TIMES.map((time) => (
           <Chip key={time} active={value === time} onClick={() => pick(time)}>
             {time}
           </Chip>
         ))}
       </div>
-
-      <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hora</p>
-      <div className="grid grid-cols-6 gap-1.5">
-        {HOURS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => setHour(option)}
-            aria-pressed={hour === option}
-            className={cn(
-              "h-11 rounded-xl text-[15px] font-semibold tabular-nums transition-colors active:scale-95",
-              hour === option ? "bg-primary text-primary-foreground" : "bg-muted/40 hover:bg-muted",
-            )}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-
-      <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Minutos</p>
-      <div className="grid grid-cols-6 gap-1.5">
-        {minutes.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => setMinute(option)}
-            aria-pressed={minute === option}
-            className={cn(
-              "h-11 rounded-xl text-[15px] font-semibold tabular-nums transition-colors active:scale-95",
-              minute === option ? "bg-primary text-primary-foreground" : "bg-muted/40 hover:bg-muted",
-            )}
-          >
-            :{option}
-          </button>
-        ))}
-      </div>
-
-      <button
-        type="button"
-        disabled={!hour}
-        onClick={() => pick(`${hour}:${minute}`)}
-        className="mt-4 h-12 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-40"
-      >
-        {hour ? `Definir ${hour}:${minute}` : "Escolha a hora"}
-      </button>
     </PickerSheet>
   );
 }
