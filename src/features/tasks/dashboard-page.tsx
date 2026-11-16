@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { GettingStarted } from "@/features/onboarding/getting-started";
 import { TodayBoosts } from "@/features/engagement/today-boosts";
 import { CalendarView } from "@/features/calendar/calendar-view";
+import { AnnouncementCard } from "@/features/announcements/announcements";
 import { TodayWorkoutCard } from "@/features/workouts/components/today-workout-card";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
@@ -249,6 +250,7 @@ function DashboardContent({
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-6">
+      <AnnouncementCard />
       <ReminderSetupCard />
       <header className="space-y-4 sm:space-y-5">
         <div className="flex items-start justify-between gap-3">

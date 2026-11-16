@@ -33,6 +33,8 @@ import { DeleteAccountButton } from "@/components/auth/delete-account-button";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { PushNotificationsSection } from "@/features/settings/push-notifications-section";
 import { CalendarFeedSection } from "@/features/settings/calendar-feed-section";
+import { cn } from "@/lib/utils";
+import { BroadcastSection } from "@/features/announcements/announcements";
 import { normalizeThemePreference } from "@/lib/theme";
 import { clearTaskCache } from "@/features/tasks/task-cache";
 import { createClient } from "@/lib/supabase/client";
@@ -79,6 +81,12 @@ function ThemePreview({ theme, selected }: { theme: ThemePreference; selected: b
     />
   );
 }
+
+const START_VIEWS = [
+  { value: "today", label: "Hoje (recomendado)", hint: "As tarefas de hoje e as que ficaram atrasadas." },
+  { value: "upcoming", label: "Próximas", hint: "O que vem nos próximos dias, a partir de amanhã." },
+  { value: "all", label: "Todas", hint: "Todas as tarefas abertas, de qualquer data ou sem data." },
+] as const;
 
 export function SettingsPage() {
   const router = useRouter();
@@ -235,6 +243,7 @@ export function SettingsPage() {
       </header>
 
       <div className="space-y-10">
+        <BroadcastSection />
         <PushNotificationsSection />
         <CalendarFeedSection />
         <section aria-labelledby="modules-heading">
@@ -411,25 +420,37 @@ export function SettingsPage() {
           <h2 id="preferences-heading" className="text-base font-semibold">
             Preferências
           </h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-medium">
-              Visão inicial de tarefas
-              <select
-                value={preferences.data?.default_task_view ?? "today"}
-                onChange={(event) =>
-                  updatePreferences.mutate({
-                    default_task_view: event.target.value as
-                      "all" | "today" | "upcoming",
-                  })
-                }
-                className="mt-1.5 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="all">Todas</option>
-                <option value="today">Hoje</option>
-                <option value="upcoming">Próximas</option>
-              </select>
-            </label>
-          </div>
+          <fieldset className="mt-4">
+            <legend className="text-sm font-medium">Ao abrir o Flowy, mostrar</legend>
+            <p className="text-xs text-muted-foreground">É a aba que aparece primeiro na tela Início. Dá para trocar de aba a qualquer momento.</p>
+            <div className="mt-2 grid gap-2">
+              {START_VIEWS.map((option) => {
+                const checked = (preferences.data?.default_task_view ?? "today") === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-2xl border p-3 transition-colors",
+                      checked ? "border-primary/50 bg-primary/[0.07]" : "border-border/60 hover:bg-muted/30",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="default-task-view"
+                      value={option.value}
+                      checked={checked}
+                      onChange={() => updatePreferences.mutate({ default_task_view: option.value })}
+                      className="mt-1 size-4 accent-[hsl(var(--primary))]"
+                    />
+                    <span className="text-sm">
+                      <span className="block font-medium">{option.label}</span>
+                      <span className="block text-muted-foreground">{option.hint}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
         </section>
 
         <section
