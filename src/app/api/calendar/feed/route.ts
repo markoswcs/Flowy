@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { GoogleRevokedError, googleAccessToken, googleEvents } from "@/lib/calendar/google";
 import { eventsBetween, normalizeFeedUrl } from "@/lib/calendar/ics";
+import { serviceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -52,6 +54,26 @@ export async function GET(request: NextRequest) {
   const tz = params.get("tz") || "America/Sao_Paulo";
   if (!DATE.test(from) || !DATE.test(to) || to < from) {
     return NextResponse.json({ error: "Período inválido." }, { status: 400 });
+  }
+
+  // A direct Google connection comes first.
+  const admin = serviceClient();
+  const { data: google } = admin
+    ? await admin.from("calendar_connections").select("refresh_token").eq("user_id", user.id).maybeSingle()
+    : { data: null };
+  if (google?.refresh_token && admin) {
+    try {
+      const events = await googleEvents(await googleAccessToken(google.refresh_token), from, to, tz);
+      return NextResponse.json({ events, connected: true }, { headers: { "cache-control": "private, max-age=300" } });
+    } catch (error) {
+      if (error instanceof GoogleRevokedError) {
+        // Access removed on Google's side: forget it, fall back to the link.
+        await admin.from("calendar_connections").delete().eq("user_id", user.id);
+      } else {
+        console.error("Google Agenda: falha ao ler.", error instanceof Error ? error.message : error);
+        return NextResponse.json({ events: [], connected: true, error: "Não foi possível ler sua agenda agora." });
+      }
+    }
   }
 
   const saved = typeof user.user_metadata?.calendar_feed_url === "string" ? user.user_metadata.calendar_feed_url : "";
