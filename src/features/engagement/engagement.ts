@@ -76,18 +76,37 @@ export function hasStudyPlan(title: string, tasks: Pick<Task, "title" | "deleted
   return tasks.some((task) => !task.deleted_at && (task.title.startsWith(`${STUDY_PREFIX}${title}`) || task.title.startsWith(`${OLD_STUDY_PREFIX}${title}`)));
 }
 
+export type StreakStatus = "lit" | "waiting" | "frozen" | "none";
+
 /**
- * Days in a row with at least one task done, up to today. Today only counts
- * once something is done, so the streak is not lost in the morning.
+ * The streak of days with at least one task done.
+ * - lit: something done today.
+ * - waiting: done yesterday, today still open (not lost in the morning).
+ * - frozen: yesterday was missed; doing a task today brings it back.
+ * One missed day never breaks it (that day just does not count); two missed
+ * days in a row do.
  */
-export function streak(doneDays: string[], today: string): number {
+export function streakState(doneDays: string[], today: string): { count: number; status: StreakStatus } {
   const days = new Set(doneDays);
+  const yesterday = addDays(today, -1);
+  const before = addDays(today, -2);
+  const status: StreakStatus = days.has(today) ? "lit" : days.has(yesterday) ? "waiting" : days.has(before) ? "frozen" : "none";
+  if (status === "none") return { count: 0, status };
+  let cursor = status === "lit" ? today : status === "waiting" ? yesterday : before;
   let count = 0;
-  let cursor = days.has(today) ? today : addDays(today, -1);
-  while (days.has(cursor)) {
-    count += 1;
-    cursor = addDays(cursor, -1);
+  for (;;) {
+    if (days.has(cursor)) {
+      count += 1;
+      cursor = addDays(cursor, -1);
+    } else if (days.has(addDays(cursor, -1))) {
+      cursor = addDays(cursor, -1); // a single missed day: skipped, not lost
+    } else break;
   }
-  return count;
+  return { count, status };
+}
+
+/** Just the number (see streakState). */
+export function streak(doneDays: string[], today: string): number {
+  return streakState(doneDays, today).count;
 }
 

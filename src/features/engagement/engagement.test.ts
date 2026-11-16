@@ -1,7 +1,7 @@
 import type { Task } from "@/types/productivity";
 import { describe, expect, it } from "vitest";
 
-import { countdownLabel, countdowns, hasStudyPlan, isDeadline, streak, studyPlan } from "./engagement";
+import { countdownLabel, countdowns, hasStudyPlan, isDeadline, streak, streakState, studyPlan } from "./engagement";
 
 const task = (id: string, title: string, due_date: string | null, status = "todo") =>
   ({ id, title, due_date, status, deleted_at: null }) as unknown as Task;
@@ -60,8 +60,20 @@ describe("streak", () => {
   });
 
   it("keeps yesterday's streak alive until today has something done", () => {
-    expect(streak([at("2026-11-10"), at("2026-11-09")], "2026-11-11")).toBe(2);
+    expect(streakState([at("2026-11-10"), at("2026-11-09")], "2026-11-11")).toEqual({ count: 2, status: "waiting" });
     expect(streak([at("2026-11-08")], "2026-11-11")).toBe(0);
-    expect(streak([], "2026-11-11")).toBe(0);
+    expect(streakState([], "2026-11-11")).toEqual({ count: 0, status: "none" });
+  });
+
+  it("freezes after one missed day and comes back with a task today", () => {
+    // Missed the 10th: frozen on the 11th, nothing lost yet.
+    expect(streakState(["2026-11-09", "2026-11-08"], "2026-11-11")).toEqual({ count: 2, status: "frozen" });
+    // Something done on the 11th: back on, the missed day just does not count.
+    expect(streakState(["2026-11-11", "2026-11-09", "2026-11-08"], "2026-11-11")).toEqual({ count: 3, status: "lit" });
+  });
+
+  it("breaks after two missed days in a row", () => {
+    expect(streakState(["2026-11-08", "2026-11-07"], "2026-11-11")).toEqual({ count: 0, status: "none" });
+    expect(streak(["2026-11-11", "2026-11-08", "2026-11-07"], "2026-11-11")).toBe(1);
   });
 });

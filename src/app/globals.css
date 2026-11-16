@@ -1940,3 +1940,20 @@
 }
 html.reduce-motion .flowy-art-pop, html.reduce-motion .flowy-art-twinkle, html.reduce-motion .flowy-art-wave { animation: none; }
 html.reduce-motion .flowy-art-draw { animation: none; stroke-dashoffset: 0; }
+
+/* Streak: a living flame, a dim ember while today is still open, frost when frozen. */
+.flowy-flame { transform-origin: 50% 90%; animation: flowy-flame 1.6s ease-in-out infinite; }
+.flowy-ember { animation: flowy-ember 2.8s ease-in-out infinite; }
+.flowy-frost { animation: flowy-frost 3.2s ease-in-out infinite; }
+@keyframes flowy-flame {
+  0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0 rgb(251 146 60 / 0)); }
+  30% { transform: scale(1.12, 0.94) rotate(-4deg); filter: drop-shadow(0 0 4px rgb(251 146 60 / 0.7)); }
+  60% { transform: scale(0.95, 1.1) rotate(3deg); filter: drop-shadow(0 0 2px rgb(251 146 60 / 0.5)); }
+}
+@keyframes flowy-ember { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes flowy-frost {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(56 189 248 / 0); }
+  50% { box-shadow: 0 0 0 4px rgb(56 189 248 / 0.18); }
+}
+@media (prefers-reduced-motion: reduce) { .flowy-flame, .flowy-ember, .flowy-frost { animation: none; } }
+html.reduce-motion .flowy-flame, html.reduce-motion .flowy-ember, html.reduce-motion .flowy-frost { animation: none; }
