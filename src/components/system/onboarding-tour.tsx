@@ -72,7 +72,7 @@ const spotSteps: SpotStep[] = [
   {
     target: "scopes",
     title: "Foque no que importa",
-    body: "Hoje, Próximas, Calendário ou Todas: um toque e pronto.",
+    body: "Hoje, Próximas ou Todas. O calendário fica no botão ao lado da saudação.",
     icon: <CalendarDays className="size-4" />,
   },
   {

@@ -3,7 +3,7 @@
 import { ReminderSetupCard } from "@/components/system/reminder-setup";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { CornerDownLeft, Mic, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, SlidersHorizontal, X } from "lucide-react";
+import { CalendarDays, CornerDownLeft, Mic, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, SlidersHorizontal, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -73,14 +73,14 @@ interface DashboardPageProps {
   initialCalendar?: boolean;
 }
 
-// Four plain tabs. "Atrasadas" live inside Hoje; "Concluídas" opens from Todas.
+// Three plain tabs. "Atrasadas" live inside Hoje; "Concluídas" opens from
+// Todas; the calendar has its own button next to the greeting.
 const tabs = [
   { value: "today", label: "Hoje" },
   { value: "upcoming", label: "Próximas" },
-  { value: "calendar", label: "Calendário" },
   { value: "all", label: "Todas" },
 ] as const;
-type Tab = (typeof tabs)[number]["value"];
+type Tab = (typeof tabs)[number]["value"] | "calendar";
 
 export function DashboardPage(props: DashboardPageProps) {
   return (
@@ -219,7 +219,7 @@ function DashboardContent({
   const personalPhrase =
     ready && allTasksQuery.data ? buildDailyPhrase(allTasksQuery.data, new Date()) : null;
   const activeTab: Tab | null = calendar
-    ? "calendar"
+    ? null
     : (tabs.find((tab) => tab.value === (filters.scope ?? "all"))?.value ?? null);
   const tabIndex = tabs.findIndex((tab) => tab.value === activeTab);
   function selectTab(tab: Tab) {
@@ -275,19 +275,32 @@ function DashboardContent({
               <span className="line-clamp-2">{personalPhrase ?? phrase}</span>
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => (calendar ? selectTab(tabs.find((tab) => tab.value === filters.scope)?.value ?? "today") : selectTab("calendar"))}
+            aria-pressed={calendar}
+            aria-label={calendar ? "Fechar calendário" : "Abrir calendário"}
+            title="Calendário"
+            className={cn(
+              "grid size-11 shrink-0 place-items-center rounded-2xl border transition-colors active:scale-95",
+              calendar ? "border-primary/50 flowy-active" : "border-border/60 bg-card/40 text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <CalendarDays className="size-5" aria-hidden="true" />
+          </button>
         </div>
 
         <div
           data-tour="scopes"
           role="tablist"
           aria-label="Período"
-          className="relative grid grid-cols-4 rounded-2xl border border-border/60 bg-card/40 p-1 sm:inline-grid sm:grid-cols-[repeat(4,minmax(7rem,auto))]"
+          className="relative grid grid-cols-3 rounded-2xl border border-border/60 bg-card/40 p-1 sm:inline-grid sm:grid-cols-[repeat(3,minmax(7rem,auto))]"
         >
           {tabIndex >= 0 ? (
             <span
               aria-hidden="true"
               className="absolute bottom-1 left-1 top-1 rounded-xl bg-background shadow-sm ring-1 ring-border/70 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-              style={{ width: "calc((100% - 0.5rem) / 4)", transform: `translateX(${tabIndex * 100}%)` }}
+              style={{ width: "calc((100% - 0.5rem) / 3)", transform: `translateX(${tabIndex * 100}%)` }}
             />
           ) : null}
           {tabs.map((tab) => {
