@@ -6,10 +6,8 @@ import {
   CalendarClock,
   Check,
   Flame,
-  Moon,
-  Target,
+  Moon,
 } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -164,11 +162,11 @@ function Deadlines() {
   );
 }
 
-// Both shortcuts look alike and plain: they open something, they are not a state.
+// A plain shortcut: it opens something, it is not a state.
 const shortcut =
   "inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-border/60 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground";
 
-/** Extras of the "Hoje" view: the streak, the way into Foco and tests coming up. */
+/** Extras of the "Hoje" view: the streak, the brain dump and tests coming up. */
 export function TodayBoosts() {
   return (
     <div className="space-y-3">
@@ -184,10 +182,6 @@ export function TodayBoosts() {
             <Moon className="size-4 shrink-0" aria-hidden="true" />
             Esvaziar
           </button>
-          <Link href="/app/focus" className={shortcut} title="Modo foco">
-            <Target className="size-4 shrink-0" aria-hidden="true" />
-            Foco
-          </Link>
         </div>
       </div>
       <ClassNowCard />

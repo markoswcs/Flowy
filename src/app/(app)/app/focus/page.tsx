@@ -1,9 +1,6 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { FocusPage } from "@/features/focus/focus-page";
-
-export const metadata: Metadata = { title: "Foco" };
-
-export default function FocusRoute() {
-  return <FocusPage />;
+// Focus mode was removed; old links and home-screen shortcuts open Início.
+export default function FocusRedirect() {
+  redirect("/app");
 }

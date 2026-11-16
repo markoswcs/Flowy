@@ -35,12 +35,6 @@ export default function manifest(): MetadataRoute.Manifest {
         url: '/app?view=today',
         icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
       },
-      {
-        name: 'Modo foco',
-        short_name: 'Foco',
-        url: '/app/focus',
-        icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
-      },
     ],
     icons: [
       {

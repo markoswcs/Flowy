@@ -17,8 +17,7 @@ import {
   Search,
   Smartphone,
   Sparkles,
-  Sun,
-  Target,
+  Sun,
   WifiOff,
   Workflow,
 } from "lucide-react";
@@ -244,19 +243,17 @@ const features = [
     ),
   },
   {
-    icon: Target,
-    title: "Modo foco",
-    body: "Só a tarefa mais importante na tela, com 25 minutos de foco.",
+    icon: CalendarDays,
+    title: "Calendário com feriados",
+    body: "Veja o mês, os feriados e a agenda do seu e-mail junto com as tarefas.",
     span: "",
     art: (
-      <div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-        <span className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-violet-400/60 text-xs font-bold tabular-nums text-violet-200">
-          25:00
-        </span>
-        <div className="min-w-0 text-xs">
-          <p className="truncate font-semibold">Estudar para a prova</p>
-          <p className="text-white/45">Uma coisa de cada vez</p>
-        </div>
+      <div className="mt-6 grid grid-cols-7 gap-1 text-center text-[10px] text-white/60">
+        {Array.from({ length: 14 }, (_, index) => (
+          <span key={index} className={index === 9 ? "rounded-full bg-violet-500 py-1 font-semibold text-white" : index === 4 ? "py-1 text-amber-300" : "py-1"}>
+            {index + 10}
+          </span>
+        ))}
       </div>
     ),
   },
