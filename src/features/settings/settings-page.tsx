@@ -34,6 +34,7 @@ import { SwitchRow } from "@/components/ui/switch-row";
 import { PushNotificationsSection } from "@/features/settings/push-notifications-section";
 import { CalendarFeedSection } from "@/features/settings/calendar-feed-section";
 import { cn } from "@/lib/utils";
+import { markStartViewChosen } from "@/features/tasks/start-view-picker";
 import { BroadcastSection } from "@/features/announcements/announcements";
 import { normalizeThemePreference } from "@/lib/theme";
 import { clearTaskCache } from "@/features/tasks/task-cache";
@@ -85,6 +86,7 @@ function ThemePreview({ theme, selected }: { theme: ThemePreference; selected: b
 const START_VIEWS = [
   { value: "today", label: "Hoje (recomendado)", hint: "As tarefas de hoje e as que ficaram atrasadas." },
   { value: "upcoming", label: "Próximas", hint: "O que vem nos próximos dias, a partir de amanhã." },
+  { value: "calendar", label: "Calendário", hint: "O mês com as tarefas, feriados e a agenda do e-mail." },
   { value: "all", label: "Todas", hint: "Todas as tarefas abertas, de qualquer data ou sem data." },
 ] as const;
 
@@ -439,7 +441,10 @@ export function SettingsPage() {
                       name="default-task-view"
                       value={option.value}
                       checked={checked}
-                      onChange={() => updatePreferences.mutate({ default_task_view: option.value })}
+                      onChange={() => {
+                        markStartViewChosen();
+                        updatePreferences.mutate({ default_task_view: option.value });
+                      }}
                       className="mt-1 size-4 accent-[hsl(var(--primary))]"
                     />
                     <span className="text-sm">

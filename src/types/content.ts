@@ -108,7 +108,7 @@ export interface UserPreferences {
   user_id: string;
   theme: ThemePreference;
   week_starts_on: 0 | 1;
-  default_task_view: "all" | "today" | "upcoming";
+  default_task_view: "all" | "today" | "upcoming" | "calendar";
   morning_digest: boolean;
   /** 21h "anything for tomorrow?" push; off by default. */
   evening_prompt?: boolean;
