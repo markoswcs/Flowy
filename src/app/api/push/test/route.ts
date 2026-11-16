@@ -32,7 +32,7 @@ export async function POST() {
 
   try {
     const result = await sendPush(subscriptions, {
-      title: "🔔 Notificações ativas",
+      title: "Notificações ativas",
       body: "É assim que o Flowy vai te lembrar das tarefas.",
       url: "/app/settings",
       tag: "flowy-test",

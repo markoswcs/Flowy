@@ -1924,3 +1924,19 @@
   }
 }
 
+
+/* Flowy drawings (components/art): gentle motion, none with reduced motion. */
+.flowy-art-pop { transform-box: fill-box; transform-origin: center; animation: flowy-art-pop .6s cubic-bezier(.34,1.56,.64,1) both; }
+.flowy-art-draw { stroke-dasharray: 60; stroke-dashoffset: 60; animation: flowy-art-draw .5s .35s ease-out forwards; }
+.flowy-art-twinkle { transform-box: fill-box; transform-origin: center; animation: flowy-art-twinkle 2.4s ease-in-out infinite; }
+.flowy-art-wave { animation: flowy-art-wave 1.6s ease-in-out 2; }
+@keyframes flowy-art-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes flowy-art-draw { to { stroke-dashoffset: 0; } }
+@keyframes flowy-art-twinkle { 0%, 100% { transform: scale(.7); opacity: .6; } 50% { transform: scale(1.1); opacity: 1; } }
+@keyframes flowy-art-wave { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(8deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .flowy-art-pop, .flowy-art-twinkle, .flowy-art-wave { animation: none; }
+  .flowy-art-draw { animation: none; stroke-dashoffset: 0; }
+}
+html.reduce-motion .flowy-art-pop, html.reduce-motion .flowy-art-twinkle, html.reduce-motion .flowy-art-wave { animation: none; }
+html.reduce-motion .flowy-art-draw { animation: none; stroke-dashoffset: 0; }

@@ -12,9 +12,9 @@ export interface TaskReminder {
 
 /** Solve it from the notification: done, a bit later or tomorrow. */
 export const TASK_ACTIONS: PushAction[] = [
-  { action: "done", title: "✅ Concluir" },
-  { action: "later", title: "⏰ +1 hora" },
-  { action: "tomorrow", title: "📅 Amanhã" },
+  { action: "done", title: "Concluir" },
+  { action: "later", title: "+1 hora" },
+  { action: "tomorrow", title: "Amanhã" },
 ];
 
 /** Text of one task reminder: on its time, on a later repeat day, or N days late. */
@@ -23,7 +23,7 @@ export function buildTaskReminder(reminder: TaskReminder): PushPayload {
   const late = reminder.late_days ?? 0;
   if (late > 0) {
     return {
-      title: `⚠️ ${reminder.title}`,
+      title: `Atrasada: ${reminder.title}`,
       body: `Atrasada há ${late === 1 ? "1 dia" : `${late} dias`} (era às ${time}). Conclua ou escolha uma nova data.`,
       url: "/app?view=today",
       tag: `task-${reminder.task_id}`,
@@ -32,7 +32,7 @@ export function buildTaskReminder(reminder: TaskReminder): PushPayload {
     };
   }
   return {
-    title: `⏰ ${reminder.title}`,
+    title: reminder.title,
     body: `Sua tarefa é agora, às ${time}.`,
     url: reminder.overdue ? "/app?view=overdue" : "/app?view=today",
     tag: `task-${reminder.task_id}`,

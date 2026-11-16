@@ -22,10 +22,12 @@ function addDays(day: string, days: number) {
 
 // Words that make a task a test or a deadline worth counting down to.
 const DEADLINE = /\b(provas?|exames?|testes?|simulados?|entregas?|trabalhos?|semin[aá]rios?|apresenta[cç](?:[aã]o|[oõ]es)|tcc|avalia[cç](?:[aã]o|[oõ]es)|p[1-4]|ap[1-4]|av[1-4]|vestibular|enem|concurso|defesa)\b/i;
-export const STUDY_PREFIX = "📚 Estudar: ";
+export const STUDY_PREFIX = "Estudar: ";
+/** Older plans were titled with a book emoji first. */
+const OLD_STUDY_PREFIX = "📚 Estudar: ";
 
 export function isDeadline(title: string) {
-  return !title.startsWith(STUDY_PREFIX) && DEADLINE.test(title);
+  return !title.startsWith(STUDY_PREFIX) && !title.startsWith(OLD_STUDY_PREFIX) && DEADLINE.test(title);
 }
 
 export interface Countdown<T> {
@@ -71,7 +73,7 @@ export function studyPlan(title: string, today: string, dueDate: string): { titl
 }
 
 export function hasStudyPlan(title: string, tasks: Pick<Task, "title" | "deleted_at">[]) {
-  return tasks.some((task) => !task.deleted_at && task.title.startsWith(`${STUDY_PREFIX}${title}`));
+  return tasks.some((task) => !task.deleted_at && (task.title.startsWith(`${STUDY_PREFIX}${title}`) || task.title.startsWith(`${OLD_STUDY_PREFIX}${title}`)));
 }
 
 /**

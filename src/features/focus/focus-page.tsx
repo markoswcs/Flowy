@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+import { FlowyArt } from "@/components/art/flowy-art";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { celebrateIfDayCleared } from "@/features/tasks/day-cleared";
@@ -120,10 +121,10 @@ export function FocusPage() {
     if (!timer || left > 0) return;
     if (timer.mode === "focus") {
       startPhase(timer.taskId, "break");
-      void ring("Foco concluído 🎯", `Hora de uma pausa de ${BREAK_MINUTES} minutos.`);
+      void ring("Foco concluído", `Hora de uma pausa de ${BREAK_MINUTES} minutos.`);
     } else {
       saveTimer(null);
-      void ring("Pausa acabou ☕", "Bora para a próxima?");
+      void ring("Pausa acabou", "Bora para a próxima?");
     }
   }, [timer, left]);
 
@@ -178,7 +179,7 @@ export function FocusPage() {
         <Skeleton className="h-80 w-full rounded-3xl" />
       ) : !task ? (
         <section className="rounded-3xl border border-border/60 bg-card/50 p-8 text-center">
-          <p className="text-4xl" aria-hidden="true">🎉</p>
+          <FlowyArt name="rest" className="mx-auto size-24" />
           <h2 className="mt-2 text-lg font-semibold">Nada pendente para hoje</h2>
           <p className="mt-1 text-sm text-muted-foreground">Aproveite o tempo livre ou adiante algo de amanhã.</p>
           <Link href="/app" className="mt-4 inline-block text-sm font-medium flowy-ink underline-offset-4 hover:underline">

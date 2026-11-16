@@ -76,7 +76,7 @@ export function BrainDump() {
     setSaving(true);
     try {
       for (const task of tasks) await create.mutateAsync(task);
-      notify(`${tasks.length} ${tasks.length === 1 ? "tarefa anotada" : "tarefas anotadas"}. Boa noite! 🌙`);
+      notify(`${tasks.length} ${tasks.length === 1 ? "tarefa anotada" : "tarefas anotadas"}. Boa noite!`);
       setText("");
       setOpen(false);
     } catch {

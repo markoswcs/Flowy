@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 /** 21h: a nudge to empty the head before sleeping (opens the quick dump). */
 const EVENING_PROMPT: PushPayload = {
-  title: "🌙 Algo para amanhã?",
+  title: "Algo para amanhã?",
   body: "Anote agora o que não pode esquecer e durma tranquilo.",
   url: "/app?view=upcoming&despejar=1",
   tag: "evening-prompt",

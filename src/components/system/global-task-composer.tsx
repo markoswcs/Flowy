@@ -19,14 +19,14 @@ export function GlobalTaskComposer() {
   const [open, setOpen] = useState(false);
   // What opened the composer: text to review and/or start dictating. A new
   // key per opening gives the composer fresh state.
-  const [launch, setLaunch] = useState<{ key: number; text?: string; voice?: boolean }>({ key: 0 });
+  const [launch, setLaunch] = useState<{ key: number; text?: string; voice?: boolean; date?: string }>({ key: 0 });
   const foldersQuery = useFolders();
   const categoriesQuery = useCategories();
 
   useEffect(() => {
     const handleOpen = (event: Event) => {
-      const detail = (event as CustomEvent<{ text?: string; voice?: boolean } | undefined>).detail;
-      setLaunch((current) => ({ key: current.key + 1, text: detail?.text, voice: detail?.voice }));
+      const detail = (event as CustomEvent<{ text?: string; voice?: boolean; date?: string } | undefined>).detail;
+      setLaunch((current) => ({ key: current.key + 1, text: detail?.text, voice: detail?.voice, date: detail?.date }));
       setOpen(true);
     };
     const handleClose = () => setOpen(false);
@@ -116,6 +116,7 @@ export function GlobalTaskComposer() {
           categories={categoriesQuery.data ?? []}
           initialText={launch.text}
           autoVoice={launch.voice}
+          defaultDueDate={launch.date ?? null}
         />
       </div>
     </div>

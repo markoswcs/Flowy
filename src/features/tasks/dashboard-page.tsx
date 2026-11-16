@@ -3,7 +3,7 @@
 import { ReminderSetupCard } from "@/components/system/reminder-setup";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { AlertCircle, Calendar, CheckCircle2, Clock, CornerDownLeft, List, Mic, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, SlidersHorizontal, ListChecks, X } from "lucide-react";
+import { CornerDownLeft, Mic, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, SlidersHorizontal, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -13,11 +13,12 @@ import {
   useSmartTask,
   withDismissed,
 } from "@/features/tasks/components/smart-suggestions";
-import { BulkActionBar, TaskSelectionProvider, useTaskSelection } from "@/features/tasks/task-selection";
+import { BulkActionBar, TaskSelectionProvider } from "@/features/tasks/task-selection";
 
 import { Input } from "@/components/ui/input";
 import { GettingStarted } from "@/features/onboarding/getting-started";
 import { TodayBoosts } from "@/features/engagement/today-boosts";
+import { CalendarView } from "@/features/calendar/calendar-view";
 import { TodayWorkoutCard } from "@/features/workouts/components/today-workout-card";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
@@ -66,15 +67,18 @@ interface DashboardPageProps {
   userId?: string;
   initialOrganizer?: "folders" | "categories" | null;
   initialScope?: TaskScope;
+  /** Opens on the calendar (/app?view=calendar). */
+  initialCalendar?: boolean;
 }
 
-const scopes = [
-  { value: "all", label: "Todas", icon: List, colorClass: "text-muted-foreground", bgClass: "hover:bg-muted/50 hover:text-foreground", activeClass: "bg-muted text-foreground font-medium shadow-sm" },
-  { value: "today", label: "Hoje", icon: Calendar, colorClass: "flowy-ink", bgClass: "hover:bg-primary/10", activeClass: "flowy-active font-medium shadow-sm border border-primary/20" },
-  { value: "overdue", label: "Atrasadas", icon: AlertCircle, colorClass: "text-destructive", bgClass: "hover:bg-destructive/10", activeClass: "bg-destructive/15 text-destructive font-medium shadow-sm border border-destructive/20" },
-  { value: "upcoming", label: "Próximas", icon: Clock, colorClass: "text-orange-400", bgClass: "hover:bg-orange-400/10", activeClass: "bg-orange-400/15 text-orange-400 font-medium shadow-sm border border-orange-400/20" },
-  { value: "completed", label: "Concluídas", icon: CheckCircle2, colorClass: "text-success", bgClass: "hover:bg-success/10", activeClass: "bg-success/15 text-success font-medium shadow-sm border border-success/20" },
+// Four plain tabs. "Atrasadas" live inside Hoje; "Concluídas" opens from Todas.
+const tabs = [
+  { value: "today", label: "Hoje" },
+  { value: "upcoming", label: "Próximas" },
+  { value: "calendar", label: "Calendário" },
+  { value: "all", label: "Todas" },
 ] as const;
+type Tab = (typeof tabs)[number]["value"];
 
 export function DashboardPage(props: DashboardPageProps) {
   return (
@@ -95,6 +99,7 @@ function DashboardContent({
   displayName,
   userId,
   initialScope = "today",
+  initialCalendar = false,
 }: DashboardPageProps) {
   const { addNotification } = useNotifications();
   const createTask = useCreateTask();
@@ -102,6 +107,7 @@ function DashboardContent({
     scope: initialScope,
   });
   const [statusBarOpen, setStatusBarOpen] = useState(false);
+  const [calendar, setCalendar] = useState(initialCalendar);
   const debouncedSearch = useDebouncedValue(filters.search ?? "", 250);
   // An empty search is left out so "Todas" shares its query (and cache) with
   // the list used for the daily phrase instead of fetching the same rows twice.
@@ -121,7 +127,6 @@ function DashboardContent({
   const searchText = filters.search ?? "";
   const [dismissed, setDismissed] = useState({ folder: false, categoryIds: [] as string[] });
   const quickTask = withDismissed(useSmartTask(searchText, folders, categories), dismissed);
-  const selection = useTaskSelection();
   const quickTaskWhen = quickTask ? smartTaskWhen(quickTask) : null;
 
   // Doubts (unknown client, likely duplicate) go to the full composer for review.
@@ -211,7 +216,14 @@ function DashboardContent({
 
   const personalPhrase =
     ready && allTasksQuery.data ? buildDailyPhrase(allTasksQuery.data, new Date()) : null;
-  const scopeIndex = Math.max(0, scopes.findIndex((scope) => scope.value === (filters.scope ?? "all")));
+  const activeTab: Tab | null = calendar
+    ? "calendar"
+    : (tabs.find((tab) => tab.value === (filters.scope ?? "all"))?.value ?? null);
+  const tabIndex = tabs.findIndex((tab) => tab.value === activeTab);
+  function selectTab(tab: Tab) {
+    setCalendar(tab === "calendar");
+    if (tab !== "calendar") setFilters({ ...filters, scope: tab });
+  }
   const activeFilters = [
     filters.priority && filters.priority !== "all"
       ? { key: "priority", label: `Prioridade: ${priorityLabels[filters.priority]}`, clear: () => setFilters({ ...filters, priority: "all" }) }
@@ -265,34 +277,45 @@ function DashboardContent({
           data-tour="scopes"
           role="tablist"
           aria-label="Período"
-          className="relative grid grid-cols-5 rounded-2xl border border-border/60 bg-card/40 p-1 shadow-sm backdrop-blur-xl sm:inline-grid sm:grid-cols-[repeat(5,minmax(7.25rem,auto))]"
+          className="relative grid grid-cols-4 rounded-2xl border border-border/60 bg-card/40 p-1 sm:inline-grid sm:grid-cols-[repeat(4,minmax(7rem,auto))]"
         >
-          <span
-            aria-hidden="true"
-            className="absolute bottom-1 left-1 top-1 rounded-xl bg-background shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.6)] ring-1 ring-border/70 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-            style={{ width: "calc((100% - 0.5rem) / 5)", transform: `translateX(${scopeIndex * 100}%)` }}
-          />
-          {scopes.map((scope) => {
-            const selected = (filters.scope ?? "all") === scope.value;
-            const Icon = scope.icon;
+          {tabIndex >= 0 ? (
+            <span
+              aria-hidden="true"
+              className="absolute bottom-1 left-1 top-1 rounded-xl bg-background shadow-sm ring-1 ring-border/70 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              style={{ width: "calc((100% - 0.5rem) / 4)", transform: `translateX(${tabIndex * 100}%)` }}
+            />
+          ) : null}
+          {tabs.map((tab) => {
+            const selected = activeTab === tab.value;
             return (
               <button
-                key={scope.value}
+                key={tab.value}
                 type="button"
                 role="tab"
                 aria-selected={selected}
-                onClick={() => setFilters({ ...filters, scope: scope.value })}
+                onClick={() => selectTab(tab.value)}
                 className={cn(
-                  "relative z-10 flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] font-medium leading-tight transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:flex-row sm:gap-2 sm:px-4 sm:text-sm",
+                  "relative z-10 min-w-0 truncate rounded-xl px-1 py-2 text-[13px] font-medium transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:px-4 sm:text-sm",
                   selected ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Icon className={cn("size-4 shrink-0 transition-transform duration-300", scope.colorClass, selected && "scale-110")} />
-                <span className="max-w-full truncate">{scope.label}</span>
+                {tab.label}
               </button>
             );
           })}
         </div>
+
+        {!calendar && (filters.scope === "overdue" || filters.scope === "completed") ? (
+          <button
+            type="button"
+            onClick={() => selectTab(filters.scope === "overdue" ? "today" : "all")}
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 py-1 pl-3 pr-2 text-xs font-medium flowy-ink"
+          >
+            {filters.scope === "overdue" ? "Atrasadas" : "Concluídas"}
+            <X className="size-3.5" aria-label="Voltar" />
+          </button>
+        ) : null}
 
         <div className="space-y-2">
           <div
@@ -342,20 +365,6 @@ function DashboardContent({
                   {activeFilters.length}
                 </span>
               ) : null}
-            </button>
-            <button
-              type="button"
-              onClick={() => (selection?.active ? selection.clear() : selection?.start())}
-              aria-pressed={Boolean(selection?.active)}
-              aria-label="Selecionar tarefas"
-              title="Selecionar várias tarefas"
-              className={cn(
-                "flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-all active:scale-95",
-                selection?.active ? "bg-violet-500 text-white" : "text-muted-foreground hover:bg-accent hover:text-foreground",
-              )}
-            >
-              <ListChecks className="size-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Selecionar</span>
             </button>
           </div>
 
@@ -421,7 +430,7 @@ function DashboardContent({
 
       <GettingStarted />
 
-      {(filters.scope ?? "all") === "today" && !debouncedSearch ? (
+      {!calendar && (filters.scope ?? "all") === "today" && !debouncedSearch ? (
         <>
           <TodayBoosts />
           <TodayWorkoutCard />
@@ -440,7 +449,9 @@ function DashboardContent({
         )}
 
         <div className="animate-in fade-in slide-in-from-bottom-1 duration-300">
-        {(
+        {calendar && !debouncedSearch ? (
+          <CalendarView folders={folders} categories={categories} />
+        ) : (
           <section className="mt-4 animate-slide-up-fade [animation-delay:200ms]" aria-live="polite">
             <TaskList
               tasks={tasksQuery.data}
@@ -475,6 +486,15 @@ function DashboardContent({
                   : "Crie uma tarefa para começar."
               }
             />
+            {(filters.scope ?? "all") === "all" && !debouncedSearch ? (
+              <button
+                type="button"
+                onClick={() => setFilters({ ...filters, scope: "completed" })}
+                className="mx-auto mt-4 block rounded-full px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+              >
+                Ver concluídas
+              </button>
+            ) : null}
           </section>
         )}
         </div>

@@ -7,7 +7,7 @@ const base = { task_id: "t1", title: "Pagar conta", due_time: "09:30:00" };
 describe("buildTaskReminder", () => {
   it("says the task is now, on its time", () => {
     expect(buildTaskReminder(base)).toEqual({
-      title: "⏰ Pagar conta",
+      title: "Pagar conta",
       body: "Sua tarefa é agora, às 09:30.",
       url: "/app?view=today",
       tag: "task-t1",
@@ -22,7 +22,7 @@ describe("buildTaskReminder", () => {
 
   it("says how late a task is, one day and many days", () => {
     expect(buildTaskReminder({ ...base, overdue: true, late_days: 1 })).toMatchObject({
-      title: "⚠️ Pagar conta",
+      title: "Atrasada: Pagar conta",
       body: "Atrasada há 1 dia (era às 09:30). Conclua ou escolha uma nova data.",
       url: "/app?view=today",
     });

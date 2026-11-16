@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const calls: Array<[string, unknown[]]> = [];
 
@@ -20,7 +20,13 @@ vi.mock("@/services/authenticated-client", () => ({
   messageFromUnknownError: () => "",
 }));
 
-import { listTasks } from "./tasks";
+// Tests share modules (isolate: false): another file may already have loaded
+// ./tasks with the real client, so it is loaded fresh here, under the mock.
+let listTasks: typeof import("./tasks").listTasks;
+beforeAll(async () => {
+  vi.resetModules();
+  ({ listTasks } = await import("./tasks"));
+});
 
 beforeEach(() => {
   calls.length = 0;

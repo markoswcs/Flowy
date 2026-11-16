@@ -50,27 +50,17 @@ function StreakChip() {
 
   return (
     <p
-      className={cn(
-        "inline-flex items-center gap-2 text-sm",
-        days ? "text-foreground" : "text-muted-foreground",
-      )}
+      className="inline-flex min-w-0 items-center gap-1.5 text-sm"
       title="Dias seguidos em que você concluiu pelo menos uma tarefa"
     >
-      <span
-        className={cn(
-          "grid size-8 shrink-0 place-items-center rounded-full",
-          days ? "bg-orange-500/15 text-orange-400" : "bg-muted/60 text-muted-foreground",
-        )}
-      >
-        <Flame className="size-4" aria-hidden="true" />
-      </span>
+      <Flame className={cn("size-4 shrink-0", days ? "text-orange-400" : "text-muted-foreground")} aria-hidden="true" />
       {days ? (
-        <span>
-          <span className="font-semibold">{days} {days === 1 ? "dia" : "dias"}</span>{" "}
-          <span className="text-muted-foreground">seguidos concluindo tarefas</span>
+        <span className="truncate">
+          <span className="font-semibold">{days}</span>{" "}
+          <span className="text-muted-foreground">{days === 1 ? "dia seguido" : "dias seguidos"}</span>
         </span>
       ) : (
-        <span>Conclua uma tarefa para começar sua sequência</span>
+        <span className="truncate text-muted-foreground">Comece sua sequência</span>
       )}
     </p>
   );
@@ -176,26 +166,27 @@ function Deadlines() {
 
 // Both shortcuts look alike and plain: they open something, they are not a state.
 const shortcut =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border/60 px-3.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground";
+  "inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-border/60 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground";
 
 /** Extras of the "Hoje" view: the streak, the way into Foco and tests coming up. */
 export function TodayBoosts() {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+      <div className="flex items-center justify-between gap-2">
         <StreakChip />
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+        <div className="flex shrink-0 gap-1.5">
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event(OPEN_DUMP_EVENT))}
             className={shortcut}
+            title="Esvaziar a cabeça: anote tudo de uma vez"
           >
             <Moon className="size-4 shrink-0" aria-hidden="true" />
-            Esvaziar a cabeça
+            Esvaziar
           </button>
-          <Link href="/app/focus" className={shortcut}>
+          <Link href="/app/focus" className={shortcut} title="Modo foco">
             <Target className="size-4 shrink-0" aria-hidden="true" />
-            Modo foco
+            Foco
           </Link>
         </div>
       </div>

@@ -56,7 +56,7 @@ async function show(task: DueTask) {
       // Falls back to the banner below.
     }
   }
-  notify(`🔔 ${task.title} · ${time}`);
+  notify(`${task.title} · ${time}`);
   chime();
 }
 

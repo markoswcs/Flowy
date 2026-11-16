@@ -8,6 +8,7 @@ import {
   Check,
   Compass,
   Dumbbell,
+  Flame,
   Folder,
   Hash,
   Plus,
@@ -27,6 +28,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { FlowyArt, SparkMark } from "@/components/art/flowy-art";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { categoryKeys, useCategories } from "@/features/categories/use-categories";
@@ -70,7 +72,7 @@ const spotSteps: SpotStep[] = [
   {
     target: "scopes",
     title: "Foque no que importa",
-    body: "Hoje, Atrasadas, Próximas ou Concluídas: um toque e pronto.",
+    body: "Hoje, Próximas, Calendário ou Todas: um toque e pronto.",
     icon: <CalendarDays className="size-4" />,
   },
   {
@@ -318,7 +320,7 @@ function WelcomeStep({ name, onStart, onSkip }: { name: string; onStart: () => v
         </span>
       </div>
       <h2 className="mt-6 text-center text-2xl font-bold tracking-tight">
-        Oi, {name}! <span className="inline-block origin-[70%_70%] animate-[flowy-bell_1.4s_ease-in-out_2]">👋</span>
+        Oi, {name}! <SparkMark className="ml-0.5" />
       </h2>
       <p className="mt-2 text-center text-sm leading-6 text-muted-foreground">
         Vamos deixar o Flowy com a sua cara. Leva <strong className="text-foreground">1 minuto</strong>.
@@ -504,7 +506,7 @@ function OrganizeStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => vo
                 : "border-border bg-background/40 hover:border-primary/50",
             )}
           >
-            <span className="mr-1.5">{profile.emoji}</span>
+            <profile.icon className="mr-1.5 inline size-4 align-[-0.15em]" aria-hidden="true" />
             {profile.label}
           </button>
         ))}
@@ -621,7 +623,9 @@ function PickerGroup({
               )}
             >
               <span className="flex items-center justify-between">
-                <span className="text-lg leading-none">{item.emoji}</span>
+                <span className="grid size-7 place-items-center rounded-lg bg-[color-mix(in_srgb,var(--chip)_18%,transparent)] text-[var(--chip)]">
+                  <item.icon className="size-4" aria-hidden="true" />
+                </span>
                 <span
                   className={cn(
                     "grid size-5 place-items-center rounded-full border transition-all duration-300",
@@ -653,7 +657,7 @@ function PickerGroup({
                   : "border-border bg-background/40 text-muted-foreground hover:text-foreground",
               )}
             >
-              <span>{item.emoji}</span>
+              <item.icon className="size-3.5 text-[var(--chip)]" aria-hidden="true" />
               {item.name}
               {selected ? <Check className="size-3.5 animate-in zoom-in" /> : null}
             </button>
@@ -682,7 +686,8 @@ function FolderTagDemo() {
           className="rounded-full bg-[#F87171]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[#F87171]"
           style={{ animation: `flowy-demo-tag ${loop}` }}
         >
-          🔥 Urgente
+          <Flame className="mr-0.5 inline size-3 align-[-0.1em]" aria-hidden="true" />
+          Urgente
         </span>
       </div>
       <div
@@ -899,9 +904,7 @@ function DoneStep({ onFinish }: { onFinish: () => void }) {
             />
           ))}
         </div>
-        <span className="grid size-20 animate-in place-items-center rounded-[1.75rem] bg-success/15 text-4xl zoom-in">
-          🎉
-        </span>
+        <FlowyArt name="celebrate" className="size-24" />
       </div>
       <h2 className="mt-5 text-center text-2xl font-bold tracking-tight">Tudo pronto!</h2>
       <p className="mt-1.5 text-center text-sm text-muted-foreground">3 truques para usar todo dia:</p>

@@ -40,13 +40,15 @@ describe("tests and deadlines", () => {
   it("spreads up to five study sessions before the test", () => {
     const plan = studyPlan("Prova de Anatomia", "2026-11-11", "2026-11-20");
     expect(plan).toHaveLength(5);
-    expect(plan[0]).toEqual({ title: "📚 Estudar: Prova de Anatomia (1/5)", due_date: "2026-11-11" });
+    expect(plan[0]).toEqual({ title: "Estudar: Prova de Anatomia (1/5)", due_date: "2026-11-11" });
     expect(plan.at(-1)!.due_date < "2026-11-20").toBe(true);
     expect(studyPlan("Prova", "2026-11-11", "2026-11-12")).toEqual([
-      { title: "📚 Estudar: Prova", due_date: "2026-11-11" },
+      { title: "Estudar: Prova", due_date: "2026-11-11" },
     ]);
     expect(studyPlan("Prova", "2026-11-11", "2026-11-11")).toEqual([]);
     expect(hasStudyPlan("Prova de Anatomia", plan.map((item) => ({ ...item, deleted_at: null })))).toBe(true);
+    // Plans made before the emoji was dropped still count.
+    expect(hasStudyPlan("Prova", [{ title: "📚 Estudar: Prova (1/2)", deleted_at: null }])).toBe(true);
   });
 });
 

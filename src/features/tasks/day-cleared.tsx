@@ -3,6 +3,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { FlowyArt } from "@/components/art/flowy-art";
 import { localDateKey } from "@/features/tasks/date-utils";
 import { taskKeys } from "@/features/tasks/query-keys";
 import type { Task } from "@/types/productivity";
@@ -75,7 +76,7 @@ export function DayClearedCelebration() {
         />
       ))}
       <div className="flowy-check-pop flowy-glass flowy-glass-strong rounded-3xl border px-7 py-5 text-center shadow-soft">
-        <p className="text-3xl" aria-hidden="true">🎉</p>
+        <FlowyArt name="celebrate" className="mx-auto size-20" />
         <p className="mt-1 text-lg font-bold">Dia limpo!</p>
         <p className="text-sm text-muted-foreground">Tudo de hoje está feito.</p>
       </div>

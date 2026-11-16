@@ -15,8 +15,8 @@ describe("buildMorningDigest", () => {
     });
 
     expect(payload).toEqual({
-      title: "☀️ Bom dia! 4 tarefas para hoje",
-      body: "⚠️ 2 atrasadas · Pagar conta, Ligar pro João, Academia e mais 3",
+      title: "Bom dia! 4 tarefas para hoje",
+      body: "2 atrasadas · Pagar conta, Ligar pro João, Academia e mais 3",
       url: "/app?view=today",
       tag: "morning-digest",
     });
@@ -25,15 +25,15 @@ describe("buildMorningDigest", () => {
   it("uses the singular and leaves out 'e mais' when every task is listed", () => {
     const payload = buildMorningDigest({ today_count: 1, overdue_count: 0, titles: ["Pagar conta"] });
 
-    expect(payload?.title).toBe("☀️ Bom dia! 1 tarefa para hoje");
+    expect(payload?.title).toBe("Bom dia! 1 tarefa para hoje");
     expect(payload?.body).toBe("Pagar conta");
   });
 
   it("still reminds of overdue tasks on a day with nothing new", () => {
     const payload = buildMorningDigest({ today_count: 0, overdue_count: 1, titles: ["Relatório"] });
 
-    expect(payload?.title).toBe("☀️ Bom dia! Hora de colocar o atrasado em dia");
-    expect(payload?.body).toBe("⚠️ 1 atrasada · Relatório");
+    expect(payload?.title).toBe("Bom dia! Hora de colocar o atrasado em dia");
+    expect(payload?.body).toBe("1 atrasada · Relatório");
   });
 
   it("shortens long titles", () => {

@@ -69,6 +69,7 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
       userId={user.id}
       initialOrganizer={initialOrganizer}
       initialScope={initialScope}
+      initialCalendar={requestedView === "calendar"}
     />
   );
 }

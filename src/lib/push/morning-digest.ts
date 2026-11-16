@@ -26,7 +26,7 @@ export function buildMorningDigest(digest: MorningDigest): PushPayload | null {
   const titles = (digest.titles ?? []).map((title) => shorten(title));
   const remaining = today + overdue - titles.length;
   const parts: string[] = [];
-  if (overdue > 0) parts.push(`⚠️ ${count(overdue, "atrasada", "atrasadas")}`);
+  if (overdue > 0) parts.push(`${count(overdue, "atrasada", "atrasadas")}`);
   if (titles.length > 0) {
     parts.push(`${titles.join(", ")}${remaining > 0 ? ` e mais ${remaining}` : ""}`);
   }
@@ -34,8 +34,8 @@ export function buildMorningDigest(digest: MorningDigest): PushPayload | null {
   return {
     title:
       today > 0
-        ? `☀️ Bom dia! ${count(today, "tarefa", "tarefas")} para hoje`
-        : "☀️ Bom dia! Hora de colocar o atrasado em dia",
+        ? `Bom dia! ${count(today, "tarefa", "tarefas")} para hoje`
+        : "Bom dia! Hora de colocar o atrasado em dia",
     body: parts.join(" · "),
     url: "/app?view=today",
     tag: "morning-digest",

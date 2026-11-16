@@ -186,7 +186,7 @@ async function runAction(action, taskId, url) {
     });
     const result = response.ok ? await response.json() : { open: true };
     if (result.open) return openApp(url);
-    const done = { done: 'Tarefa concluída ✅', later: 'Lembro de novo daqui a 1 hora ⏰', tomorrow: 'Passou para amanhã 📅' };
+    const done = { done: 'Tarefa concluída', later: 'Lembro de novo daqui a 1 hora', tomorrow: 'Passou para amanhã' };
     await self.registration.showNotification(done[action] || 'Feito', {
       body: '',
       icon: '/icon-192.png',
