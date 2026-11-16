@@ -12,6 +12,11 @@ export const dynamic = "force-dynamic";
 /** "Conectar Google Agenda": sends the signed-in person to Google's consent screen. */
 export async function GET(request: NextRequest) {
   const origin = publicOrigin(request);
+  // Google only knows the current address: an app installed from the old one
+  // starts over there, so the return address matches.
+  if (origin === "https://flowy-mauve.vercel.app") {
+    return NextResponse.redirect("https://useflowy.vercel.app/api/calendar/google/start");
+  }
   const config = googleCalendarConfig();
   if (!config) return NextResponse.redirect(`${origin}/app/settings?agenda=indisponivel#agenda`);
 
