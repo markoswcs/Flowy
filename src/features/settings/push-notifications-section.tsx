@@ -1,7 +1,6 @@
 "use client";
 
-import { Bell, Moon, PlayCircle, Sunrise } from "lucide-react";
-import Link from "next/link";
+import { Bell, Moon, Sunrise } from "lucide-react";
 import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
@@ -129,13 +128,6 @@ export function PushNotificationsSection() {
         </Button>
       ) : null}
       <ReminderCheckPanel push={push} />
-      <Link
-        href="/instalar"
-        className="mt-3 flex items-center gap-2 text-sm font-medium flowy-ink hover:underline"
-      >
-        <PlayCircle className="size-4" aria-hidden="true" />
-        Vídeo: como instalar no celular (para mandar a quem precisar)
-      </Link>
     </section>
   );
 }

@@ -92,6 +92,8 @@ describe("ReminderSetupCard", () => {
     act(() => vi.advanceTimersByTime(1600));
 
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByRole("button", { name: "Ver como" })).toBeTruthy();
+    // The card offers the install video instead.
+    fireEvent.click(screen.getByRole("button", { name: "Ver vídeo" }));
+    expect(screen.getByRole("dialog", { name: "Comece a receber notificações" })).toBeTruthy();
   });
 });

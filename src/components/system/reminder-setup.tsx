@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, Check, Download, Share, SquarePlus, X } from "lucide-react";
+import { BellRing, Check, Download, Play, Share, SquarePlus, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -383,6 +383,52 @@ function AskOnceSheet({
   );
 }
 
+/** The install video, big, from the home screen reminder (phones). */
+function VideoDialog({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const release = holdOverlay();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      release();
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[220] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-labelledby="install-video-title">
+      <button type="button" aria-label="Fechar" onClick={onClose} className="flowy-glass-scrim absolute inset-0 animate-in fade-in" />
+      <section className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-sm animate-in overflow-y-auto rounded-[1.75rem] border border-border/60 bg-card p-4 text-center shadow-2xl fade-in zoom-in-95">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fechar"
+          className="absolute right-3 top-3 z-10 grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+        >
+          <X className="size-4" />
+        </button>
+        <h2 id="install-video-title" className="px-8 text-lg font-semibold">
+          Comece a receber notificações
+        </h2>
+        <p className="mb-3 mt-1 text-sm text-muted-foreground">
+          Instale o Flowy na tela do celular e toque em Permitir. Leva 40 segundos.
+        </p>
+        <InstallVideo compact />
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-3 h-11 w-full rounded-2xl bg-primary text-sm font-semibold text-primary-foreground"
+        >
+          Entendi
+        </button>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
 /**
  * Home screen card for people who still don't get reminders. Where they can
  * be turned on right here (installed app, computer) it is a one-tap "Ativar";
@@ -394,6 +440,7 @@ export function ReminderSetupCard() {
   const [hidden, setHidden] = useState(true);
   const [direct, setDirect] = useState(false);
   const [asking, setAsking] = useState(false);
+  const [video, setVideo] = useState(false);
 
   useEffect(() => {
     // Storage is read after mount so server and client markup match.
@@ -435,13 +482,11 @@ export function ReminderSetupCard() {
             <BellRing className="tut-swing-icon size-5" aria-hidden="true" />
           </span>
           <p className="min-w-0 flex-1 text-sm leading-5">
-            <strong className="font-semibold">
-              Receba lembretes no celular e no PC
-            </strong>
+            <strong className="font-semibold">Comece a receber notificações</strong>
             <span className="block text-muted-foreground">
               {canEnableHere
                 ? "Um toque e você recebe o aviso na hora de cada tarefa."
-                : "Veja no vídeo: instalar e ativar leva 40 segundos."}
+                : "Veja em 40 segundos como ativar."}
             </span>
           </p>
           <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
@@ -457,10 +502,12 @@ export function ReminderSetupCard() {
             ) : (
               <button
                 type="button"
-                onClick={() => setOpen(true)}
-                className="min-h-10 rounded-xl bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                // Phones watch the video; a computer gets the step-by-step guide.
+                onClick={() => (isDesktop() ? setOpen(true) : setVideo(true))}
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
               >
-                Ver como
+                <Play className="size-4" aria-hidden="true" />
+                Ver vídeo
               </button>
             )}
             <button
@@ -477,6 +524,7 @@ export function ReminderSetupCard() {
         </div>
       ) : null}
       {open ? <SetupDialog push={push} onClose={() => setOpen(false)} /> : null}
+      {video ? <VideoDialog onClose={() => setVideo(false)} /> : null}
       {asking && push.status === "disabled" ? (
         <AskOnceSheet push={push} onDone={() => setAsking(false)} />
       ) : null}
