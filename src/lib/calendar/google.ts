@@ -203,8 +203,25 @@ export async function googleEvents(
     maxResults: "500",
     timeZone: viewerZone,
   });
-  const read = (id: string) =>
-    googleGet<{ items?: GoogleEvent[] }>(accessToken, `calendars/${encodeURIComponent(id)}/events?${params}`);
+  // Google may split even a short answer into pages: follow them all.
+  const read = async (id: string) => {
+    const items: GoogleEvent[] = [];
+    let pageToken: string | undefined;
+    let pages = 0;
+    do {
+      const query = new URLSearchParams(params);
+      if (pageToken) query.set("pageToken", pageToken);
+      const page = await googleGet<{ items?: GoogleEvent[]; nextPageToken?: string }>(
+        accessToken,
+        `calendars/${encodeURIComponent(id)}/events?${query}`,
+      );
+      items.push(...(page.items ?? []));
+      pageToken = page.nextPageToken;
+      pages += 1;
+    } while (pageToken && pages < 10);
+    console.info(`Google Agenda: ${items.length} itens em ${pages} página(s) da agenda ${id === "primary" ? "principal" : id.slice(0, 6)}…`);
+    return { items };
+  };
   const results = await Promise.all(
     agendas.map((id) =>
       read(id).catch((error: unknown) => {
