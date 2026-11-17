@@ -43,7 +43,14 @@ async function readSaved(): Promise<string> {
   return typeof value === "string" ? value : "";
 }
 
-async function readGoogle(): Promise<{ available: boolean; connected: boolean; email?: string | null; tasks?: boolean }> {
+interface GoogleStatus {
+  available: boolean;
+  connected: boolean;
+  accounts?: { email: string | null; tasks: boolean }[];
+  tasks?: boolean;
+}
+
+async function readGoogle(): Promise<GoogleStatus> {
   const response = await fetch("/api/calendar/google/status");
   if (!response.ok) return { available: false, connected: false };
   return response.json();
@@ -61,7 +68,7 @@ function GoogleMark() {
 }
 
 interface AgendaList {
-  agendas: { id: string; name: string; color: string | null; primary: boolean }[];
+  agendas: { id: string; name: string; color: string | null; primary: boolean; account?: string | null }[];
   chosen: string[] | null;
   error?: string;
 }
@@ -81,10 +88,17 @@ function AgendaPicker() {
   if (list.isLoading) return <p className="mt-2 text-xs text-muted-foreground">Carregando suas agendas…</p>;
   if (list.data?.error) return <p className="mt-2 text-xs text-amber-300">{list.data.error}</p>;
   if (agendas.length < 2) return null;
-  const chosen = list.data?.chosen ?? agendas.filter((agenda) => agenda.primary).map((agenda) => agenda.id);
+  const picked = list.data?.chosen ?? [];
+  // Same rule as the server: an account with none of its agendas chosen shows its main one.
+  const accountHasPick = (account: string | null | undefined) =>
+    agendas.some((agenda) => agenda.account === account && picked.includes(agenda.id));
+  const checked = agendas
+    .filter((agenda) => picked.includes(agenda.id) || (agenda.primary && !accountHasPick(agenda.account)))
+    .map((agenda) => agenda.id);
+  const accounts = [...new Set(agendas.map((agenda) => agenda.account ?? ""))];
 
   async function toggle(id: string) {
-    const next = chosen.includes(id) ? chosen.filter((item) => item !== id) : [...chosen, id];
+    const next = checked.includes(id) ? checked.filter((item) => item !== id) : [...checked, id];
     setSaving(true);
     try {
       const { error } = await createClient().auth.updateUser({ data: { google_agendas: next } });
@@ -101,13 +115,16 @@ function AgendaPicker() {
   return (
     <fieldset className="mt-3 rounded-2xl border border-border/60 bg-card/40 p-3" disabled={saving}>
       <legend className="px-1 text-sm font-medium">Quais agendas mostrar no Flowy</legend>
-      <ul className="mt-1 space-y-1">
-        {agendas.map((agenda) => (
+      {accounts.map((account) => (
+      <div key={account} className="mt-1">
+      {accounts.length > 1 ? <p className="px-2 pt-2 text-xs font-semibold text-muted-foreground">{account || "Google"}</p> : null}
+      <ul className="space-y-1">
+        {agendas.filter((agenda) => (agenda.account ?? "") === account).map((agenda) => (
           <li key={agenda.id}>
             <label className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-sm hover:bg-muted/40">
               <input
                 type="checkbox"
-                checked={chosen.includes(agenda.id)}
+                checked={checked.includes(agenda.id)}
                 onChange={() => void toggle(agenda.id)}
                 className="size-4 accent-[hsl(var(--primary))]"
               />
@@ -118,6 +135,8 @@ function AgendaPicker() {
           </li>
         ))}
       </ul>
+      </div>
+      ))}
     </fieldset>
   );
 }
@@ -184,10 +203,11 @@ export function CalendarFeedSection() {
     }
   }
 
-  async function disconnectGoogle() {
+  async function disconnectGoogle(email: string | null) {
     setBusy(true);
     try {
-      await fetch("/api/calendar/google/status", { method: "DELETE" });
+      await fetch(`/api/calendar/google/status${email ? `?email=${encodeURIComponent(email)}` : ""}`, { method: "DELETE" });
+      await queryClient.invalidateQueries({ queryKey: ["calendar-google-agendas"] });
       await queryClient.invalidateQueries({ queryKey: ["calendar-google"] });
       await queryClient.invalidateQueries({ queryKey: ["calendar-feed"] });
       toast.success("Google Agenda desconectada");
@@ -211,13 +231,26 @@ export function CalendarFeedSection() {
 
       {googleOn ? (
         <>
-        <div className="mt-3 flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm">
-          <GoogleMark />
-          <span className="min-w-0 flex-1 truncate">Google Agenda conectada{google.data?.email ? ` · ${google.data.email}` : ""}</span>
-          <Button type="button" variant="ghost" size="sm" loading={busy} onClick={() => void disconnectGoogle()}>
-            Desconectar
-          </Button>
-        </div>
+        <ul className="mt-3 space-y-2">
+          {(google.data?.accounts ?? []).map((account) => (
+            <li
+              key={account.email ?? "google"}
+              className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm"
+            >
+              <GoogleMark />
+              <span className="min-w-0 flex-1 truncate">{account.email ?? "Google Agenda"}</span>
+              <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => void disconnectGoogle(account.email)}>
+                Desconectar
+              </Button>
+            </li>
+          ))}
+        </ul>
+        <a
+          href="/api/calendar/google/start"
+          className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-dashed border-border text-sm font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+        >
+          + Adicionar outra conta Google
+        </a>
         {google.data?.tasks === false ? (
           <a
             href="/api/calendar/google/start"

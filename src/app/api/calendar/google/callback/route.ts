@@ -71,9 +71,14 @@ export async function GET(request: NextRequest) {
     email = null;
   }
 
+  if (!email) return back("erro");
+  // One row per Google account: adding the same account again refreshes it.
   const { error } = await admin
     .from("calendar_connections")
-    .upsert({ user_id: user.id, provider: "google", refresh_token: tokens.refresh_token, account_email: email });
+    .upsert(
+      { user_id: user.id, provider: "google", refresh_token: tokens.refresh_token, account_email: email },
+      { onConflict: "user_id,account_email" },
+    );
   if (error) {
     console.error("Google Agenda: falha ao salvar.", error.message);
     return back("erro");

@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
     response_type: "code",
     scope: GOOGLE_CALENDAR_SCOPE,
     access_type: "offline",
-    prompt: "consent",
+    // The person picks which Google account to add (they may have several).
+    prompt: "consent select_account",
     include_granted_scopes: "true",
     state,
   });
-  if (user.email) params.set("login_hint", user.email);
 
   const response = NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
   // The callback checks this, so nobody can attach their calendar to someone else.

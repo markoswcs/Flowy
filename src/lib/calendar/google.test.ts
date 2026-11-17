@@ -38,7 +38,8 @@ describe("agendasToRead", () => {
 
   it("reads exactly the chosen agendas", () => {
     expect(agendasToRead(agendas, ["trabalho@group.calendar.google.com"])).toEqual(["trabalho@group.calendar.google.com"]);
-    expect(agendasToRead(agendas, [])).toEqual([]);
+    // A newly added account (none of its agendas chosen) shows its main one.
+    expect(agendasToRead(agendas, ["outra-conta@gmail.com"])).toEqual(["me@gmail.com"]);
   });
 
   it("falls back to the main agenda when the list is empty", () => {

@@ -56,35 +56,50 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Período inválido." }, { status: 400 });
   }
 
-  // A direct Google connection comes first.
+  // Direct Google connections come first: every account the person added.
   const admin = serviceClient();
-  const { data: google } = admin
-    ? await admin.from("calendar_connections").select("refresh_token").eq("user_id", user.id).maybeSingle()
+  const { data: accounts } = admin
+    ? await admin.from("calendar_connections").select("account_email, refresh_token").eq("user_id", user.id)
     : { data: null };
-  if (google?.refresh_token && admin) {
-    try {
-      const picked = user.user_metadata?.google_agendas;
-      const chosen = Array.isArray(picked) ? picked.filter((id): id is string => typeof id === "string") : null;
-      const token = await googleAccessToken(google.refresh_token);
-      const [{ events, agendas }, tasks] = await Promise.all([
-        googleEvents(token, from, to, tz, chosen),
-        // Connected before Tarefas were asked for: no permission yet, no tasks.
-        googleTasks(token, from, to).catch(() => null),
-      ]);
-      console.info(`Google Agenda: ${events.length} eventos de ${agendas} agenda(s), ${tasks?.length ?? "sem permissão para"} tarefas, entre ${from} e ${to}.`);
-      return NextResponse.json(
-        { events: [...events, ...(tasks ?? [])], connected: true, tasksAllowed: tasks !== null },
-        { headers: { "cache-control": "private, max-age=120" } },
-      );
-    } catch (error) {
-      if (error instanceof GoogleRevokedError) {
-        // Access removed on Google's side: forget it, fall back to the link.
-        await admin.from("calendar_connections").delete().eq("user_id", user.id);
-      } else {
-        console.error("Google Agenda: falha ao ler.", error instanceof Error ? error.message : error);
-        return NextResponse.json({ events: [], connected: true, error: "Não foi possível ler sua agenda agora." });
-      }
-    }
+  if (admin && accounts?.length) {
+    const picked = user.user_metadata?.google_agendas;
+    const chosen = Array.isArray(picked) ? picked.filter((id): id is string => typeof id === "string") : null;
+    let failed = false;
+    let tasksAllowed = true;
+    const results = await Promise.all(
+      accounts.map(async (account) => {
+        try {
+          const token = await googleAccessToken(account.refresh_token);
+          const [{ events, agendas }, tasks] = await Promise.all([
+            googleEvents(token, from, to, tz, chosen),
+            // Connected before Tarefas were asked for: no permission yet, no tasks.
+            googleTasks(token, from, to).catch(() => null),
+          ]);
+          if (tasks === null) tasksAllowed = false;
+          console.info(`Google Agenda: ${events.length} eventos de ${agendas} agenda(s), ${tasks?.length ?? "sem permissão para"} tarefas.`);
+          return [...events, ...(tasks ?? [])];
+        } catch (error) {
+          if (error instanceof GoogleRevokedError) {
+            // Access removed on Google's side: forget that account.
+            await admin.from("calendar_connections").delete().eq("user_id", user.id).eq("account_email", account.account_email);
+          } else {
+            failed = true;
+            console.error("Google Agenda: falha ao ler uma conta.", error instanceof Error ? error.message : error);
+          }
+          return [];
+        }
+      }),
+    );
+    const events = results.flat().sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? "").localeCompare(b.time ?? ""));
+    return NextResponse.json(
+      {
+        events,
+        connected: true,
+        tasksAllowed,
+        ...(failed ? { error: "Não foi possível ler uma das suas agendas agora." } : {}),
+      },
+      { headers: { "cache-control": "private, max-age=120" } },
+    );
   }
 
   const saved = typeof user.user_metadata?.calendar_feed_url === "string" ? user.user_metadata.calendar_feed_url : "";

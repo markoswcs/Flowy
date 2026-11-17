@@ -178,10 +178,10 @@ export async function googleAgendas(accessToken: string): Promise<GoogleAgenda[]
  * the main one until they choose (shared and subscribed agendas surprise people).
  */
 export function agendasToRead(agendas: Pick<GoogleAgenda, "id" | "primary">[], chosen: string[] | null): string[] {
-  const ids = chosen
-    ? agendas.filter((agenda) => chosen.includes(agenda.id)).map((agenda) => agenda.id)
-    : agendas.filter((agenda) => agenda.primary).map((agenda) => agenda.id);
-  if (chosen && !ids.length) return [];
+  // The choice covers every connected account; an account with none of its
+  // agendas chosen (a newly added one) shows its main agenda.
+  const picked = chosen ? agendas.filter((agenda) => chosen.includes(agenda.id)).map((agenda) => agenda.id) : [];
+  const ids = picked.length ? picked : agendas.filter((agenda) => agenda.primary).map((agenda) => agenda.id);
   return ids.length ? ids.slice(0, 10) : ["primary"];
 }
 
