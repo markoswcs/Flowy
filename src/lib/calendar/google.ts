@@ -50,22 +50,26 @@ export async function googleTasks(accessToken: string, from: string, to: string)
     return response.json() as Promise<T>;
   };
   const lists = await get<{ items?: { id: string }[] }>("users/@me/lists?maxResults=20");
-  const params = new URLSearchParams({
-    showCompleted: "false",
-    showHidden: "false",
-    maxResults: "100",
-    dueMin: new Date(`${from}T00:00:00Z`).toISOString(),
-    dueMax: new Date(new Date(`${to}T00:00:00Z`).getTime() + 86_400_000).toISOString(),
-  });
+  // Every open task (a list rarely has more than 100), filtered here: the
+  // counts below tell why a month comes back empty.
+  const params = new URLSearchParams({ showCompleted: "false", showHidden: "false", maxResults: "100" });
+  let failed = 0;
   const results = await Promise.all(
     (lists.items ?? []).slice(0, 10).map((list) =>
-      get<{ items?: GoogleTask[] }>(`lists/${encodeURIComponent(list.id)}/tasks?${params}`).catch(() => ({ items: [] })),
+      get<{ items?: GoogleTask[] }>(`lists/${encodeURIComponent(list.id)}/tasks?${params}`).catch((error: unknown) => {
+        failed += 1;
+        console.error("Google Tarefas: falha numa lista.", error instanceof Error ? error.message : error);
+        return { items: [] as GoogleTask[] };
+      }),
     ),
   );
-  return results
-    .flatMap((result) => result.items ?? [])
-    .map(taskToCalendarEvent)
-    .filter((event): event is CalendarEvent => Boolean(event && event.date >= from && event.date <= to));
+  const open = results.flatMap((result) => result.items ?? []).filter((task) => !task.deleted && task.status !== "completed");
+  const dated = open.map(taskToCalendarEvent).filter((event): event is CalendarEvent => Boolean(event));
+  const inRange = dated.filter((event) => event.date >= from && event.date <= to);
+  console.info(
+    `Google Tarefas: ${lists.items?.length ?? 0} lista(s), ${open.length} abertas, ${open.length - dated.length} sem data, ${inRange.length} no período, ${failed} lista(s) com erro.`,
+  );
+  return inRange;
 }
 
 export function googleCalendarConfig() {
