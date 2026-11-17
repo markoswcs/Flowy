@@ -1,7 +1,72 @@
 import type { CalendarEvent } from "./ics";
 
-/** Read-only access to the person's Google Agenda (and their e-mail, to show which account). */
-export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly email";
+/**
+ * Read-only access to the person's Google Agenda and Google Tarefas (and their
+ * e-mail, to show which account).
+ */
+export const GOOGLE_CALENDAR_SCOPE =
+  "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/tasks.readonly email";
+const TASKS_SCOPE = "https://www.googleapis.com/auth/tasks.readonly";
+
+/** Whether an access token carries the Google Tarefas permission. */
+export async function hasTasksScope(accessToken: string): Promise<boolean> {
+  const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`, {
+    signal: AbortSignal.timeout(8000),
+    cache: "no-store",
+  });
+  if (!response.ok) return false;
+  const data = (await response.json().catch(() => ({}))) as { scope?: string };
+  return (data.scope ?? "").split(" ").includes(TASKS_SCOPE);
+}
+
+interface GoogleTask {
+  title?: string;
+  due?: string;
+  status?: string;
+  deleted?: boolean;
+  hidden?: boolean;
+}
+
+/**
+ * A Google task with a due date. Google keeps only the day (as midnight UTC),
+ * so the date is read as written, with no timezone shift.
+ */
+export function taskToCalendarEvent(task: GoogleTask): CalendarEvent | null {
+  if (!task.due || task.deleted || task.status === "completed") return null;
+  const date = task.due.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  return { date, time: null, title: (task.title ?? "").trim().slice(0, 200) || "(sem título)", kind: "task" };
+}
+
+/** Open Google Tarefas with a due date between two dates, from every list. */
+export async function googleTasks(accessToken: string, from: string, to: string): Promise<CalendarEvent[]> {
+  const get = async <T>(path: string): Promise<T> => {
+    const response = await fetch(`https://tasks.googleapis.com/tasks/v1/${path}`, {
+      headers: { authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(8000),
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error(`tasks ${response.status}`);
+    return response.json() as Promise<T>;
+  };
+  const lists = await get<{ items?: { id: string }[] }>("users/@me/lists?maxResults=20");
+  const params = new URLSearchParams({
+    showCompleted: "false",
+    showHidden: "false",
+    maxResults: "100",
+    dueMin: new Date(`${from}T00:00:00Z`).toISOString(),
+    dueMax: new Date(new Date(`${to}T00:00:00Z`).getTime() + 86_400_000).toISOString(),
+  });
+  const results = await Promise.all(
+    (lists.items ?? []).slice(0, 10).map((list) =>
+      get<{ items?: GoogleTask[] }>(`lists/${encodeURIComponent(list.id)}/tasks?${params}`).catch(() => ({ items: [] })),
+    ),
+  );
+  return results
+    .flatMap((result) => result.items ?? [])
+    .map(taskToCalendarEvent)
+    .filter((event): event is CalendarEvent => Boolean(event && event.date >= from && event.date <= to));
+}
 
 export function googleCalendarConfig() {
   const clientId = process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;

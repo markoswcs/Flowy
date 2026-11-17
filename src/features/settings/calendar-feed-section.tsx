@@ -43,7 +43,7 @@ async function readSaved(): Promise<string> {
   return typeof value === "string" ? value : "";
 }
 
-async function readGoogle(): Promise<{ available: boolean; connected: boolean; email?: string | null }> {
+async function readGoogle(): Promise<{ available: boolean; connected: boolean; email?: string | null; tasks?: boolean }> {
   const response = await fetch("/api/calendar/google/status");
   if (!response.ok) return { available: false, connected: false };
   return response.json();
@@ -218,6 +218,15 @@ export function CalendarFeedSection() {
             Desconectar
           </Button>
         </div>
+        {google.data?.tasks === false ? (
+          <a
+            href="/api/calendar/google/start"
+            className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-sky-400/40 bg-sky-500/10 px-3 py-3 text-sm font-semibold text-sky-200"
+          >
+            <GoogleMark />
+            Trazer também as Tarefas do Google
+          </a>
+        ) : null}
         <AgendaPicker />
         </>
       ) : linkOn ? (

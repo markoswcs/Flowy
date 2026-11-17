@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Repeat2 } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Circle, Plus, Repeat2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -157,13 +157,21 @@ export function CalendarView({ folders, categories }: { folders: Folder[]; categ
 
         {dayEvents.length ? (
           <ul className="space-y-1">
-            {dayEvents.map((event, index) => (
-              <li key={index} className="flex items-center gap-3 rounded-2xl border border-sky-400/20 bg-sky-500/5 px-3 py-2.5 text-sm">
-                <span className="w-11 shrink-0 text-xs font-semibold tabular-nums text-sky-300">{event.time ?? "Dia"}</span>
-                <span className="min-w-0 flex-1 truncate">{event.title}</span>
-                <CalendarDays className="size-3.5 shrink-0 text-sky-300/70" aria-label="Da sua agenda" />
-              </li>
-            ))}
+            {dayEvents.map((event, index) =>
+              event.kind === "task" ? (
+                <li key={index} className="flex items-center gap-3 rounded-2xl border border-sky-400/20 bg-sky-500/5 px-3 py-2.5 text-sm">
+                  <Circle className="size-4 shrink-0 text-sky-300" aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate">{event.title}</span>
+                  <span className="shrink-0 text-[11px] text-sky-300/80">Tarefas do Google</span>
+                </li>
+              ) : (
+                <li key={index} className="flex items-center gap-3 rounded-2xl border border-sky-400/20 bg-sky-500/5 px-3 py-2.5 text-sm">
+                  <span className="w-11 shrink-0 text-xs font-semibold tabular-nums text-sky-300">{event.time ?? "Dia"}</span>
+                  <span className="min-w-0 flex-1 truncate">{event.title}</span>
+                  <CalendarDays className="size-3.5 shrink-0 text-sky-300/70" aria-label="Da sua agenda" />
+                </li>
+              ),
+            )}
           </ul>
         ) : null}
 

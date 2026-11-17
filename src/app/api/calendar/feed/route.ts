@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { GoogleRevokedError, googleAccessToken, googleEvents } from "@/lib/calendar/google";
+import { GoogleRevokedError, googleAccessToken, googleEvents, googleTasks } from "@/lib/calendar/google";
 import { eventsBetween, normalizeFeedUrl } from "@/lib/calendar/ics";
 import { serviceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -65,9 +65,17 @@ export async function GET(request: NextRequest) {
     try {
       const picked = user.user_metadata?.google_agendas;
       const chosen = Array.isArray(picked) ? picked.filter((id): id is string => typeof id === "string") : null;
-      const { events, agendas } = await googleEvents(await googleAccessToken(google.refresh_token), from, to, tz, chosen);
-      console.info(`Google Agenda: ${events.length} eventos de ${agendas} agenda(s) entre ${from} e ${to}.`);
-      return NextResponse.json({ events, connected: true }, { headers: { "cache-control": "private, max-age=120" } });
+      const token = await googleAccessToken(google.refresh_token);
+      const [{ events, agendas }, tasks] = await Promise.all([
+        googleEvents(token, from, to, tz, chosen),
+        // Connected before Tarefas were asked for: no permission yet, no tasks.
+        googleTasks(token, from, to).catch(() => null),
+      ]);
+      console.info(`Google Agenda: ${events.length} eventos de ${agendas} agenda(s), ${tasks?.length ?? "sem permissão para"} tarefas, entre ${from} e ${to}.`);
+      return NextResponse.json(
+        { events: [...events, ...(tasks ?? [])], connected: true, tasksAllowed: tasks !== null },
+        { headers: { "cache-control": "private, max-age=120" } },
+      );
     } catch (error) {
       if (error instanceof GoogleRevokedError) {
         // Access removed on Google's side: forget it, fall back to the link.

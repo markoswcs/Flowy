@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { agendasToRead, toCalendarEvent } from "./google";
+import { agendasToRead, taskToCalendarEvent, toCalendarEvent } from "./google";
 
 describe("toCalendarEvent", () => {
   it("keeps all-day events without a time", () => {
@@ -43,5 +43,22 @@ describe("agendasToRead", () => {
 
   it("falls back to the main agenda when the list is empty", () => {
     expect(agendasToRead([], null)).toEqual(["primary"]);
+  });
+});
+
+describe("taskToCalendarEvent", () => {
+  it("puts a task on its due day, as written", () => {
+    expect(taskToCalendarEvent({ title: "Pagar boleto", due: "2026-11-20T00:00:00.000Z", status: "needsAction" })).toEqual({
+      date: "2026-11-20",
+      time: null,
+      title: "Pagar boleto",
+      kind: "task",
+    });
+  });
+
+  it("skips done, deleted and undated tasks", () => {
+    expect(taskToCalendarEvent({ title: "x", due: "2026-11-20T00:00:00.000Z", status: "completed" })).toBeNull();
+    expect(taskToCalendarEvent({ title: "x", due: "2026-11-20T00:00:00.000Z", deleted: true })).toBeNull();
+    expect(taskToCalendarEvent({ title: "x" })).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { googleCalendarConfig } from "@/lib/calendar/google";
+import { googleAccessToken, googleCalendarConfig, hasTasksScope } from "@/lib/calendar/google";
 import { serviceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,8 +19,16 @@ export async function GET() {
   const available = Boolean(googleCalendarConfig() && admin);
   if (!available || !admin) return NextResponse.json({ available: false, connected: false });
 
-  const { data } = await admin.from("calendar_connections").select("account_email").eq("user_id", user.id).maybeSingle();
-  return NextResponse.json({ available: true, connected: Boolean(data), email: data?.account_email ?? null });
+  const { data } = await admin
+    .from("calendar_connections")
+    .select("account_email, refresh_token")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  // Connections made before Tarefas existed need one more consent.
+  const tasks = data?.refresh_token
+    ? await googleAccessToken(data.refresh_token).then(hasTasksScope).catch(() => true)
+    : false;
+  return NextResponse.json({ available: true, connected: Boolean(data), email: data?.account_email ?? null, tasks });
 }
 
 /** Disconnects: revokes Google's token and forgets it. */

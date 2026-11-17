@@ -7,6 +7,8 @@ export interface CalendarEvent {
   date: string; // YYYY-MM-DD in the viewer's timezone
   time: string | null; // HH:MM, null for all day
   title: string;
+  /** "task" for a Google Tarefa; events have none. */
+  kind?: "task";
 }
 
 interface Stamp {
