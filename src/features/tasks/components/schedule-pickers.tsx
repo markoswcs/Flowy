@@ -113,6 +113,7 @@ export function DatePickerSheet({
               type="button"
               onClick={() => pick(date)}
               aria-pressed={date === value}
+              data-no-glow
               aria-label={new Intl.DateTimeFormat("pt-BR", { dateStyle: "full" }).format(new Date(`${date}T12:00:00`))}
               className={cn(
                 "aspect-square rounded-full text-sm font-medium tabular-nums transition-colors active:scale-95",

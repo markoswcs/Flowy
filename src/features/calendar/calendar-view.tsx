@@ -108,8 +108,10 @@ export function CalendarView({ folders, categories }: { folders: Folder[]; categ
                 type="button"
                 onClick={() => setSelected(date)}
                 aria-pressed={isSelected}
+                // The filled circle already marks the day: no glow frame around the cell.
+                data-no-glow
                 aria-label={`${longDate(date)}${count ? `, ${count} ${count === 1 ? "tarefa" : "tarefas"}` : ""}${isHoliday ? `, feriado: ${holidays.get(date)!.name}` : ""}`}
-                className="group flex h-12 flex-col items-center justify-center gap-1"
+                className="group flex h-12 flex-col items-center justify-center gap-1 rounded-xl"
               >
                 <span
                   className={cn(
