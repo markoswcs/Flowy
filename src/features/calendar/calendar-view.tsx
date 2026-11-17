@@ -19,7 +19,7 @@ import { repeatsOn } from "./repeats";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 
-async function loadEvents(from: string, to: string): Promise<{ events: CalendarEvent[]; connected: boolean }> {
+async function loadEvents(from: string, to: string): Promise<{ events: CalendarEvent[]; connected: boolean; error?: string }> {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const response = await fetch(`/api/calendar/feed?from=${from}&to=${to}&tz=${encodeURIComponent(tz)}`);
   if (!response.ok) return { events: [], connected: false };
@@ -186,6 +186,10 @@ export function CalendarView({ folders, categories }: { folders: Folder[]; categ
 
         {empty && !tasks.isLoading ? (
           <p className="py-6 text-center text-sm text-muted-foreground">Nada marcado para este dia.</p>
+        ) : null}
+
+        {feed.data?.error ? (
+          <p className="pt-2 text-center text-xs text-amber-300">{feed.data.error} Tente de novo em alguns minutos.</p>
         ) : null}
 
         {feed.data && !feed.data.connected ? (

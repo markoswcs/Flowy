@@ -63,8 +63,9 @@ export async function GET(request: NextRequest) {
     : { data: null };
   if (google?.refresh_token && admin) {
     try {
-      const events = await googleEvents(await googleAccessToken(google.refresh_token), from, to, tz);
-      return NextResponse.json({ events, connected: true }, { headers: { "cache-control": "private, max-age=300" } });
+      const { events, agendas } = await googleEvents(await googleAccessToken(google.refresh_token), from, to, tz);
+      console.info(`Google Agenda: ${events.length} eventos de ${agendas} agenda(s) entre ${from} e ${to}.`);
+      return NextResponse.json({ events, connected: true }, { headers: { "cache-control": "private, max-age=120" } });
     } catch (error) {
       if (error instanceof GoogleRevokedError) {
         // Access removed on Google's side: forget it, fall back to the link.

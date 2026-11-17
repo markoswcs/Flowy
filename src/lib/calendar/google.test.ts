@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { toCalendarEvent } from "./google";
+import { agendasToRead, toCalendarEvent } from "./google";
 
 describe("toCalendarEvent", () => {
   it("keeps all-day events without a time", () => {
@@ -22,5 +22,23 @@ describe("toCalendarEvent", () => {
   it("drops cancelled events and names untitled ones", () => {
     expect(toCalendarEvent({ status: "cancelled", start: { date: "2026-11-20" } }, "America/Sao_Paulo")).toBeNull();
     expect(toCalendarEvent({ start: { date: "2026-11-20" } }, "America/Sao_Paulo")?.title).toBe("(sem título)");
+  });
+});
+
+describe("agendasToRead", () => {
+  it("reads the main agenda and the other checked ones, never holidays", () => {
+    expect(
+      agendasToRead([
+        { id: "me@gmail.com", primary: true },
+        { id: "trabalho@group.calendar.google.com", selected: true },
+        { id: "escondida@group.calendar.google.com", selected: true, hidden: true },
+        { id: "desmarcada@group.calendar.google.com", selected: false },
+        { id: "pt-br.brazilian#holiday@group.v.calendar.google.com", selected: true },
+      ]),
+    ).toEqual(["me@gmail.com", "trabalho@group.calendar.google.com"]);
+  });
+
+  it("falls back to the main agenda", () => {
+    expect(agendasToRead([])).toEqual(["primary"]);
   });
 });

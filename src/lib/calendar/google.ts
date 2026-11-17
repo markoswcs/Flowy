@@ -60,8 +60,41 @@ export function toCalendarEvent(event: GoogleEvent, viewerZone: string): Calenda
   return { date: `${get("year")}-${get("month")}-${get("day")}`, time: `${get("hour")}:${get("minute")}`, title };
 }
 
-/** Events of the primary calendar between two dates (inclusive). */
-export async function googleEvents(accessToken: string, from: string, to: string, viewerZone: string): Promise<CalendarEvent[]> {
+interface GoogleCalendarEntry {
+  id: string;
+  primary?: boolean;
+  selected?: boolean;
+  hidden?: boolean;
+}
+
+async function googleGet<T>(accessToken: string, path: string): Promise<T> {
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/${path}`, {
+    headers: { authorization: `Bearer ${accessToken}` },
+    signal: AbortSignal.timeout(8000),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`${path.split("?")[0]} ${response.status} ${detail.slice(0, 200)}`);
+  }
+  return response.json() as Promise<T>;
+}
+
+/**
+ * The agendas the person shows in Google Agenda (the main one and any other
+ * they keep checked), not holiday agendas: Flowy already shows holidays.
+ */
+export function agendasToRead(items: GoogleCalendarEntry[]): string[] {
+  const ids = items
+    .filter((item) => (item.primary || item.selected) && !item.hidden && !item.id.includes("#holiday@"))
+    .map((item) => item.id);
+  return ids.length ? ids.slice(0, 10) : ["primary"];
+}
+
+/** Events of the person's agendas between two dates (inclusive), sorted, without repeats. */
+export async function googleEvents(accessToken: string, from: string, to: string, viewerZone: string): Promise<{ events: CalendarEvent[]; agendas: number }> {
+  const list = await googleGet<{ items?: GoogleCalendarEntry[] }>(accessToken, "users/me/calendarList?minAccessRole=reader&maxResults=50");
+  const agendas = agendasToRead(list.items ?? []);
   const params = new URLSearchParams({
     timeMin: new Date(`${from}T00:00:00Z`).toISOString(),
     timeMax: new Date(new Date(`${to}T00:00:00Z`).getTime() + 2 * 86_400_000).toISOString(),
@@ -70,14 +103,22 @@ export async function googleEvents(accessToken: string, from: string, to: string
     maxResults: "500",
     timeZone: viewerZone,
   });
-  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`, {
-    headers: { authorization: `Bearer ${accessToken}` },
-    signal: AbortSignal.timeout(8000),
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error(`events ${response.status}`);
-  const data = (await response.json()) as { items?: GoogleEvent[] };
-  return (data.items ?? [])
+  const results = await Promise.all(
+    agendas.map((id) =>
+      googleGet<{ items?: GoogleEvent[] }>(accessToken, `calendars/${encodeURIComponent(id)}/events?${params}`).catch(() => ({ items: [] })),
+    ),
+  );
+  const seen = new Set<string>();
+  const events = results
+    .flatMap((result) => result.items ?? [])
     .map((event) => toCalendarEvent(event, viewerZone))
-    .filter((event): event is CalendarEvent => Boolean(event && event.date >= from && event.date <= to));
+    .filter((event): event is CalendarEvent => {
+      if (!event || event.date < from || event.date > to) return false;
+      const key = `${event.date}|${event.time}|${event.title}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? "").localeCompare(b.time ?? ""));
+  return { events, agendas: agendas.length };
 }
