@@ -226,8 +226,15 @@ export async function googleEvents(
     console.info(`Google Agenda: nada lido nas escolhidas (${agendas.join(", ")}). Por agenda: ${counts.join(" | ")}`);
   }
   const seen = new Set<string>();
-  const events = results
-    .flatMap((result) => result.items ?? [])
+  const raw = results.flatMap((result) => result.items ?? []);
+  // What Google sent before Flowy's own filtering (no titles): status and start shape.
+  console.info(
+    `Google Agenda: ${raw.length} itens recebidos. Amostra: ${raw
+      .slice(0, 5)
+      .map((item) => `${item.status ?? "?"}/${item.start?.dateTime ?? item.start?.date ?? "sem início"}`)
+      .join(", ")}`,
+  );
+  const events = raw
     .map((event) => toCalendarEvent(event, viewerZone))
     .filter((event): event is CalendarEvent => {
       if (!event || event.date < from || event.date > to) return false;
