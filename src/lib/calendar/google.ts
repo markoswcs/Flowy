@@ -193,7 +193,8 @@ export async function googleEvents(
   viewerZone: string,
   chosen: string[] | null,
 ): Promise<{ events: CalendarEvent[]; agendas: number }> {
-  const agendas = agendasToRead(await googleAgendas(accessToken), chosen);
+  const all = await googleAgendas(accessToken);
+  const agendas = agendasToRead(all, chosen);
   const params = new URLSearchParams({
     timeMin: new Date(`${from}T00:00:00Z`).toISOString(),
     timeMax: new Date(new Date(`${to}T00:00:00Z`).getTime() + 2 * 86_400_000).toISOString(),
@@ -202,11 +203,28 @@ export async function googleEvents(
     maxResults: "500",
     timeZone: viewerZone,
   });
+  const read = (id: string) =>
+    googleGet<{ items?: GoogleEvent[] }>(accessToken, `calendars/${encodeURIComponent(id)}/events?${params}`);
   const results = await Promise.all(
     agendas.map((id) =>
-      googleGet<{ items?: GoogleEvent[] }>(accessToken, `calendars/${encodeURIComponent(id)}/events?${params}`).catch(() => ({ items: [] })),
+      read(id).catch((error: unknown) => {
+        console.error(`Google Agenda: falha ao ler a agenda ${id}.`, error instanceof Error ? error.message : error);
+        return { items: [] as GoogleEvent[] };
+      }),
     ),
   );
+  // Nothing found: say, per agenda of the account, how many events this
+  // period has, so a missing meeting can be traced to its agenda.
+  if (!results.some((result) => result.items?.length)) {
+    const counts = await Promise.all(
+      all.slice(0, 12).map((agenda) =>
+        read(agenda.id)
+          .then((result) => `${agenda.name}${agenda.primary ? " (principal)" : ""}: ${result.items?.length ?? 0}`)
+          .catch((error: unknown) => `${agenda.name}: erro ${error instanceof Error ? error.message.slice(0, 80) : ""}`),
+      ),
+    );
+    console.info(`Google Agenda: nada lido nas escolhidas (${agendas.join(", ")}). Por agenda: ${counts.join(" | ")}`);
+  }
   const seen = new Set<string>();
   const events = results
     .flatMap((result) => result.items ?? [])
