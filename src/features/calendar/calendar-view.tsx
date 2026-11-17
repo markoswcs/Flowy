@@ -19,7 +19,10 @@ import { repeatsOn } from "./repeats";
 
 const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 
-async function loadEvents(from: string, to: string): Promise<{ events: CalendarEvent[]; connected: boolean; error?: string }> {
+async function loadEvents(
+  from: string,
+  to: string,
+): Promise<{ events: CalendarEvent[]; connected: boolean; error?: string; tasksAllowed?: boolean }> {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const response = await fetch(`/api/calendar/feed?from=${from}&to=${to}&tz=${encodeURIComponent(tz)}`, { cache: "no-store" });
   if (!response.ok) return { events: [], connected: false };
@@ -194,6 +197,17 @@ export function CalendarView({ folders, categories }: { folders: Folder[]; categ
 
         {empty && !tasks.isLoading ? (
           <p className="py-6 text-center text-sm text-muted-foreground">Nada marcado para este dia.</p>
+        ) : null}
+
+        {feed.data?.tasksAllowed === false ? (
+          // Connected before Tarefas were asked for: one tap gives the permission.
+          <a
+            href="/api/calendar/google/start"
+            className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-sky-400/40 bg-sky-500/10 px-3 py-2.5 text-sm font-semibold text-sky-200"
+          >
+            <Circle className="size-4" aria-hidden="true" />
+            Mostrar também suas Tarefas do Google
+          </a>
         ) : null}
 
         {feed.data?.error ? (
