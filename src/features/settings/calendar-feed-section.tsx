@@ -60,6 +60,68 @@ function GoogleMark() {
   );
 }
 
+interface AgendaList {
+  agendas: { id: string; name: string; color: string | null; primary: boolean }[];
+  chosen: string[] | null;
+  error?: string;
+}
+
+async function readAgendas(): Promise<AgendaList> {
+  const response = await fetch("/api/calendar/google/agendas");
+  if (!response.ok) return { agendas: [], chosen: null };
+  return response.json();
+}
+
+/** Which Google agendas show in Flowy. Until chosen, only the main one. */
+function AgendaPicker() {
+  const queryClient = useQueryClient();
+  const list = useQuery({ queryKey: ["calendar-google-agendas"], queryFn: readAgendas });
+  const [saving, setSaving] = useState(false);
+  const agendas = list.data?.agendas ?? [];
+  if (list.isLoading) return <p className="mt-2 text-xs text-muted-foreground">Carregando suas agendas…</p>;
+  if (list.data?.error) return <p className="mt-2 text-xs text-amber-300">{list.data.error}</p>;
+  if (agendas.length < 2) return null;
+  const chosen = list.data?.chosen ?? agendas.filter((agenda) => agenda.primary).map((agenda) => agenda.id);
+
+  async function toggle(id: string) {
+    const next = chosen.includes(id) ? chosen.filter((item) => item !== id) : [...chosen, id];
+    setSaving(true);
+    try {
+      const { error } = await createClient().auth.updateUser({ data: { google_agendas: next } });
+      if (error) throw error;
+      queryClient.setQueryData<AgendaList>(["calendar-google-agendas"], (current) => (current ? { ...current, chosen: next } : current));
+      await queryClient.invalidateQueries({ queryKey: ["calendar-feed"] });
+    } catch {
+      toast.error("Não foi possível salvar. Tente de novo.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <fieldset className="mt-3 rounded-2xl border border-border/60 bg-card/40 p-3" disabled={saving}>
+      <legend className="px-1 text-sm font-medium">Quais agendas mostrar no Flowy</legend>
+      <ul className="mt-1 space-y-1">
+        {agendas.map((agenda) => (
+          <li key={agenda.id}>
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2 text-sm hover:bg-muted/40">
+              <input
+                type="checkbox"
+                checked={chosen.includes(agenda.id)}
+                onChange={() => void toggle(agenda.id)}
+                className="size-4 accent-[hsl(var(--primary))]"
+              />
+              <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: agenda.color ?? "#38bdf8" }} aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">{agenda.name}</span>
+              {agenda.primary ? <span className="text-xs text-muted-foreground">principal</span> : null}
+            </label>
+          </li>
+        ))}
+      </ul>
+    </fieldset>
+  );
+}
+
 /**
  * The calendar of the person's e-mail in Flowy's calendar (read only). Google:
  * one button. Outlook / iCloud: open the right page, copy, tap "Colar link".
@@ -148,6 +210,7 @@ export function CalendarFeedSection() {
       </p>
 
       {googleOn ? (
+        <>
         <div className="mt-3 flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm">
           <GoogleMark />
           <span className="min-w-0 flex-1 truncate">Google Agenda conectada{google.data?.email ? ` · ${google.data.email}` : ""}</span>
@@ -155,6 +218,8 @@ export function CalendarFeedSection() {
             Desconectar
           </Button>
         </div>
+        <AgendaPicker />
+        </>
       ) : linkOn ? (
         <div className="mt-3 flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm">
           <Check className="size-5 shrink-0 text-emerald-400" aria-hidden="true" />

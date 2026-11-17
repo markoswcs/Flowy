@@ -26,19 +26,22 @@ describe("toCalendarEvent", () => {
 });
 
 describe("agendasToRead", () => {
-  it("reads the main agenda and the other checked ones, never holidays", () => {
-    expect(
-      agendasToRead([
-        { id: "me@gmail.com", primary: true },
-        { id: "trabalho@group.calendar.google.com", selected: true },
-        { id: "escondida@group.calendar.google.com", selected: true, hidden: true },
-        { id: "desmarcada@group.calendar.google.com", selected: false },
-        { id: "pt-br.brazilian#holiday@group.v.calendar.google.com", selected: true },
-      ]),
-    ).toEqual(["me@gmail.com", "trabalho@group.calendar.google.com"]);
+  const agendas = [
+    { id: "me@gmail.com", primary: true },
+    { id: "trabalho@group.calendar.google.com", primary: false },
+    { id: "guardioes@group.calendar.google.com", primary: false },
+  ];
+
+  it("reads only the main agenda until the person chooses", () => {
+    expect(agendasToRead(agendas, null)).toEqual(["me@gmail.com"]);
   });
 
-  it("falls back to the main agenda", () => {
-    expect(agendasToRead([])).toEqual(["primary"]);
+  it("reads exactly the chosen agendas", () => {
+    expect(agendasToRead(agendas, ["trabalho@group.calendar.google.com"])).toEqual(["trabalho@group.calendar.google.com"]);
+    expect(agendasToRead(agendas, [])).toEqual([]);
+  });
+
+  it("falls back to the main agenda when the list is empty", () => {
+    expect(agendasToRead([], null)).toEqual(["primary"]);
   });
 });

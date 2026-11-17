@@ -21,7 +21,7 @@ const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 
 async function loadEvents(from: string, to: string): Promise<{ events: CalendarEvent[]; connected: boolean; error?: string }> {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const response = await fetch(`/api/calendar/feed?from=${from}&to=${to}&tz=${encodeURIComponent(tz)}`);
+  const response = await fetch(`/api/calendar/feed?from=${from}&to=${to}&tz=${encodeURIComponent(tz)}`, { cache: "no-store" });
   if (!response.ok) return { events: [], connected: false };
   return response.json();
 }

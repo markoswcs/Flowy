@@ -62,9 +62,19 @@ export function toCalendarEvent(event: GoogleEvent, viewerZone: string): Calenda
 
 interface GoogleCalendarEntry {
   id: string;
+  summary?: string;
+  summaryOverride?: string;
+  backgroundColor?: string;
   primary?: boolean;
   selected?: boolean;
   hidden?: boolean;
+}
+
+export interface GoogleAgenda {
+  id: string;
+  name: string;
+  color: string | null;
+  primary: boolean;
 }
 
 async function googleGet<T>(accessToken: string, path: string): Promise<T> {
@@ -80,21 +90,41 @@ async function googleGet<T>(accessToken: string, path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+/** The person's agendas (holiday ones left out: Flowy already shows holidays). */
+export async function googleAgendas(accessToken: string): Promise<GoogleAgenda[]> {
+  const list = await googleGet<{ items?: GoogleCalendarEntry[] }>(accessToken, "users/me/calendarList?minAccessRole=reader&maxResults=50");
+  return (list.items ?? [])
+    .filter((item) => !item.id.includes("#holiday@"))
+    .map((item) => ({
+      id: item.id,
+      name: (item.summaryOverride || item.summary || item.id).slice(0, 80),
+      color: item.backgroundColor ?? null,
+      primary: Boolean(item.primary),
+    }))
+    .sort((a, b) => Number(b.primary) - Number(a.primary) || a.name.localeCompare(b.name));
+}
+
 /**
- * The agendas the person shows in Google Agenda (the main one and any other
- * they keep checked), not holiday agendas: Flowy already shows holidays.
+ * Which agendas to read: the ones the person chose in Configurações, or only
+ * the main one until they choose (shared and subscribed agendas surprise people).
  */
-export function agendasToRead(items: GoogleCalendarEntry[]): string[] {
-  const ids = items
-    .filter((item) => (item.primary || item.selected) && !item.hidden && !item.id.includes("#holiday@"))
-    .map((item) => item.id);
+export function agendasToRead(agendas: Pick<GoogleAgenda, "id" | "primary">[], chosen: string[] | null): string[] {
+  const ids = chosen
+    ? agendas.filter((agenda) => chosen.includes(agenda.id)).map((agenda) => agenda.id)
+    : agendas.filter((agenda) => agenda.primary).map((agenda) => agenda.id);
+  if (chosen && !ids.length) return [];
   return ids.length ? ids.slice(0, 10) : ["primary"];
 }
 
 /** Events of the person's agendas between two dates (inclusive), sorted, without repeats. */
-export async function googleEvents(accessToken: string, from: string, to: string, viewerZone: string): Promise<{ events: CalendarEvent[]; agendas: number }> {
-  const list = await googleGet<{ items?: GoogleCalendarEntry[] }>(accessToken, "users/me/calendarList?minAccessRole=reader&maxResults=50");
-  const agendas = agendasToRead(list.items ?? []);
+export async function googleEvents(
+  accessToken: string,
+  from: string,
+  to: string,
+  viewerZone: string,
+  chosen: string[] | null,
+): Promise<{ events: CalendarEvent[]; agendas: number }> {
+  const agendas = agendasToRead(await googleAgendas(accessToken), chosen);
   const params = new URLSearchParams({
     timeMin: new Date(`${from}T00:00:00Z`).toISOString(),
     timeMax: new Date(new Date(`${to}T00:00:00Z`).getTime() + 2 * 86_400_000).toISOString(),
