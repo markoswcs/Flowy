@@ -528,6 +528,17 @@ export function LandingPage() {
         </main>
 
         <footer className="border-t border-white/5 px-4 py-8 text-center text-xs text-[color:var(--muted)] sm:px-6">
+          <nav className="mb-3 flex justify-center gap-4" aria-label="Informações">
+            <Link href="/privacidade" className="hover:text-white">
+              Política de privacidade
+            </Link>
+            <Link href="/termos" className="hover:text-white">
+              Termos de uso
+            </Link>
+            <Link href="/instalar" className="hover:text-white">
+              Como instalar
+            </Link>
+          </nav>
           © {new Date().getFullYear()} Flowy
         </footer>
       </div>
