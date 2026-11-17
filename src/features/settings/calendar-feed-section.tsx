@@ -35,6 +35,7 @@ const RESULT_TEXT: Record<string, [string, "success" | "error"]> = {
   "sem-permissao": ["Marque a permissão de ver a agenda na tela do Google e tente de novo", "error"],
   indisponivel: ["A conexão com o Google ainda não está disponível. Use o link abaixo", "error"],
   erro: ["Não foi possível conectar. Tente de novo", "error"],
+  limite: ["Você já tem 3 contas Google conectadas. Desconecte uma para adicionar outra", "error"],
 };
 
 async function readSaved(): Promise<string> {
@@ -245,12 +246,16 @@ export function CalendarFeedSection() {
             </li>
           ))}
         </ul>
-        <a
-          href="/api/calendar/google/start"
-          className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-dashed border-border text-sm font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground"
-        >
-          + Adicionar outra conta Google
-        </a>
+        {(google.data?.accounts?.length ?? 0) < 3 ? (
+          <a
+            href="/api/calendar/google/start"
+            className="mt-2 flex h-11 items-center justify-center gap-2 rounded-2xl border border-dashed border-border text-sm font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+          >
+            + Adicionar outra conta Google ({google.data?.accounts?.length ?? 0}/3)
+          </a>
+        ) : (
+          <p className="mt-2 text-center text-xs text-muted-foreground">Máximo de 3 contas Google.</p>
+        )}
         {google.data?.tasks === false ? (
           <a
             href="/api/calendar/google/start"

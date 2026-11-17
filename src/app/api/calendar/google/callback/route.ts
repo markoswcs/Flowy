@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 
 import { NextResponse, type NextRequest } from "next/server";
 
-import { googleCalendarConfig } from "@/lib/calendar/google";
+import { MAX_GOOGLE_ACCOUNTS, googleCalendarConfig } from "@/lib/calendar/google";
 import { serviceClient } from "@/lib/supabase/admin";
 import { publicOrigin } from "@/lib/request-origin";
 import { createClient } from "@/lib/supabase/server";
@@ -72,6 +72,13 @@ export async function GET(request: NextRequest) {
   }
 
   if (!email) return back("erro");
+  // Up to 3 accounts; reconnecting one already added is always fine.
+  const { data: existing } = await admin.from("calendar_connections").select("account_email").eq("user_id", user.id);
+  const others = (existing ?? []).filter((row) => row.account_email !== email);
+  if (others.length >= MAX_GOOGLE_ACCOUNTS) {
+    await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tokens.refresh_token)}`, { method: "POST" }).catch(() => undefined);
+    return back("limite");
+  }
   // One row per Google account: adding the same account again refreshes it.
   const { error } = await admin
     .from("calendar_connections")

@@ -80,6 +80,9 @@ export function googleCalendarConfig() {
 
 export class GoogleRevokedError extends Error {}
 
+/** Google accounts one person can connect at the same time. */
+export const MAX_GOOGLE_ACCOUNTS = 3;
+
 /** A fresh access token from the stored refresh token. */
 export async function googleAccessToken(refreshToken: string): Promise<string> {
   const config = googleCalendarConfig();
