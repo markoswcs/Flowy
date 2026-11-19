@@ -6,12 +6,28 @@ const MAX_STATIC = 400;
 // `next dev` registers /sw.js?dev=1: its files change under the same names.
 const CACHING = !new URL(self.location.href).searchParams.has('dev');
 
+// Flowy moved to useflowy.vercel.app. On the old address this worker keeps
+// only what reminders need (push and its buttons) and sends every page there.
+const OLD_HOST = 'flowy-mauve.vercel.app';
+const NEW_ORIGIN = 'https://useflowy.vercel.app';
+const ON_OLD_HOST = self.location.hostname === OLD_HOST;
+const moved = (url) => NEW_ORIGIN + url.pathname + url.search + url.hash;
+
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      await self.clients.claim();
+      if (!ON_OLD_HOST) return;
+      // Saved copies of the old app would open instead of the redirect.
+      await Promise.all((await caches.keys()).map((key) => caches.delete(key)));
+      const windows = await self.clients.matchAll({ type: 'window' });
+      await Promise.all(windows.map((client) => client.navigate(moved(new URL(client.url))).catch(() => undefined)));
+    })(),
+  );
 });
 
 /** Oldest entries go first: Cache Storage keeps insertion order. */
@@ -105,6 +121,10 @@ async function pageFromCache(event) {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  if (ON_OLD_HOST) {
+    if (request.mode === 'navigate') event.respondWith(Response.redirect(moved(new URL(request.url)), 308));
+    return;
+  }
   if (!CACHING || request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
@@ -206,7 +226,7 @@ async function runAction(action, taskId, url) {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
-  const url = new URL(data.url || '/app', self.location.origin).href;
+  const url = new URL(data.url || '/app', ON_OLD_HOST ? NEW_ORIGIN : self.location.origin).href;
   if (event.action && data.taskId) {
     event.waitUntil(runAction(event.action, data.taskId, url));
     return;
