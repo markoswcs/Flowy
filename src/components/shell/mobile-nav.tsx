@@ -1,12 +1,14 @@
 "use client";
 
-import { Home, Network, NotebookPen, PenTool } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { parseSection, SECTION_HREF } from "@/features/notes/note-sections";
+import { parseSection } from "@/features/notes/note-sections";
 import { cn } from "@/lib/utils";
+
+import { resolveDock } from "./dock-items";
+import { useDock } from "./use-dock";
 
 function NavItem({
   label,
@@ -51,10 +53,19 @@ function NavItem({
   );
 }
 
+/** Bottom bar on phones: four shortcuts the person chooses (Configurações) around the create button. */
 export function MobileNav() {
   const pathname = usePathname();
-  const section = parseSection(useSearchParams().get("tipo"));
-  const onNotes = pathname === "/app/notes";
+  const params = useSearchParams();
+  const place = { pathname, section: parseSection(params.get("tipo")), view: params.get("view") };
+  const dock = useDock();
+  const items = resolveDock(dock.data);
+
+  const item = (index: number) => {
+    const entry = items[index]!;
+    const Icon = entry.icon;
+    return <NavItem key={entry.key} label={entry.label} href={entry.href} active={entry.active(place)} icon={<Icon className="size-5" />} />;
+  };
 
   return (
     <nav
@@ -63,32 +74,12 @@ export function MobileNav() {
       className="flowy-mobile-nav fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden"
     >
       <div className="grid h-[4.25rem] grid-cols-[1fr_1fr_4.75rem_1fr_1fr] items-center flowy-glass rounded-[2rem] border px-2">
-        <NavItem
-          label="Início"
-          href="/app"
-          active={pathname === "/app"}
-          icon={<Home className="size-5" />}
-        />
-        <NavItem
-          label="Notas"
-          href={SECTION_HREF.nota}
-          active={onNotes && section === "nota"}
-          icon={<NotebookPen className="size-5" />}
-        />
+        {item(0)}
+        {item(1)}
         {/* The create button floats in this slot. */}
         <span aria-hidden="true" />
-        <NavItem
-          label="Mapas"
-          href={SECTION_HREF.mapa}
-          active={onNotes && section === "mapa"}
-          icon={<Network className="size-5" />}
-        />
-        <NavItem
-          label="Desenhos"
-          href={SECTION_HREF.desenho}
-          active={onNotes && section === "desenho"}
-          icon={<PenTool className="size-5" />}
-        />
+        {item(2)}
+        {item(3)}
       </div>
     </nav>
   );

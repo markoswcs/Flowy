@@ -36,6 +36,7 @@ import { CalendarFeedSection } from "@/features/settings/calendar-feed-section";
 import { cn } from "@/lib/utils";
 import { markStartViewChosen } from "@/features/tasks/start-view-picker";
 import { BroadcastSection } from "@/features/announcements/announcements";
+import { DockSection } from "@/features/settings/dock-section";
 import { normalizeThemePreference } from "@/lib/theme";
 import { clearTaskCache } from "@/features/tasks/task-cache";
 import { createClient } from "@/lib/supabase/client";
@@ -246,6 +247,7 @@ export function SettingsPage() {
 
       <div className="space-y-10">
         <BroadcastSection />
+        <DockSection />
         <PushNotificationsSection />
         <CalendarFeedSection />
         <section aria-labelledby="modules-heading">
