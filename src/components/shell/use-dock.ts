@@ -10,8 +10,9 @@ const dockKey = ["dock"] as const;
 
 /** The bottom-bar choice, kept in the account so it follows the person to any device. */
 async function readDock(): Promise<string[]> {
-  const { data } = await createClient().auth.getSession();
-  return resolveDock(data.session?.user.user_metadata?.dock).map((item) => item.key);
+  // From the server, not the local session: a choice made on another device shows here too.
+  const { data } = await createClient().auth.getUser();
+  return resolveDock(data.user?.user_metadata?.dock).map((item) => item.key);
 }
 
 export function useDock() {
