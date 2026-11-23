@@ -4,7 +4,6 @@ import {
   Check,
   ChevronRight,
   Dumbbell,
-  Flame,
   Minus,
   Moon,
   Pencil,
@@ -29,6 +28,7 @@ import { WorkoutSession } from "./components/workout-session";
 import { BodyWeightCard } from "./components/body-weight-card";
 import { MuscleMap } from "./components/muscle-map";
 import { RestTimerBar } from "./components/rest-timer";
+import { StatsTiles } from "./components/stats-tiles";
 import { TrainingStats } from "./components/training-stats";
 import { rotationKey } from "./training";
 import { useLoggedSets } from "./use-strength";
@@ -79,7 +79,7 @@ const STATUS_STYLE: Record<
 > = {
   done: {
     label: "Treinou",
-    className: "bg-emerald-500/20 text-emerald-400 ring-emerald-500/30",
+    className: "bg-emerald-500 text-white shadow-[0_0_14px_-2px] shadow-emerald-500/70",
     icon: Check,
   },
   skipped: {
@@ -97,10 +97,13 @@ const STATUS_STYLE: Record<
     className: "text-muted-foreground/60",
     icon: Minus,
   },
-  today: { label: "Hoje", className: "ring-2 ring-violet-400 text-foreground" },
+  today: {
+    label: "Hoje",
+    className: "bg-gradient-to-br from-primary to-fuchsia-500 text-white shadow-[0_0_16px_-2px] shadow-fuchsia-500/70",
+  },
   planned: {
     label: "Treino previsto",
-    className: "bg-violet-500/10 text-foreground",
+    className: "bg-violet-500/20 text-violet-100 ring-violet-400/40",
   },
   before: { label: "", className: "text-muted-foreground/40" },
 };
@@ -212,7 +215,8 @@ function MonthView({
   const legend: DayStatus[] = ["done", "missed", "skipped", "planned"];
   return (
     <section
-      className="rounded-3xl border border-border/60 bg-card/50 p-4 sm:p-6"
+      id="workout-month"
+      className="scroll-mt-24 rounded-3xl border border-border/60 bg-card/50 p-4 sm:p-6"
       aria-label="Mês"
     >
       <h2 className="font-semibold first-letter:uppercase">{monthName}</h2>
@@ -517,6 +521,8 @@ function Dashboard({
   );
   const [pastDay, setPastDay] = useState<string | null>(null);
   const [trainAnyway, setTrainAnyway] = useState(false);
+  const [chosenKey, setChosenKey] = useState<string | null>(null);
+  const [choosing, setChoosing] = useState(false);
   const keys = sessionKeys(profile);
   // More workouts than days (e.g. Push/Pull/Legs on 2 days) only works as a queue.
   const rotating =
@@ -528,15 +534,13 @@ function Dashboard({
   const todayKey =
     loggedToday && keys.includes(loggedToday)
       ? loggedToday
-      : plannedToday || trainAnyway
+      : chosenKey && keys.includes(chosenKey)
+        ? chosenKey
+        : plannedToday || trainAnyway
         ? (queueNext ?? plannedToday ?? keys[0] ?? null)
         : null;
   const next = todayKey ? null : nextTraining(profile, today, queueNext);
   const streak = currentStreak(profile, byDay, today);
-  const month = today.slice(0, 7);
-  const doneThisMonth = logs.filter(
-    (log) => log.status === "done" && log.day.startsWith(month),
-  ).length;
 
   if (editing) {
     return (
@@ -561,16 +565,7 @@ function Dashboard({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/15 px-3 py-1.5 text-sm font-semibold text-orange-400">
-          <Flame className="size-4" aria-hidden="true" />
-          {streak} {streak === 1 ? "treino seguido" : "treinos seguidos"}
-        </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1.5 text-sm font-semibold text-emerald-400">
-          <Check className="size-4" aria-hidden="true" />
-          {doneThisMonth} este mês
-        </span>
-      </div>
+      <StatsTiles logs={logs} history={sets.data ?? []} streak={streak} today={today} />
 
       <WeekStrip
         profile={profile}
@@ -594,13 +589,38 @@ function Dashboard({
           onClose={() => setPastDay(null)}
         />
       ) : todayKey ? (
-        <WorkoutSession
-          session={buildSession(profile, todayKey)}
-          profile={profile}
-          day={today}
-          log={byDay.get(today)}
-          onEdit={() => setEditingKey(todayKey)}
-        />
+        <div className="space-y-2">
+          {choosing ? (
+            <div className="flex flex-wrap gap-1.5 rounded-2xl bg-muted/30 p-2 animate-in fade-in slide-in-from-top-1" role="group" aria-label="Fazer outro treino hoje">
+              {keys.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={key === todayKey}
+                  onClick={() => {
+                    setChosenKey(key);
+                    setChoosing(false);
+                  }}
+                  className={cn(
+                    "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                    key === todayKey ? "bg-primary text-primary-foreground" : "bg-background/60 text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {buildSession(profile, key).name}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <WorkoutSession
+            key={todayKey}
+            session={buildSession(profile, todayKey)}
+            profile={profile}
+            day={today}
+            log={byDay.get(today)}
+            onEdit={() => setEditingKey(todayKey)}
+            onChooseOther={byDay.get(today) || keys.length < 2 ? undefined : () => setChoosing((value) => !value)}
+          />
+        </div>
       ) : (
         <section className="rounded-3xl border border-border/60 bg-card/50 p-5">
           <p className="flex items-center gap-2 font-semibold">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, ClipboardList, Link2, Pencil, RefreshCw, SkipForward, Timer, Undo2 } from "lucide-react";
+import { Check, ChevronDown, ClipboardList, Link2, Pencil, RefreshCw, Shuffle, SkipForward, Timer, Undo2 } from "lucide-react";
 import { Fragment, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -62,11 +62,12 @@ function ExerciseRow({
       return;
     }
     // An edited workout keeps its own list: change only this position.
-    const exercises = session.exercises.map(({ exercise, sets, amount, rest }, position) => ({
+    const exercises = session.exercises.map(({ exercise, sets, amount, rest, superset }, position) => ({
       id: position === index ? id : exercise.id,
       sets,
       amount,
       rest,
+      ...(superset ? { superset: true } : {}),
     }));
     saveCustom.mutate({ profile, key: session.key, exercises }, done);
   }
@@ -74,8 +75,15 @@ function ExerciseRow({
   return (
     <li className="rounded-2xl border border-border/50 bg-background/40 p-3.5">
       <div className="flex items-start gap-3">
-        <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-muted text-xs font-bold tabular-nums">
-          {index + 1}
+        <span
+          className={cn(
+            "grid size-8 shrink-0 place-items-center rounded-xl text-xs font-bold tabular-nums text-white transition-colors",
+            doneToday >= item.sets
+              ? "bg-emerald-500 shadow-[0_0_12px_-2px] shadow-emerald-500/70"
+              : "bg-gradient-to-br from-primary to-fuchsia-500",
+          )}
+        >
+          {doneToday >= item.sets ? <Check className="size-4" strokeWidth={3} aria-label="Feito" /> : index + 1}
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-medium leading-snug">{item.exercise.name}</p>
@@ -169,6 +177,7 @@ export function WorkoutSession({
   title = "Treino de hoje",
   onEdit,
   startOpen,
+  onChooseOther,
 }: {
   session: Session;
   profile: WorkoutProfile;
@@ -178,12 +187,20 @@ export function WorkoutSession({
   onEdit?: () => void;
   /** Open the set logging on every exercise (today's workout, or a past day being filled in). */
   startOpen?: boolean;
+  /** Offers "Trocar treino": do another workout of the plan today. */
+  onChooseOther?: () => void;
 }) {
   const [askFeeling, setAskFeeling] = useState(false);
   const logWorkout = useLogWorkout();
   const undo = useUndoWorkoutLog();
   const sets = useLoggedSets();
   const open = startOpen ?? (title === "Treino de hoje" && !log);
+  // Progress of the day: sets done out of planned, and the volume as it grows.
+  const ids = new Set(session.exercises.map((item) => item.exercise.id));
+  const ofDay = (sets.data ?? []).filter((set) => set.day === day && ids.has(set.exercise_id));
+  const planned = session.exercises.reduce((sum, item) => sum + item.sets, 0);
+  const progress = planned ? Math.min(1, ofDay.length / planned) : 0;
+  const volume = Math.round(ofDay.filter((set) => set.kind !== "warmup").reduce((sum, set) => sum + (set.weight_kg ?? 0) * set.amount, 0));
   // The screen stays on while today's workout is under way.
   useWakeLock(title === "Treino de hoje" && !log);
 
@@ -213,6 +230,12 @@ export function WorkoutSession({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+        {onChooseOther ? (
+          <Button type="button" variant="outline" size="sm" onClick={onChooseOther} className="gap-1.5">
+            <Shuffle className="size-3.5" />
+            Trocar treino
+          </Button>
+        ) : null}
         {onEdit ? (
           <Button type="button" variant="outline" size="sm" onClick={onEdit} className="gap-1.5">
             <Pencil className="size-3.5" />
@@ -234,6 +257,33 @@ export function WorkoutSession({
         ) : null}
         </div>
       </header>
+
+      {ofDay.length || open ? (
+        <div className="mt-4">
+          <div className="flex items-baseline justify-between text-xs">
+            <span className="font-medium">
+              {ofDay.length}/{planned} séries
+            </span>
+            <span className="text-muted-foreground">{volume ? `${volume.toLocaleString("pt-BR")} kg de volume` : "Marque as séries com ✓"}</span>
+          </div>
+          <div
+            className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-muted/50"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={planned}
+            aria-valuenow={ofDay.length}
+            aria-label="Séries feitas hoje"
+          >
+            <div
+              className={cn(
+                "h-full rounded-full transition-[width] duration-500 ease-out",
+                progress >= 1 ? "bg-emerald-500" : "bg-gradient-to-r from-primary via-fuchsia-500 to-orange-400",
+              )}
+              style={{ width: `${Math.max(progress * 100, ofDay.length ? 4 : 0)}%` }}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <p className="mt-4 rounded-2xl bg-muted/40 px-4 py-2.5 text-sm text-muted-foreground">
         Aquecimento: 5 minutos de caminhada no lugar, giros de braço e quadril.

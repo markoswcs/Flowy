@@ -9,11 +9,13 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Lively by default: the Flowy gradient with a soft glow.
+        default:
+          "bg-gradient-to-br from-primary to-fuchsia-500 text-white shadow-[0_8px_22px_-10px] shadow-fuchsia-500/70 hover:brightness-110 hover:shadow-fuchsia-500/90",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-primary/15 text-foreground hover:bg-primary/25",
         outline:
-          "border border-border bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-primary/35 bg-primary/[0.06] text-foreground hover:border-primary/60 hover:bg-primary/15",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
