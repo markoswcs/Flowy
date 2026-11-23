@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
+import { UpdatePrompt, markUpdateAvailable } from "@/components/system/update-prompt";
 import { NetworkStatus } from "@/components/ui/network-status";
 import { clearTaskCache } from "@/features/tasks/task-cache";
 import { QueryProvider } from "@/providers/query-provider";
@@ -29,9 +30,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
         window.location.replace(event.data.url || "/login");
       }
       // A newer build is out: switch now unless the person already started
-      // using this copy (the next opening gets the new one anyway).
-      if (event.data?.type === "flowy:new-version" && !touched) {
-        window.location.reload();
+      // using this copy; then offer the "Atualizar" button instead.
+      if (event.data?.type === "flowy:new-version") {
+        if (touched) markUpdateAvailable();
+        else window.location.reload();
       }
     };
     window.addEventListener("pointerdown", markTouched, { once: true });
@@ -58,6 +60,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     >
       <QueryProvider><NotificationProvider>{children}</NotificationProvider></QueryProvider>
       <NetworkStatus />
+      <UpdatePrompt />
     </ThemeProvider>
   );
 }
