@@ -20,6 +20,7 @@ import { GettingStarted } from "@/features/onboarding/getting-started";
 import { TodayBoosts } from "@/features/engagement/today-boosts";
 import { CalendarView } from "@/features/calendar/calendar-view";
 import { AnnouncementCard } from "@/features/announcements/announcements";
+import { WhatsNewCard } from "@/features/announcements/whats-new";
 import { StartViewPicker } from "@/features/tasks/start-view-picker";
 import { TodayWorkoutCard } from "@/features/workouts/components/today-workout-card";
 import { useCategories } from "@/features/categories/use-categories";
@@ -252,6 +253,7 @@ function DashboardContent({
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-6">
       <AnnouncementCard />
+      <WhatsNewCard />
       <StartViewPicker onPick={selectTab} />
       <ReminderSetupCard />
       <header className="space-y-4 sm:space-y-5">
