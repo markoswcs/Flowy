@@ -26,9 +26,12 @@ const ALL_OFF = "tips:off";
 const mounted = new Map<TipId, string[]>();
 const listeners = new Set<() => void>();
 let snapshot: string | null = null;
+// Retired in this session: a tip used in many places (one per exercise) must
+// not come back on the next copy once the person said "Entendi".
+const retired = new Set<string>();
 
 function recompute() {
-  const id = ORDER.find((tip) => mounted.get(tip)?.length);
+  const id = retired.has(ALL_OFF) ? undefined : ORDER.find((tip) => !retired.has(tip) && mounted.get(tip)?.length);
   const next = id ? `${id}|${mounted.get(id)![0]}` : null;
   if (next !== snapshot) {
     snapshot = next;
@@ -82,8 +85,18 @@ export function FeatureTip({
   children: ReactNode;
 }) {
   const instance = useId();
-  const [offered, dismiss] = useIntroOffered(`tip:${id}`);
-  const [allOffered, dismissAll] = useIntroOffered(ALL_OFF);
+  const [offered, dismissOne] = useIntroOffered(`tip:${id}`);
+  const [allOffered, dismissEvery] = useIntroOffered(ALL_OFF);
+  const dismiss = () => {
+    retired.add(id);
+    recompute();
+    dismissOne();
+  };
+  const dismissAll = () => {
+    retired.add(ALL_OFF);
+    recompute();
+    dismissEvery();
+  };
   const eligible = offered === true && allOffered === true;
   const active = useActive();
 
