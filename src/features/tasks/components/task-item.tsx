@@ -536,7 +536,7 @@ export function TaskItem({
               "mt-px flex size-[1.4rem] shrink-0 items-center justify-center border-2 transition-all duration-200 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 disabled:opacity-50",
               selecting ? "rounded-md" : "rounded-full",
               (selecting ? selected : completed)
-                ? "border-transparent bg-gradient-to-br from-violet-400 via-primary to-violet-700 text-white shadow-[0_0_12px_-2px] shadow-violet-500/80"
+                ? "border-transparent bg-primary text-white shadow-[0_0_12px_-2px] shadow-violet-500/80"
                 : "border-violet-400/60 bg-violet-500/10 hover:border-violet-300 hover:bg-violet-500/20 hover:shadow-[0_0_10px_-2px] hover:shadow-violet-500/70",
             )}
           >

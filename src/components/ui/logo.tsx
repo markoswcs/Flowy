@@ -32,7 +32,7 @@ export function Logo({
         height={32}
         className="shrink-0 object-contain rounded-[10px]"
       />
-      {compact ? null : <span className="text-lg">Flowy</span>}
+      {compact ? null : <span className="font-brand text-lg font-bold tracking-tight">Flowy</span>}
     </Link>
   );
 }

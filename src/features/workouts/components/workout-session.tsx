@@ -77,10 +77,10 @@ function ExerciseRow({
       <div className="flex items-start gap-3">
         <span
           className={cn(
-            "grid size-8 shrink-0 place-items-center rounded-xl text-xs font-bold tabular-nums text-white transition-colors",
+            "grid size-8 shrink-0 place-items-center rounded-xl text-xs font-bold tabular-nums transition-colors",
             doneToday >= item.sets
-              ? "bg-emerald-500 shadow-[0_0_12px_-2px] shadow-emerald-500/70"
-              : "bg-gradient-to-br from-violet-400 via-primary to-violet-700",
+              ? "bg-emerald-500 text-white"
+              : "bg-primary/15 ring-1 ring-inset ring-primary/30 flowy-ink",
           )}
         >
           {doneToday >= item.sets ? <Check className="size-4" strokeWidth={3} aria-label="Feito" /> : index + 1}
@@ -277,7 +277,7 @@ export function WorkoutSession({
             <div
               className={cn(
                 "h-full rounded-full transition-[width] duration-500 ease-out",
-                progress >= 1 ? "bg-emerald-500" : "bg-gradient-to-r from-violet-700 via-primary to-violet-400",
+                progress >= 1 ? "bg-emerald-500" : "bg-primary",
               )}
               style={{ width: `${Math.max(progress * 100, ofDay.length ? 4 : 0)}%` }}
             />

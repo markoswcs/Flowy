@@ -99,7 +99,7 @@ const STATUS_STYLE: Record<
   },
   today: {
     label: "Hoje",
-    className: "bg-gradient-to-br from-violet-400 via-primary to-violet-700 text-white shadow-[0_0_16px_-2px] shadow-violet-500/70",
+    className: "bg-primary text-white shadow-[0_0_16px_-2px] shadow-violet-500/70",
   },
   planned: {
     label: "Treino previsto",

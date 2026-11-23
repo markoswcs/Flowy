@@ -127,6 +127,21 @@
     scroll-behavior: smooth;
   }
 
+  /* Headings and the wordmark use the logo's typeface. */
+  h1,
+  h2,
+  h3,
+  .font-brand,
+  .flowy-launch-name {
+    font-family:
+      var(--font-brand),
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    letter-spacing: -0.02em;
+  }
+
   body {
     @apply min-h-dvh bg-background text-foreground antialiased;
     font-family:

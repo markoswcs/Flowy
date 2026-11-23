@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Bricolage_Grotesque } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "@/app/globals.css";
@@ -19,6 +20,14 @@ export const metadata: Metadata = {
   },
 };
 
+/** The Flowy wordmark's typeface, used for the brand and the headings. */
+const brand = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-brand",
+  display: "swap",
+});
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -30,7 +39,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" className={brand.variable} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <LaunchScreen />
         <AppProviders>{children}</AppProviders>

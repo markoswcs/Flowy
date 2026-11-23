@@ -9,9 +9,9 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Lively by default: the Flowy purple in a gradient with a soft glow.
+        // The Flowy purple, solid, with a soft glow.
         default:
-          "bg-gradient-to-br from-violet-400 via-primary to-violet-700 text-white shadow-[0_8px_22px_-10px] shadow-violet-500/70 hover:brightness-110 hover:shadow-violet-500/90",
+          "bg-primary text-primary-foreground shadow-[0_8px_20px_-10px] shadow-primary/70 hover:bg-primary/90",
         secondary:
           "bg-primary/15 text-foreground hover:bg-primary/25",
         outline:

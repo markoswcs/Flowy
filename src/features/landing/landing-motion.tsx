@@ -28,9 +28,31 @@ export function LandingMotion({ children }: { children: ReactNode }) {
       schedule();
     };
 
+    // Cards marked data-tilt lean towards the pointer and catch a light.
+    const tiltCards = Array.from(document.querySelectorAll<HTMLElement>("[data-tilt]"));
+    const onTilt = (event: PointerEvent) => {
+      const card = event.currentTarget as HTMLElement;
+      const box = card.getBoundingClientRect();
+      const x = (event.clientX - box.left) / box.width;
+      const y = (event.clientY - box.top) / box.height;
+      card.style.setProperty("--ry", `${((x - 0.5) * 10).toFixed(2)}deg`);
+      card.style.setProperty("--rx", `${((0.5 - y) * 8).toFixed(2)}deg`);
+      card.style.setProperty("--gx", `${(x * 100).toFixed(1)}%`);
+      card.style.setProperty("--gy", `${(y * 100).toFixed(1)}%`);
+      card.style.setProperty("--glow", "1");
+    };
+    const onLeave = (event: PointerEvent) => {
+      const card = event.currentTarget as HTMLElement;
+      ["--rx", "--ry", "--glow"].forEach((name) => card.style.removeProperty(name));
+    };
+
     if (!reduce) {
       window.addEventListener("pointermove", onPointer, { passive: true });
       update();
+      tiltCards.forEach((card) => {
+        card.addEventListener("pointermove", onTilt);
+        card.addEventListener("pointerleave", onLeave);
+      });
     }
 
     const observer = new IntersectionObserver(
@@ -51,6 +73,10 @@ export function LandingMotion({ children }: { children: ReactNode }) {
     return () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onPointer);
+      tiltCards.forEach((card) => {
+        card.removeEventListener("pointermove", onTilt);
+        card.removeEventListener("pointerleave", onLeave);
+      });
       observer.disconnect();
       ["--mx", "--my"].forEach((name) => root.style.removeProperty(name));
     };
