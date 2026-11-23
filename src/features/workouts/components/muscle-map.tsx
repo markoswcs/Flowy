@@ -1,11 +1,14 @@
 "use client";
 
 import { Activity } from "lucide-react";
+import { useState } from "react";
 
 import { localDateKey } from "@/features/tasks/date-utils";
+import { cn } from "@/lib/utils";
 
 import { EXERCISE_BY_ID, type Slot } from "../exercises";
 import { setsPerSlot, type LoggedSet } from "../strength";
+import { recoveringSlots } from "../training";
 
 type Region = { slot: Slot; d: string; weight?: number };
 
@@ -62,7 +65,17 @@ const LABELS: Partial<Record<Slot, string>> = {
   calves: "Panturrilha",
 };
 
-function Figure({ regions, level, title }: { regions: Region[]; level: (slot: Slot) => number; title: string }) {
+type Mode = "volume" | "recovery" | "untrained";
+
+const MODES: { mode: Mode; label: string; hint: string }[] = [
+  { mode: "volume", label: "Volume", hint: "Séries de trabalho nos últimos 7 dias: quanto mais, mais aceso." },
+  { mode: "recovery", label: "Recuperando", hint: "Treinados ontem ou hoje: dê um descanso antes de pesar de novo." },
+  { mode: "untrained", label: "Esquecidos", hint: "Nenhuma série nos últimos 7 dias." },
+];
+
+const MODE_COLOR: Record<Mode, string> = { volume: "#a78bfa", recovery: "#fbbf24", untrained: "#f87171" };
+
+function Figure({ regions, level, title, color }: { regions: Region[]; level: (slot: Slot) => number; title: string; color: string }) {
   return (
     <figure className="flex-1 text-center">
       <svg viewBox="0 0 100 190" className="mx-auto h-44 w-auto" role="img" aria-label={title}>
@@ -75,9 +88,9 @@ function Figure({ regions, level, title }: { regions: Region[]; level: (slot: Sl
             <path
               key={index}
               d={region.d}
-              fill={value ? "#a78bfa" : "currentColor"}
+              fill={value ? color : "currentColor"}
               opacity={value ? 0.25 + value * 0.75 : 0.1}
-              className="transition-opacity duration-500"
+              className="transition-all duration-500"
             />
           );
         })}
@@ -93,43 +106,82 @@ function weekStart(today: string) {
   return localDateKey(date);
 }
 
-/** Which muscle groups got sets in the last 7 days: the more sets, the brighter. */
+/** The muscle map in three modes: where the volume went, what is recovering and what was left out. */
 export function MuscleMap({ history }: { history: LoggedSet[] }) {
+  const [mode, setMode] = useState<Mode>("volume");
   const today = localDateKey();
-  const counts = setsPerSlot(history, (id) => EXERCISE_BY_ID.get(id)?.slot, weekStart(today), today);
+  const slotOf = (id: string) => EXERCISE_BY_ID.get(id)?.slot;
+  const counts = setsPerSlot(history, slotOf, weekStart(today), today);
+  const recovering = recoveringSlots(history, slotOf, today);
+  const groups = Object.keys(LABELS) as Slot[];
+  const trainedSlot = (slot: Slot) => Boolean(counts[slot] || (slot === "squat" && counts.lunge));
   // 12 sets in a week lights a group fully.
-  const level = (slot: Slot) => Math.min(1, (counts[slot] ?? 0) / 12);
-  const trained = (Object.keys(LABELS) as Slot[]).filter((slot) => counts[slot]);
-  const untouched = (Object.keys(LABELS) as Slot[]).filter((slot) => !counts[slot] && !(slot === "squat" && counts.lunge));
+  const level = (slot: Slot) =>
+    mode === "volume"
+      ? Math.min(1, (counts[slot] ?? 0) / 12)
+      : mode === "recovery"
+        ? recovering.has(slot) || (slot === "squat" && recovering.has("lunge"))
+          ? 1
+          : 0
+        : trainedSlot(slot)
+          ? 0
+          : 0.8;
+  const trained = groups.filter((slot) => counts[slot]);
+  const untouched = groups.filter((slot) => !trainedSlot(slot));
+  const resting = groups.filter((slot) => recovering.has(slot));
+  const current = MODES.find((entry) => entry.mode === mode)!;
 
   return (
     <section className="rounded-3xl border border-border/60 bg-card/50 p-4 sm:p-6" aria-labelledby="muscle-map-title">
-      <h2 id="muscle-map-title" className="flex items-center gap-2 text-base font-semibold">
-        <Activity className="size-5 flowy-ink" aria-hidden="true" />
-        Músculos da semana
-      </h2>
-      <p className="mt-0.5 text-sm text-muted-foreground">Séries registradas nos últimos 7 dias.</p>
-      <div className="mt-3 flex gap-2">
-        <Figure regions={FRONT} level={level} title="Frente" />
-        <Figure regions={BACK} level={level} title="Costas" />
-      </div>
-      {trained.length ? (
-        <ul className="mt-3 flex flex-wrap gap-1.5">
-          {trained.map((slot) => (
-            <li key={slot} className="rounded-full bg-violet-500/15 px-3 py-1 text-xs font-medium">
-              {LABELS[slot]} · {counts[slot]} {counts[slot] === 1 ? "série" : "séries"}
-            </li>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="muscle-map-title" className="flex items-center gap-2 text-base font-semibold">
+          <Activity className="size-5 flowy-ink" aria-hidden="true" />
+          Músculos da semana
+        </h2>
+        <div className="flex rounded-full bg-muted/40 p-0.5" role="group" aria-label="Modo do mapa">
+          {MODES.map((entry) => (
+            <button
+              key={entry.mode}
+              type="button"
+              aria-pressed={mode === entry.mode}
+              onClick={() => setMode(entry.mode)}
+              className={cn(
+                "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                mode === entry.mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {entry.label}
+            </button>
           ))}
-          {counts.cardio ? (
-            <li className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-medium">Cardio · {counts.cardio}</li>
-          ) : null}
-        </ul>
+        </div>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">{current.hint}</p>
+      <div className="mt-3 flex gap-2">
+        <Figure regions={FRONT} level={level} title="Frente" color={MODE_COLOR[mode]} />
+        <Figure regions={BACK} level={level} title="Costas" color={MODE_COLOR[mode]} />
+      </div>
+      {mode === "volume" ? (
+        trained.length ? (
+          <ul className="mt-3 flex flex-wrap gap-1.5">
+            {trained.map((slot) => (
+              <li key={slot} className="rounded-full bg-violet-500/15 px-3 py-1 text-xs font-medium">
+                {LABELS[slot]} · {counts[slot]} {counts[slot] === 1 ? "série" : "séries"}
+              </li>
+            ))}
+            {counts.cardio ? <li className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-medium">Cardio · {counts.cardio}</li> : null}
+          </ul>
+        ) : (
+          <p className="mt-3 text-center text-sm text-muted-foreground">Marque as séries com ✓ no treino e o mapa acende.</p>
+        )
+      ) : mode === "recovery" ? (
+        <p className="mt-3 text-center text-sm text-muted-foreground">
+          {resting.length ? `Recuperando: ${resting.map((slot) => LABELS[slot]).join(", ")}.` : "Tudo descansado: pode pesar."}
+        </p>
       ) : (
-        <p className="mt-3 text-center text-sm text-muted-foreground">Marque as séries com ✓ no treino e o mapa acende.</p>
+        <p className="mt-3 text-center text-sm text-muted-foreground">
+          {untouched.length ? `Sem treino há 7 dias: ${untouched.map((slot) => LABELS[slot]).join(", ")}.` : "Nenhum grupo esquecido. Muito bom!"}
+        </p>
       )}
-      {trained.length && untouched.length ? (
-        <p className="mt-2 text-xs text-muted-foreground">Sem treino esta semana: {untouched.map((slot) => LABELS[slot]).join(", ")}.</p>
-      ) : null}
     </section>
   );
 }

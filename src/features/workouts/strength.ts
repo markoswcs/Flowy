@@ -7,6 +7,10 @@ export interface LoggedSet {
   set_number: number;
   amount: number;
   weight_kg: number | null;
+  /** Aquecimento, drop ou até a falha; ausente = normal. */
+  kind?: "normal" | "warmup" | "drop" | "failure";
+  /** Repetições na reserva (0–5), se a pessoa marcou. */
+  rir?: number | null;
 }
 
 export interface BodyWeight {
@@ -37,7 +41,7 @@ export function isPersonalRecord(set: Pick<LoggedSet, "amount" | "weight_kg">, p
 
 /** Sets of the last day before `day` on which the exercise was logged. */
 export function lastSession(history: LoggedSet[], exerciseId: string, day: string): LoggedSet[] {
-  const earlier = history.filter((item) => item.exercise_id === exerciseId && item.day < day);
+  const earlier = history.filter((item) => item.exercise_id === exerciseId && item.day < day && item.kind !== "warmup");
   const last = earlier.reduce<string | null>((latest, item) => (!latest || item.day > latest ? item.day : latest), null);
   return last ? earlier.filter((item) => item.day === last).sort((a, b) => a.set_number - b.set_number) : [];
 }
@@ -76,7 +80,7 @@ export function formatKg(weight: number) {
 export function progressByDay(history: LoggedSet[], exerciseId: string): { day: string; value: number }[] {
   const byDay = new Map<string, number>();
   for (const item of history) {
-    if (item.exercise_id !== exerciseId) continue;
+    if (item.exercise_id !== exerciseId || item.kind === "warmup") continue;
     const value = item.weight_kg ? estimateOneRepMax(item.weight_kg, item.amount) : item.amount;
     byDay.set(item.day, Math.max(byDay.get(item.day) ?? 0, value));
   }
@@ -87,7 +91,7 @@ export function progressByDay(history: LoggedSet[], exerciseId: string): { day: 
 export function setsPerSlot(history: LoggedSet[], slotOf: (exerciseId: string) => Slot | undefined, from: string, to: string) {
   const counts: Partial<Record<Slot, number>> = {};
   for (const item of history) {
-    if (item.day < from || item.day > to) continue;
+    if (item.day < from || item.day > to || item.kind === "warmup") continue;
     const slot = slotOf(item.exercise_id);
     if (slot) counts[slot] = (counts[slot] ?? 0) + 1;
   }

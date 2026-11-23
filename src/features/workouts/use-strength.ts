@@ -12,6 +12,7 @@ import {
   listSets,
   saveBodyWeight,
   saveSet,
+  saveSets,
   saveWeightGoal,
 } from "@/services/strength";
 
@@ -29,9 +30,9 @@ function daysAgo(days: number) {
   return localDateKey(date);
 }
 
-/** A year of sets: last time, records and the history charts. */
+/** Every logged set: last time, records, totals and the history charts. */
 export function useLoggedSets(enabled = true) {
-  return useQuery({ queryKey: strengthKeys.sets(), queryFn: () => listSets(daysAgo(366)), enabled, staleTime: 60_000 });
+  return useQuery({ queryKey: strengthKeys.sets(), queryFn: () => listSets("2000-01-01"), enabled, staleTime: 60_000 });
 }
 
 export function useBodyWeights(enabled = true) {
@@ -112,5 +113,15 @@ export function useSaveWeightGoal() {
     mutationFn: saveWeightGoal,
     onSettled: () => queryClient.invalidateQueries({ queryKey: workoutKeys.profile() }),
     onError: () => toast.error("Não foi possível salvar a meta."),
+  });
+}
+
+/** Import: saves everything, then reloads the history. */
+export function useImportSets() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: saveSets,
+    onSettled: () => queryClient.invalidateQueries({ queryKey: strengthKeys.sets() }),
+    onError: (error) => toast.error("Não foi possível importar.", { description: messageFromUnknownError(error) }),
   });
 }

@@ -3,6 +3,15 @@ export type WorkoutLevel = "beginner" | "intermediate" | "advanced";
 export type WorkoutPlace = "home" | "gym" | "outdoor";
 export type Limitation = "knee" | "back" | "shoulder" | "wrist";
 export type Feeling = "easy" | "ok" | "hard";
+export type WorkoutSplit = "auto" | "ppl" | "upper_lower" | "full" | "five";
+
+export const SPLIT_LABELS: Record<WorkoutSplit, { label: string; hint: string }> = {
+  auto: { label: "Automático", hint: "Montado pelo seu objetivo e dias" },
+  ppl: { label: "Push / Pull / Legs", hint: "Empurrar, puxar e pernas" },
+  upper_lower: { label: "Superior / Inferior", hint: "Alterna parte de cima e de baixo" },
+  full: { label: "Corpo todo", hint: "O corpo inteiro em cada treino" },
+  five: { label: "5 × 5", hint: "Poucos exercícios pesados, 5 séries de 5" },
+};
 
 export interface WorkoutProfile {
   user_id: string;
@@ -21,6 +30,10 @@ export interface WorkoutProfile {
   custom_sessions: Record<string, CustomExercise[]>;
   /** Target body weight in kg (Peso corporal), if the person set one. */
   body_weight_goal?: number | null;
+  /** Divisão escolhida: automática (pelo objetivo) ou um plano pronto. */
+  split?: WorkoutSplit;
+  /** Rodízio: o próximo treino é o seguinte ao último feito, em qualquer dia. */
+  rotation?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +46,8 @@ export interface CustomExercise {
   amount: number;
   /** Rest between sets, in seconds. */
   rest: number;
+  /** Bi-set: done back to back with the next exercise, rest after the pair. */
+  superset?: boolean;
 }
 
 export type WorkoutProfileInput = Pick<

@@ -10,7 +10,7 @@ import type { Feeling, WorkoutGoal, WorkoutLevel, WorkoutLog, WorkoutProfile } f
 type PlanProfile = Pick<
   WorkoutProfile,
   "goal" | "level" | "days" | "minutes" | "place" | "limitations" | "intensity" | "swaps"
-> & { custom_sessions?: WorkoutProfile["custom_sessions"] };
+> & { custom_sessions?: WorkoutProfile["custom_sessions"]; split?: WorkoutProfile["split"] };
 
 export interface PlannedExercise {
   exercise: Exercise;
@@ -19,6 +19,8 @@ export interface PlannedExercise {
   amount: number;
   /** Rest between sets, in seconds. */
   rest: number;
+  /** Bi-set with the next exercise. */
+  superset?: boolean;
 }
 
 export interface Session {
@@ -39,6 +41,16 @@ const TEMPLATES: Record<string, { name: string; slots: Slot[] }> = {
   pull: { name: "Costas e bíceps", slots: ["pull", "pull", "hinge", "pull", "core"] },
   legs: { name: "Pernas", slots: ["squat", "lunge", "hinge", "squat", "core"] },
   cardio: { name: "Cardio e abdômen", slots: ["cardio", "core", "cardio", "core", "cardio", "core"] },
+  five_a: { name: "5 × 5 · Treino A", slots: ["squat", "push", "pull"] },
+  five_b: { name: "5 × 5 · Treino B", slots: ["squat", "push", "hinge"] },
+};
+
+/** Ready-made splits: the order of the workouts, repeated over the training days. */
+const SPLITS: Record<Exclude<NonNullable<WorkoutProfile["split"]>, "auto">, string[]> = {
+  ppl: ["push", "pull", "legs"],
+  upper_lower: ["upper", "lower"],
+  full: ["full_a", "full_b", "full_c"],
+  five: ["five_a", "five_b"],
 };
 
 const LEVEL_NUMBER: Record<WorkoutLevel, 1 | 2 | 3> = { beginner: 1, intermediate: 2, advanced: 3 };
@@ -48,11 +60,13 @@ const REST: Record<WorkoutGoal, number> = { gain_muscle: 90, lose_weight: 30, co
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 /** Session keys in the order of the training days, e.g. ["upper", "lower", "upper-2"]. */
-export function sessionKeys(profile: Pick<PlanProfile, "goal" | "days">): string[] {
+export function sessionKeys(profile: Pick<PlanProfile, "goal" | "days" | "split">): string[] {
   const count = clamp(profile.days.length, 1, 7);
   const muscle = profile.goal === "gain_muscle";
   let order: string[];
-  if (count <= 2) order = ["full_a", "full_b"];
+  const split = profile.split && profile.split !== "auto" ? SPLITS[profile.split] : null;
+  if (split) order = Array.from({ length: Math.max(count, split.length) }, (_, index) => split[index % split.length]!);
+  else if (count <= 2) order = ["full_a", "full_b"];
   else if (count === 3) order = muscle ? ["upper", "lower", "full_a"] : ["full_a", "full_b", "full_c"];
   else if (count === 4) order = muscle ? ["upper", "lower", "upper", "lower"] : ["full_a", "cardio", "full_b", "cardio"];
   else
@@ -61,7 +75,7 @@ export function sessionKeys(profile: Pick<PlanProfile, "goal" | "days">): string
       : ["full_a", "cardio", "full_b", "cardio", "full_c", "lower", "cardio"];
   // A template used again in the week gets its own key and other exercises.
   const seen = new Map<string, number>();
-  return order.slice(0, count).map((template) => {
+  return order.slice(0, split ? Math.max(count, split.length) : count).map((template) => {
     const times = (seen.get(template) ?? 0) + 1;
     seen.set(template, times);
     return times === 1 ? template : `${template}-${times}`;
@@ -124,9 +138,9 @@ export function buildSession(profile: PlanProfile, key: string): Session {
   // Edited by hand: exactly what the person chose, in their order.
   const custom = profile.custom_sessions?.[key];
   if (custom) {
-    const exercises = custom.flatMap(({ id, sets, amount, rest }) => {
+    const exercises = custom.flatMap(({ id, sets, amount, rest, superset }) => {
       const exercise = EXERCISE_BY_ID.get(id);
-      return exercise ? [{ exercise, sets, amount, rest }] : [];
+      return exercise ? [{ exercise, sets, amount, rest, ...(superset ? { superset: true } : {}) }] : [];
     });
     return { key, name: `${name}${suffix}`, exercises, custom: true };
   }
@@ -135,7 +149,8 @@ export function buildSession(profile: PlanProfile, key: string): Session {
   const occurrences = new Map<Slot, number>();
   const exercises: PlannedExercise[] = [];
 
-  for (const slot of slots.slice(0, exerciseCount(profile.minutes, slots.length))) {
+  const count = template.startsWith("five") ? slots.length : exerciseCount(profile.minutes, slots.length);
+  for (const slot of slots.slice(0, count)) {
     const occurrence = occurrences.get(slot) ?? 0;
     occurrences.set(slot, occurrence + 1);
     // Harder options first, so each person gets the most their level allows.
@@ -147,7 +162,9 @@ export function buildSession(profile: PlanProfile, key: string): Session {
     const swap = EXERCISE_BY_ID.get(profile.swaps[exercise.id] ?? "");
     if (swap && swap.slot === exercise.slot && allowed(swap, profile, false)) exercise = swap;
     used.add(exercise.id);
-    exercises.push({ exercise, ...dose(exercise, profile) });
+    // 5 × 5: heavy, five sets of five, long rests.
+    const heavy = template.startsWith("five") && exercise.unit === "reps";
+    exercises.push({ exercise, ...dose(exercise, profile), ...(heavy ? { sets: 5, amount: 5, rest: 180 } : {}) });
   }
 
   return { key, name: `${name}${suffix}`, exercises, custom: false };
@@ -163,7 +180,7 @@ function parseDate(key: string) {
 }
 
 /** The session planned for a day, or null on a rest day. */
-export function sessionKeyFor(profile: Pick<PlanProfile, "goal" | "days">, day: string): string | null {
+export function sessionKeyFor(profile: Pick<PlanProfile, "goal" | "days" | "split">, day: string): string | null {
   const days = [...new Set(profile.days)].sort((a, b) => a - b);
   const index = days.indexOf(parseDate(day).getDay());
   if (index < 0) return null;

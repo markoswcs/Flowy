@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Minus, Plus, RotateCcw, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Link2, Minus, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -93,7 +93,9 @@ export function WorkoutEditor({
   onClose: () => void;
 }) {
   const [items, setItems] = useState<Item[]>(() =>
-    session.exercises.map(({ exercise, sets, amount, rest }) => withUid({ id: exercise.id, sets, amount, rest })),
+    session.exercises.map(({ exercise, sets, amount, rest, superset }) =>
+      withUid({ id: exercise.id, sets, amount, rest, ...(superset ? { superset: true } : {}) }),
+    ),
   );
   const [picking, setPicking] = useState(false);
   const save = useSaveCustomSession();
@@ -129,7 +131,15 @@ export function WorkoutEditor({
 
   function submit() {
     save.mutate(
-      { profile, key: session.key, exercises: items.map(({ id, sets, amount, rest }) => ({ id, sets, amount, rest })) },
+      { profile, key: session.key, exercises: items.map(({ id, sets, amount, rest, superset }, index) => ({
+          id,
+          sets,
+          amount,
+          rest,
+          // The last exercise has no partner to pair with.
+          ...(superset && index < items.length - 1 ? { superset: true } : {}),
+        })),
+      },
       {
         onSuccess: () => {
           notify("Treino salvo");
@@ -233,6 +243,20 @@ export function WorkoutEditor({
                     />
                   )}
                 </div>
+                {index < items.length - 1 && !continuous ? (
+                  <button
+                    type="button"
+                    onClick={() => change(item.uid, { superset: !item.superset })}
+                    aria-pressed={Boolean(item.superset)}
+                    className={cn(
+                      "mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                      item.superset ? "bg-violet-500/20 text-foreground ring-1 ring-violet-400/50" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                    )}
+                  >
+                    <Link2 className="size-3.5" aria-hidden="true" />
+                    {item.superset ? "Bi-set com o próximo (sem descanso entre os dois)" : "Fazer em bi-set com o próximo"}
+                  </button>
+                ) : null}
               </li>
             );
           })}

@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, ChevronDown, ClipboardList, Pencil, RefreshCw, SkipForward, Timer, Undo2 } from "lucide-react";
-import { useState } from "react";
+import { Check, ChevronDown, ClipboardList, Link2, Pencil, RefreshCw, SkipForward, Timer, Undo2 } from "lucide-react";
+import { Fragment, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { notify } from "@/providers/notification-provider";
@@ -12,6 +12,7 @@ import { alternativesFor, formatDose, type PlannedExercise, type Session } from 
 import { FEELING_LABELS, type Feeling, type WorkoutLog, type WorkoutProfile } from "../types";
 import type { LoggedSet } from "../strength";
 import { useLoggedSets } from "../use-strength";
+import { useWakeLock } from "../use-wake-lock";
 import { useLogWorkout, useSaveCustomSession, useSwapExercise, useUndoWorkoutLog } from "../use-workouts";
 import { ExerciseHistory } from "./exercise-history";
 import { SetLogger } from "./set-logger";
@@ -167,6 +168,7 @@ export function WorkoutSession({
   log,
   title = "Treino de hoje",
   onEdit,
+  startOpen,
 }: {
   session: Session;
   profile: WorkoutProfile;
@@ -174,11 +176,16 @@ export function WorkoutSession({
   log?: WorkoutLog;
   title?: string;
   onEdit?: () => void;
+  /** Open the set logging on every exercise (today's workout, or a past day being filled in). */
+  startOpen?: boolean;
 }) {
   const [askFeeling, setAskFeeling] = useState(false);
   const logWorkout = useLogWorkout();
   const undo = useUndoWorkoutLog();
   const sets = useLoggedSets();
+  const open = startOpen ?? (title === "Treino de hoje" && !log);
+  // The screen stays on while today's workout is under way.
+  useWakeLock(title === "Treino de hoje" && !log);
 
   function finish(feeling: Feeling) {
     logWorkout.mutate(
@@ -234,16 +241,23 @@ export function WorkoutSession({
 
       <ol className="mt-3 space-y-2">
         {session.exercises.map((item, index) => (
-          <ExerciseRow
-            key={`${item.exercise.id}-${index}`}
-            item={item}
-            profile={profile}
-            index={index}
-            session={session}
-            day={day}
-            history={sets.data}
-            logOpen={title === "Treino de hoje" && !log}
-          />
+          <Fragment key={`${item.exercise.id}-${index}`}>
+            <ExerciseRow
+              item={item}
+              profile={profile}
+              index={index}
+              session={session}
+              day={day}
+              history={sets.data}
+              logOpen={open}
+            />
+            {item.superset && index < session.exercises.length - 1 ? (
+              <li role="presentation" className="-my-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-violet-300">
+                <Link2 className="size-3.5" aria-hidden="true" />
+                Bi-set: emende com o próximo
+              </li>
+            ) : null}
+          </Fragment>
         ))}
       </ol>
 

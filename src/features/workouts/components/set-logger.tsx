@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, LineChart, Plus, Trophy } from "lucide-react";
+import { Check, Disc3, LineChart, Plus, Trophy } from "lucide-react";
 import { Fragment, useState } from "react";
 
 import { notify } from "@/providers/notification-provider";
@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import type { PlannedExercise } from "../plan";
 import { formatKg, isPersonalRecord, lastSession, suggestNext, type LoggedSet } from "../strength";
 import { useDeleteSet, useSaveSet } from "../use-strength";
+import { RIR_LEVELS, SET_KINDS, rirColor, working, type SetKind } from "../training";
+import { PlateCalculator } from "./plate-calculator";
 import { startRest } from "./rest-timer";
 
 const UNIT_LABEL = { reps: "reps", seconds: "seg", minutes: "min" } as const;
@@ -16,6 +18,8 @@ const UNIT_LABEL = { reps: "reps", seconds: "seg", minutes: "min" } as const;
 interface Row {
   amount: string;
   weight: string;
+  kind: SetKind;
+  rir: number | null;
 }
 
 const kg = (value: string) => {
@@ -59,20 +63,24 @@ export function SetLogger({
     const count = Math.max(item.sets, today.length);
     return Array.from({ length: count }, (_, index): Row => {
       const done = today.find((set) => set.set_number === index + 1);
-      if (done) return { amount: String(done.amount), weight: done.weight_kg ? String(done.weight_kg) : "" };
+      if (done) {
+        return { amount: String(done.amount), weight: done.weight_kg ? String(done.weight_kg) : "", kind: done.kind ?? "normal", rir: done.rir ?? null };
+      }
       const previous = last.find((set) => set.set_number === index + 1) ?? last[last.length - 1];
       const weight = suggestion?.weight ?? previous?.weight_kg ?? null;
-      return { amount: String(item.amount), weight: weight ? String(weight) : "" };
+      return { amount: String(item.amount), weight: weight ? String(weight) : "", kind: "normal", rir: null };
     });
   };
   const [rows, setRows] = useState<Row[]>(initialRows);
+  const [menu, setMenu] = useState<number | null>(null);
+  const [plates, setPlates] = useState(false);
 
   function update(index: number, change: Partial<Row>) {
     setRows((current) => current.map((row, position) => (position === index ? { ...row, ...change } : row)));
   }
 
-  function log(index: number) {
-    const row = rows[index]!;
+  function log(index: number, override?: Partial<Row>) {
+    const row = { ...rows[index]!, ...override };
     const amount = Math.round(Number(row.amount));
     if (!Number.isFinite(amount) || amount <= 0) return;
     const set: LoggedSet = {
@@ -81,10 +89,13 @@ export function SetLogger({
       set_number: index + 1,
       amount: Math.min(999, amount),
       weight_kg: withLoad ? kg(row.weight) : null,
+      kind: row.kind,
+      rir: row.rir,
     };
-    const before = history.filter((past) => past.exercise_id === exercise.id && past.day < day);
-    const earlierToday = today.filter((past) => past.set_number !== set.set_number);
-    const record = isPersonalRecord(set, [...before, ...earlierToday]) && isPersonalRecord(set, before);
+    const before = working(history.filter((past) => past.exercise_id === exercise.id && past.day < day));
+    const earlierToday = working(today.filter((past) => past.set_number !== set.set_number));
+    const record =
+      set.kind !== "warmup" && isPersonalRecord(set, [...before, ...earlierToday]) && isPersonalRecord(set, before);
     save.mutate(set, {
       onSuccess: () => {
         if (record) {
@@ -96,7 +107,16 @@ export function SetLogger({
         }
       },
     });
+    // Re-saving a set's type or effort starts no rest; in a superset the next
+    // exercise comes straight away and the rest follows the pair.
+    if (override || item.superset) return;
     if (index < rows.length - 1 || item.rest) startRest(item.rest, exercise.name);
+  }
+
+  /** Changing the type or the effort of a set already done saves it again. */
+  function setDetail(index: number, change: Partial<Pick<Row, "kind" | "rir">>) {
+    update(index, change);
+    if (today.some((set) => set.set_number === index + 1)) log(index, change);
   }
 
   return (
@@ -119,7 +139,27 @@ export function SetLogger({
             "h-11 w-full min-w-0 appearance-none rounded-xl border-0 bg-muted/40 text-center text-base font-semibold tabular-nums outline-none ring-1 ring-inset ring-border/50 transition focus:ring-2 focus:ring-violet-400/60";
           return (
             <Fragment key={index}>
-              <span className="text-center text-xs font-semibold tabular-nums text-muted-foreground">{index + 1}</span>
+              <button
+                type="button"
+                onClick={() => setMenu(menu === index ? null : index)}
+                aria-expanded={menu === index}
+                aria-label={`Série ${index + 1}: tipo e esforço`}
+                data-no-glow
+                className={cn(
+                  "flex h-11 flex-col items-center justify-center rounded-lg text-xs font-semibold tabular-nums transition-colors hover:bg-muted/50",
+                  row.kind === "warmup"
+                    ? "text-sky-300"
+                    : row.kind === "drop"
+                      ? "text-fuchsia-300"
+                      : row.kind === "failure"
+                        ? "text-red-400"
+                        : "text-muted-foreground",
+                  menu === index && "bg-muted/60",
+                )}
+              >
+                {SET_KINDS.find((entry) => entry.kind === row.kind)?.short || index + 1}
+                {row.rir !== null ? <span className={cn("text-[9px] leading-none", rirColor(row.rir))}>R{row.rir}</span> : null}
+              </button>
               <input
                 inputMode="numeric"
                 value={row.amount}
@@ -152,6 +192,51 @@ export function SetLogger({
               >
                 <Check className="size-4" strokeWidth={done ? 3 : 2} />
               </button>
+              {menu === index ? (
+                <div className="col-span-4 space-y-2 rounded-2xl bg-muted/30 p-2.5 animate-in fade-in slide-in-from-top-1">
+                  <div className="flex flex-wrap gap-1.5" role="group" aria-label="Tipo da série">
+                    {SET_KINDS.map((entry) => (
+                      <button
+                        key={entry.kind}
+                        type="button"
+                        aria-pressed={row.kind === entry.kind}
+                        onClick={() => setDetail(index, { kind: entry.kind })}
+                        className={cn(
+                          "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                          row.kind === entry.kind ? "bg-primary text-primary-foreground" : "bg-background/60 text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {entry.label}
+                      </button>
+                    ))}
+                  </div>
+                  {withLoad ? (
+                    <div>
+                      <p className="mb-1 text-[11px] text-muted-foreground">Quantas ainda daria para fazer? (opcional)</p>
+                      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Repetições na reserva">
+                        {RIR_LEVELS.map((level) => (
+                          <button
+                            key={level.value}
+                            type="button"
+                            title={level.label}
+                            aria-pressed={row.rir === level.value}
+                            onClick={() => setDetail(index, { rir: row.rir === level.value ? null : level.value })}
+                            className={cn(
+                              "min-w-9 rounded-full px-2.5 py-1.5 text-xs font-semibold tabular-nums transition-colors",
+                              row.rir === level.value ? "bg-primary text-primary-foreground" : cn("bg-background/60", rirColor(level.value)),
+                            )}
+                          >
+                            {level.value === 5 ? "5+" : level.value}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {row.rir !== null ? RIR_LEVELS.find((level) => level.value === row.rir)?.label : "0 = até a falha, 2 = sobravam duas."}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </Fragment>
           );
         })}
@@ -160,7 +245,12 @@ export function SetLogger({
       <div className="flex flex-wrap gap-1.5">
         <button
           type="button"
-          onClick={() => setRows((current) => [...current, { ...(current[current.length - 1] ?? { amount: String(item.amount), weight: "" }) }])}
+          onClick={() =>
+            setRows((current) => {
+              const previous = current[current.length - 1];
+              return [...current, { amount: previous?.amount ?? String(item.amount), weight: previous?.weight ?? "", kind: "normal", rir: null }];
+            })
+          }
           className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/40 hover:text-foreground"
         >
           <Plus className="size-3.5" aria-hidden="true" />
@@ -174,13 +264,31 @@ export function SetLogger({
           <LineChart className="size-3.5" aria-hidden="true" />
           Histórico
         </button>
-        {today.some((set) => isPersonalRecord(set, history.filter((past) => past.exercise_id === exercise.id && past.day < day))) ? (
+        {withLoad ? (
+          <button
+            type="button"
+            onClick={() => setPlates(true)}
+            className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+          >
+            <Disc3 className="size-3.5" aria-hidden="true" />
+            Anilhas
+          </button>
+        ) : null}
+        {working(today).some((set) =>
+          isPersonalRecord(set, working(history.filter((past) => past.exercise_id === exercise.id && past.day < day))),
+        ) ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-300">
             <Trophy className="size-3.5" aria-hidden="true" />
             Recorde hoje
           </span>
         ) : null}
       </div>
+      {plates ? (
+        <PlateCalculator
+          initial={kg(rows.find((_, index) => !today.some((set) => set.set_number === index + 1))?.weight ?? rows[0]?.weight ?? "") ?? 20}
+          onClose={() => setPlates(false)}
+        />
+      ) : null}
     </div>
   );
 }

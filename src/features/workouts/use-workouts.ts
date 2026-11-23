@@ -27,7 +27,7 @@ export const workoutKeys = {
 /** Logs of the last ~3 months: enough for the month view and the streak. */
 function logsSince() {
   const date = new Date();
-  date.setDate(date.getDate() - 95);
+  date.setDate(date.getDate() - 370);
   return localDateKey(date);
 }
 
@@ -131,5 +131,15 @@ export function useUndoWorkoutLog() {
     mutationFn: (day: string) => deleteWorkoutLog(day),
     onSettled: () => queryClient.invalidateQueries({ queryKey: workoutKeys.logs() }),
     onError: onError("Não foi possível desfazer."),
+  });
+}
+
+/** Ready-made split and rotation mode. */
+export function useSavePlanStyle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (changes: Partial<Pick<WorkoutProfile, "split" | "rotation">>) => updateWorkoutProfile(changes),
+    onSuccess: (profile) => queryClient.setQueryData(workoutKeys.profile(), profile),
+    onError: onError("Não foi possível mudar o plano. Rode a atualização do banco (fase 2 dos treinos) e tente de novo."),
   });
 }
