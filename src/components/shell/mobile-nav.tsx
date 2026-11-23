@@ -35,7 +35,7 @@ function NavItem({
       <span
         className={cn(
           "grid place-items-center transition-all duration-300",
-          active ? "flowy-prism size-11" : "h-10 w-14 rounded-2xl text-muted-foreground hover:text-foreground",
+          active ? "flowy-prism size-10" : "h-10 w-14 rounded-2xl text-muted-foreground hover:text-foreground",
         )}
       >
         {icon}

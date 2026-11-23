@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, LineChart, Plus, Trophy, X } from "lucide-react";
-import { useState } from "react";
+import { Check, LineChart, Plus, Trophy } from "lucide-react";
+import { Fragment, useState } from "react";
 
 import { notify } from "@/providers/notification-provider";
 import { cn } from "@/lib/utils";
@@ -108,64 +108,54 @@ export function SetLogger({
       ) : null}
       {suggestion ? <p className="rounded-xl bg-primary/10 px-3 py-2 text-xs flowy-ink">{suggestion.reason}</p> : null}
 
-      <ul className="space-y-1.5">
+      <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-x-2 gap-y-1.5">
+        <span className="text-[11px] text-muted-foreground">#</span>
+        <span className="text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{UNIT_LABEL[exercise.unit]}</span>
+        <span className="text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{withLoad ? "kg" : ""}</span>
+        <span aria-hidden="true" />
         {rows.map((row, index) => {
           const done = today.find((set) => set.set_number === index + 1);
+          const field =
+            "h-11 w-full min-w-0 appearance-none rounded-xl border-0 bg-muted/40 text-center text-base font-semibold tabular-nums outline-none ring-1 ring-inset ring-border/50 transition focus:ring-2 focus:ring-violet-400/60";
           return (
-            <li key={index} className="flex items-center gap-2">
-              <span className="w-6 shrink-0 text-center text-xs font-semibold tabular-nums text-muted-foreground">{index + 1}</span>
-              <label className="flex min-w-0 flex-1 items-center gap-1 rounded-xl border border-border/60 bg-background/60 px-2.5">
-                <input
-                  inputMode="numeric"
-                  value={row.amount}
-                  onChange={(event) => update(index, { amount: event.target.value.replace(/[^\d]/g, "").slice(0, 3) })}
-                  aria-label={`Série ${index + 1}: ${UNIT_LABEL[exercise.unit]}`}
-                  className="h-10 w-full min-w-0 bg-transparent text-center text-base font-semibold tabular-nums outline-none"
-                />
-                <span className="shrink-0 text-xs text-muted-foreground">{UNIT_LABEL[exercise.unit]}</span>
-              </label>
+            <Fragment key={index}>
+              <span className="text-center text-xs font-semibold tabular-nums text-muted-foreground">{index + 1}</span>
+              <input
+                inputMode="numeric"
+                value={row.amount}
+                onChange={(event) => update(index, { amount: event.target.value.replace(/[^\d]/g, "").slice(0, 3) })}
+                aria-label={`Série ${index + 1}: ${UNIT_LABEL[exercise.unit]}`}
+                className={cn(field, done && "bg-emerald-500/10 ring-emerald-500/30")}
+              />
               {withLoad ? (
-                <label className="flex min-w-0 flex-1 items-center gap-1 rounded-xl border border-border/60 bg-background/60 px-2.5">
-                  <input
-                    inputMode="decimal"
-                    value={row.weight}
-                    placeholder="corpo"
-                    onChange={(event) => update(index, { weight: event.target.value.replace(/[^\d.,]/g, "").slice(0, 6) })}
-                    aria-label={`Série ${index + 1}: peso em kg`}
-                    className="h-10 w-full min-w-0 bg-transparent text-center text-base font-semibold tabular-nums outline-none placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground"
-                  />
-                  <span className="shrink-0 text-xs text-muted-foreground">kg</span>
-                </label>
-              ) : null}
+                <input
+                  inputMode="decimal"
+                  value={row.weight}
+                  placeholder="—"
+                  onChange={(event) => update(index, { weight: event.target.value.replace(/[^\d.,]/g, "").slice(0, 6) })}
+                  aria-label={`Série ${index + 1}: peso em kg (vazio = peso do corpo)`}
+                  className={cn(field, "placeholder:font-normal placeholder:text-muted-foreground", done && "bg-emerald-500/10 ring-emerald-500/30")}
+                />
+              ) : (
+                <span aria-hidden="true" />
+              )}
               <button
                 type="button"
-                onClick={() => log(index)}
-                aria-label={done ? `Série ${index + 1} feita: salvar de novo` : `Marcar série ${index + 1} como feita`}
+                onClick={() => (done ? remove.mutate(done) : log(index))}
+                aria-label={done ? `Série ${index + 1} feita: desmarcar` : `Marcar série ${index + 1} como feita`}
                 aria-pressed={Boolean(done)}
                 data-no-glow
                 className={cn(
-                  "grid size-10 shrink-0 place-items-center rounded-xl border transition-colors active:scale-95",
-                  done ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-400" : "border-border/60 text-muted-foreground hover:text-foreground",
+                  "grid size-11 place-items-center rounded-xl transition-colors active:scale-95",
+                  done ? "bg-emerald-500 text-white" : "bg-muted/40 text-muted-foreground ring-1 ring-inset ring-border/50 hover:text-foreground",
                 )}
               >
-                <Check className="size-4" />
+                <Check className="size-4" strokeWidth={done ? 3 : 2} />
               </button>
-              {done ? (
-                <button
-                  type="button"
-                  onClick={() => remove.mutate(done)}
-                  aria-label={`Apagar série ${index + 1}`}
-                  className="grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                >
-                  <X className="size-3.5" />
-                </button>
-              ) : (
-                <span className="w-8 shrink-0" aria-hidden="true" />
-              )}
-            </li>
+            </Fragment>
           );
         })}
-      </ul>
+      </div>
 
       <div className="flex flex-wrap gap-1.5">
         <button

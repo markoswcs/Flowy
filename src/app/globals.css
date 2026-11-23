@@ -1958,20 +1958,16 @@ html.reduce-motion .flowy-art-draw { animation: none; stroke-dashoffset: 0; }
 @media (prefers-reduced-motion: reduce) { .flowy-flame, .flowy-ember, .flowy-frost { animation: none; } }
 html.reduce-motion .flowy-flame, html.reduce-motion .flowy-ember, html.reduce-motion .flowy-frost { animation: none; }
 
-/* Selected item: the icon sits in a dark glass disc wrapped by a prismatic
-   ring (white-hot top, orange, red, deep blue) with a soft bloom behind it. */
+/* Selected item: the icon sits in a soft glass disc wrapped by a thin
+   prismatic hairline in the Flowy colours, with a faint bloom behind it. */
 .flowy-prism {
   position: relative;
   isolation: isolate;
   display: grid;
   place-items: center;
   border-radius: 9999px;
-  background: radial-gradient(circle at 50% 30%, #34343d 0%, #18181d 55%, #0b0b0f 100%);
-  box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.12), inset 0 -2px 6px rgb(0 0 0 / 0.6);
-  color: #f4f4f7;
-}
-.flowy-prism > svg {
-  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.25)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.6));
+  background: radial-gradient(circle at 50% 35%, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.03) 70%);
+  color: hsl(var(--foreground));
 }
 .flowy-prism::before,
 .flowy-prism::after {
@@ -1981,42 +1977,34 @@ html.reduce-motion .flowy-flame, html.reduce-motion .flowy-ember, html.reduce-mo
   pointer-events: none;
   background: conic-gradient(
     from var(--flowy-prism-angle, -20deg),
-    #ffffff 0deg,
-    #ffd29a 16deg,
-    #ff8a3d 38deg,
-    #ff3b2f 62deg,
-    #8b1a14 88deg,
-    #1a1d2e 112deg,
-    #1d4ed8 140deg,
-    #38bdf8 162deg,
-    #fde68a 184deg,
-    #fb923c 204deg,
-    #ef4444 228deg,
-    #7f1d1d 250deg,
-    #1e3a8a 276deg,
-    #3b82f6 300deg,
-    #a5f3fc 326deg,
-    #ffffff 360deg
+    #f5f3ff 0deg,
+    #c4b5fd 40deg,
+    #8b5cf6 90deg,
+    #ec4899 150deg,
+    #fb923c 200deg,
+    #fde68a 230deg,
+    #38bdf8 280deg,
+    #818cf8 320deg,
+    #f5f3ff 360deg
   );
-  animation: flowy-prism-spin 9s linear infinite;
+  animation: flowy-prism-spin 12s linear infinite;
 }
-/* The ring itself. */
+/* The ring itself: a hairline, not a band. */
 .flowy-prism::before {
-  inset: -3px;
-  padding: 3px;
+  inset: 0;
+  padding: 1.5px;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  filter: saturate(1.35) brightness(1.1);
 }
-/* Bloom: the same colours, blurred, glowing around the ring. */
+/* Bloom: the same colours, blurred and faint. */
 .flowy-prism::after {
-  inset: -7px;
+  inset: -3px;
   z-index: -1;
-  filter: blur(8px) saturate(1.6);
-  opacity: 0.7;
-  -webkit-mask: radial-gradient(circle, transparent 52%, #000 62%, #000 72%, transparent 100%);
-  mask: radial-gradient(circle, transparent 52%, #000 62%, #000 72%, transparent 100%);
+  filter: blur(6px);
+  opacity: 0.35;
+  -webkit-mask: radial-gradient(circle, transparent 55%, #000 70%, transparent 100%);
+  mask: radial-gradient(circle, transparent 55%, #000 70%, transparent 100%);
 }
 @property --flowy-prism-angle {
   syntax: "<angle>";
