@@ -8,7 +8,9 @@ import { useEffect, type ReactNode } from "react";
 export function LandingMotion({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     let frame = 0;
     let pointerX = 0;
     let pointerY = 0;
@@ -29,7 +31,9 @@ export function LandingMotion({ children }: { children: ReactNode }) {
     };
 
     // Cards marked data-tilt lean towards the pointer and catch a light.
-    const tiltCards = Array.from(document.querySelectorAll<HTMLElement>("[data-tilt]"));
+    const tiltCards = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-tilt]"),
+    );
     const onTilt = (event: PointerEvent) => {
       const card = event.currentTarget as HTMLElement;
       const box = card.getBoundingClientRect();
@@ -43,8 +47,21 @@ export function LandingMotion({ children }: { children: ReactNode }) {
     };
     const onLeave = (event: PointerEvent) => {
       const card = event.currentTarget as HTMLElement;
-      ["--rx", "--ry", "--glow"].forEach((name) => card.style.removeProperty(name));
+      ["--rx", "--ry", "--glow"].forEach((name) =>
+        card.style.removeProperty(name),
+      );
     };
+
+    // How far down the page the reader is (0..1), for the bar under the menu.
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      root.style.setProperty(
+        "--scroll",
+        max > 0 ? (window.scrollY / max).toFixed(4) : "0",
+      );
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
 
     if (!reduce) {
       window.addEventListener("pointermove", onPointer, { passive: true });
@@ -73,12 +90,15 @@ export function LandingMotion({ children }: { children: ReactNode }) {
     return () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onPointer);
+      window.removeEventListener("scroll", onScroll);
       tiltCards.forEach((card) => {
         card.removeEventListener("pointermove", onTilt);
         card.removeEventListener("pointerleave", onLeave);
       });
       observer.disconnect();
-      ["--mx", "--my"].forEach((name) => root.style.removeProperty(name));
+      ["--mx", "--my", "--scroll"].forEach((name) =>
+        root.style.removeProperty(name),
+      );
     };
   }, []);
 

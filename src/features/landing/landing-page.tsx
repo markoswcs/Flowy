@@ -32,6 +32,12 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
 import { GoogleOneTap } from "@/components/auth/google-one-tap";
+import {
+  CountUp,
+  Faq,
+  HowItWorks,
+  RotatingWord,
+} from "@/features/landing/landing-extras";
 import { LandingMotion } from "@/features/landing/landing-motion";
 import {
   AGENDA_POINTS,
@@ -108,10 +114,35 @@ function Eyebrow({ children }: { children: ReactNode }) {
 }
 
 const mockTasks = [
-  { title: "Enviar proposta para o cliente", when: "Hoje · 14:00", tone: "today", folder: ["Trabalho", "#a78bfa"], done: true },
-  { title: "Revisar o contrato da Maria", when: "Hoje · 16:30", tone: "today", folder: ["Trabalho", "#a78bfa"], done: false },
-  { title: "Estudar inglês", when: "Hoje", tone: "today", repeat: "Dias úteis", folder: ["Pessoal", "#4ade80"], done: false },
-  { title: "Planejar a campanha de novembro", when: "Sex", tone: "later", folder: ["Trabalho", "#a78bfa"], done: false },
+  {
+    title: "Enviar proposta para o cliente",
+    when: "Hoje · 14:00",
+    tone: "today",
+    folder: ["Trabalho", "#a78bfa"],
+    done: true,
+  },
+  {
+    title: "Revisar o contrato da Maria",
+    when: "Hoje · 16:30",
+    tone: "today",
+    folder: ["Trabalho", "#a78bfa"],
+    done: false,
+  },
+  {
+    title: "Estudar inglês",
+    when: "Hoje",
+    tone: "today",
+    repeat: "Dias úteis",
+    folder: ["Pessoal", "#4ade80"],
+    done: false,
+  },
+  {
+    title: "Planejar a campanha de novembro",
+    when: "Sex",
+    tone: "later",
+    folder: ["Trabalho", "#a78bfa"],
+    done: false,
+  },
 ];
 
 // The home screen as it is today: sidebar, greeting with the calendar button,
@@ -122,7 +153,9 @@ function AppMock() {
       <aside className="hidden w-48 shrink-0 flex-col border-r border-white/[0.06] bg-[#151515] p-3 sm:flex">
         <div className="mb-5 flex items-center gap-2 px-2 pt-1">
           <Image src="/logo.png" alt="" width={20} height={20} />
-          <span className="font-[family-name:var(--font-display)] text-sm font-bold tracking-tight">Flowy</span>
+          <span className="font-[family-name:var(--font-display)] text-sm font-bold tracking-tight">
+            Flowy
+          </span>
         </div>
         {[
           { label: "Início", icon: Home },
@@ -135,13 +168,16 @@ function AppMock() {
             key={label}
             className={cn(
               "mb-0.5 flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-xs",
-              index === 0 ? "bg-white/[0.06] font-medium text-white" : "text-white/55",
+              index === 0
+                ? "bg-white/[0.06] font-medium text-white"
+                : "text-white/55",
             )}
           >
             <span
               className={cn(
                 "grid size-6 place-items-center rounded-full",
-                index === 0 && "bg-[#18181d] shadow-[0_0_0_1.5px_rgb(167_139_250/0.8),0_0_10px_rgb(167_139_250/0.45)]",
+                index === 0 &&
+                  "bg-[#18181d] shadow-[0_0_0_1.5px_rgb(167_139_250/0.8),0_0_10px_rgb(167_139_250/0.45)]",
               )}
             >
               <Icon className="size-3.5" />
@@ -149,15 +185,22 @@ function AppMock() {
             {label}
           </div>
         ))}
-        <p className="mb-1.5 mt-5 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-white/35">Pastas</p>
+        <p className="mb-1.5 mt-5 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-white/35">
+          Pastas
+        </p>
         {[
           ["Trabalho", "#a78bfa", 2],
           ["Pessoal", "#4ade80", 1],
         ].map(([name, color, count]) => (
-          <div key={name as string} className="flex items-center gap-2.5 px-2 py-1.5 text-xs text-white/60">
+          <div
+            key={name as string}
+            className="flex items-center gap-2.5 px-2 py-1.5 text-xs text-white/60"
+          >
             <Folder className="size-3.5" style={{ color: color as string }} />
             <span className="flex-1">{name}</span>
-            <span className="rounded-full bg-white/[0.07] px-1.5 text-[9px]">{count}</span>
+            <span className="rounded-full bg-white/[0.07] px-1.5 text-[9px]">
+              {count}
+            </span>
           </div>
         ))}
       </aside>
@@ -174,7 +217,8 @@ function AppMock() {
               </p>
             </div>
             <p className="mt-1 flex items-center gap-1.5 text-[10px] text-white/55">
-              <Sparkles className="size-3" /> 3 tarefas para hoje. Comece por “Revisar o contrato da Maria”.
+              <Sparkles className="size-3" /> 3 tarefas para hoje. Comece por
+              “Revisar o contrato da Maria”.
             </p>
           </div>
           <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.03]">
@@ -184,7 +228,14 @@ function AppMock() {
 
         <div className="mt-4 inline-flex rounded-xl border border-white/10 bg-white/[0.02] p-0.5 text-[10px] text-white/55">
           {["Hoje", "Próximas", "Todas"].map((item, index) => (
-            <span key={item} className={cn("rounded-lg px-4 py-1", index === 0 && "border border-white/15 bg-[#1b1b1b] font-semibold text-white")}>
+            <span
+              key={item}
+              className={cn(
+                "rounded-lg px-4 py-1",
+                index === 0 &&
+                  "border border-white/15 bg-[#1b1b1b] font-semibold text-white",
+              )}
+            >
               {item}
             </span>
           ))}
@@ -193,7 +244,14 @@ function AppMock() {
         <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2 text-[11px] text-white/75">
           <Search className="size-3.5 shrink-0 text-white/40" />
           <span className="min-w-0 flex-1 truncate">
-            <span className={cn(styles.typing, "inline-block max-w-full align-bottom")}>Reunião com o time amanhã às 15h</span>
+            <span
+              className={cn(
+                styles.typing,
+                "inline-block max-w-full align-bottom",
+              )}
+            >
+              Reunião com o time amanhã às 15h
+            </span>
           </span>
           <Mic className="size-3.5 shrink-0 text-white/40" />
           <span className="hidden items-center gap-1 text-white/55 sm:inline-flex">
@@ -209,7 +267,10 @@ function AppMock() {
         </p>
 
         <p className="mb-1.5 mt-3 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-white/45">
-          Hoje <span className="rounded-full bg-white/[0.08] px-1.5 tracking-normal">3</span>
+          Hoje{" "}
+          <span className="rounded-full bg-white/[0.08] px-1.5 tracking-normal">
+            3
+          </span>
         </p>
         <div className="space-y-1.5">
           {mockTasks.map((task, index) => (
@@ -223,18 +284,31 @@ function AppMock() {
               <span
                 className={cn(
                   "mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border-2",
-                  task.done ? "border-transparent bg-violet-600" : "border-violet-400/60 bg-violet-500/10",
+                  task.done
+                    ? "border-transparent bg-violet-600"
+                    : "border-violet-400/60 bg-violet-500/10",
                 )}
               >
-                {task.done ? <Check className="size-2.5 text-white" strokeWidth={3} /> : null}
+                {task.done ? (
+                  <Check className="size-2.5 text-white" strokeWidth={3} />
+                ) : null}
               </span>
               <div className="min-w-0 flex-1">
-                <p className={cn("truncate text-xs font-medium", task.done && "text-white/40 line-through")}>{task.title}</p>
+                <p
+                  className={cn(
+                    "truncate text-xs font-medium",
+                    task.done && "text-white/40 line-through",
+                  )}
+                >
+                  {task.title}
+                </p>
                 <p className="mt-1 flex flex-wrap items-center gap-1 text-[9px]">
                   <span
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5",
-                      task.tone === "today" && !task.done ? "bg-violet-500/20 text-violet-200 ring-1 ring-inset ring-violet-400/35" : "text-white/45",
+                      task.tone === "today" && !task.done
+                        ? "bg-violet-500/20 text-violet-200 ring-1 ring-inset ring-violet-400/35"
+                        : "text-white/45",
                     )}
                   >
                     <CalendarDays className="size-2.5" />
@@ -249,7 +323,11 @@ function AppMock() {
                     className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-white/75"
                     style={{ backgroundColor: `${task.folder[1]}22` }}
                   >
-                    <Folder className="size-2.5" style={{ color: task.folder[1] }} /> {task.folder[0]}
+                    <Folder
+                      className="size-2.5"
+                      style={{ color: task.folder[1] }}
+                    />{" "}
+                    {task.folder[0]}
                   </span>
                 </p>
               </div>
@@ -515,6 +593,28 @@ const benefits = [
   },
 ];
 
+const MARQUEE = [
+  { icon: Mic, label: "Criar por voz" },
+  { icon: Bell, label: "Lembretes no celular e no PC" },
+  { icon: CalendarDays, label: "Google Agenda" },
+  { icon: Check, label: "Google Tarefas" },
+  { icon: Dumbbell, label: "Treinos com progresso" },
+  { icon: GraduationCap, label: "Grade de aulas" },
+  { icon: Flame, label: "Dias seguidos" },
+  { icon: NotebookPen, label: "Notas" },
+  { icon: Network, label: "Mapas mentais" },
+  { icon: PenTool, label: "Desenhos" },
+  { icon: Repeat2, label: "Tarefas que se repetem" },
+  { icon: Smartphone, label: "Instala como app" },
+];
+
+const STATS = [
+  { value: 46, suffix: "", label: "exercícios explicados" },
+  { value: 4, suffix: "", label: "planos de treino prontos" },
+  { value: 3, suffix: "", label: "contas Google juntas" },
+  { value: 0, suffix: "", label: "anúncios" },
+];
+
 export function LandingPage() {
   return (
     <LandingMotion>
@@ -523,6 +623,7 @@ export function LandingPage() {
         <div className={styles.aurora} aria-hidden="true" />
 
         <header className={styles.nav}>
+          <span className={styles.progress} aria-hidden="true" />
           <nav
             className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6"
             aria-label="Principal"
@@ -541,6 +642,12 @@ export function LandingPage() {
               </span>
             </Link>
             <div className="hidden items-center gap-7 text-sm text-[color:var(--muted)] md:flex">
+              <a
+                href="#como-funciona"
+                className="transition-colors hover:text-white"
+              >
+                Como funciona
+              </a>
               <a
                 href="#recursos"
                 className="transition-colors hover:text-white"
@@ -583,6 +690,7 @@ export function LandingPage() {
         <main>
           <section className="relative px-4 pb-16 pt-14 text-center sm:px-6 sm:pt-20">
             <div className={styles.gridFloor} aria-hidden="true" />
+            <div className={styles.spotlight} aria-hidden="true" />
             <div className="relative mx-auto max-w-3xl">
               <Reveal>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-[color:var(--muted)]">
@@ -593,17 +701,25 @@ export function LandingPage() {
                 <h1
                   className={cn(
                     styles.display,
-                    "mt-6 font-[family-name:var(--font-display)] text-[2.6rem] font-extrabold sm:text-6xl md:text-7xl",
+                    "mt-6 font-[family-name:var(--font-display)] text-[2.7rem] font-extrabold sm:text-6xl md:text-[5.2rem]",
                   )}
                 >
-                  Sua rotina inteira,{" "}
+                  <span className={styles.word} style={delay(0)}>
+                    Suas
+                  </span>{" "}
+                  <span className={styles.word} style={delay(120)}>
+                    <RotatingWord />
+                  </span>
+                  <br />
                   <span
                     className={cn(
+                      styles.word,
                       styles.serif,
                       "font-[family-name:var(--font-serif)] font-normal",
                     )}
+                    style={delay(260)}
                   >
-                    num só lugar.
+                    em fluxo.
                   </span>
                 </h1>
               </Reveal>
@@ -722,6 +838,44 @@ export function LandingPage() {
                   <TreinosScreen />
                 </Phone>
               </div>
+            </Reveal>
+          </section>
+
+          <div
+            className={cn(styles.marqueeWrap, "overflow-hidden py-6")}
+            aria-hidden="true"
+          >
+            <div className={styles.marquee}>
+              {[...MARQUEE, ...MARQUEE].map(({ icon: Icon, label }, index) => (
+                <span
+                  key={index}
+                  className={cn(
+                    styles.chip3d,
+                    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-white/75",
+                  )}
+                >
+                  <Icon className="size-4 text-[color:var(--violet-hot)]" />
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <section
+            id="como-funciona"
+            className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 sm:py-24"
+          >
+            <Reveal className="mb-10 max-w-2xl">
+              <Eyebrow>Como funciona</Eyebrow>
+              <DisplayHeading className="mt-3">
+                Três passos.{" "}
+                <span className="text-[color:var(--muted)]">
+                  Nenhum formulário.
+                </span>
+              </DisplayHeading>
+            </Reveal>
+            <Reveal wait={100}>
+              <HowItWorks />
             </Reveal>
           </section>
 
@@ -885,10 +1039,49 @@ export function LandingPage() {
             </ul>
           </section>
 
+          <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
+            <Reveal className="grid grid-cols-2 gap-px overflow-hidden rounded-[1.75rem] border border-white/[0.08] bg-white/[0.06] md:grid-cols-4">
+              {STATS.map(({ value, suffix, label }) => (
+                <div
+                  key={label}
+                  className="bg-[color:var(--ink)] px-6 py-8 text-center"
+                >
+                  <p
+                    className={cn(
+                      styles.statNumber,
+                      "font-[family-name:var(--font-display)] text-4xl font-extrabold sm:text-5xl",
+                    )}
+                  >
+                    <CountUp to={value} suffix={suffix} />
+                  </p>
+                  <p className="mt-2 text-sm text-[color:var(--muted)]">
+                    {label}
+                  </p>
+                </div>
+              ))}
+            </Reveal>
+          </section>
+
+          <section
+            id="duvidas"
+            className="mx-auto max-w-3xl scroll-mt-20 px-4 pb-20 sm:px-6 sm:pb-28"
+          >
+            <Reveal className="mb-8 text-center">
+              <Eyebrow>Dúvidas</Eyebrow>
+              <DisplayHeading className="mt-3">
+                Perguntas frequentes
+              </DisplayHeading>
+            </Reveal>
+            <Reveal wait={100}>
+              <Faq />
+            </Reveal>
+          </section>
+
           <section className="px-4 pb-20 sm:px-6">
             <Reveal
               className={cn(
                 styles.ctaBox,
+                styles.glowBorder,
                 "relative isolate mx-auto max-w-4xl overflow-hidden rounded-[2rem] px-6 py-14 text-center sm:py-16",
               )}
             >

@@ -439,3 +439,240 @@
 .tilt:hover {
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-4px);
 }
+
+/* ---------- Motion, round two ---------- */
+
+/* Reading progress along the top of the menu bar. */
+.progress {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  width: 100%;
+  transform-origin: left;
+  transform: scaleX(var(--scroll, 0));
+  background: linear-gradient(90deg, #7c3aed, #a78bfa, #67e8f9);
+  box-shadow: 0 0 12px rgb(167 139 250 / 0.7);
+}
+
+/* A soft light that follows the pointer over the hero. */
+.spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    600px circle at calc((var(--mx, 0) + 1) * 50%) calc((var(--my, -0.4) + 1) * 50%),
+    rgb(139 92 246 / 0.16),
+    transparent 60%
+  );
+}
+
+/* The hero headline arrives word by word, from blur to sharp. */
+.word {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(12px);
+  transform: translateY(0.35em);
+  animation: wordIn 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+@keyframes wordIn {
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+/* The changing word: one in place, the previous leaving upwards. */
+.rotator {
+  position: relative;
+  display: inline-grid;
+  vertical-align: bottom;
+  overflow: hidden;
+  padding: 0 0.08em 0.12em;
+}
+
+.rotatorWord {
+  position: absolute;
+  inset: 0 0.08em 0.12em;
+  opacity: 0;
+  transform: translateY(100%);
+  transition:
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 500ms;
+  background: linear-gradient(100deg, #c4b5fd, #67e8f9 55%, #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rotatorOn {
+  opacity: 1;
+  transform: none;
+}
+
+.rotatorOff {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+/* Endless strip of features. */
+.marquee {
+  display: flex;
+  width: max-content;
+  gap: 0.75rem;
+  animation: marquee 38s linear infinite;
+}
+
+.marqueeWrap {
+  mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+}
+
+.marqueeWrap:hover .marquee {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* How it works: the active step's timer and its little stage. */
+.stepBar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  transform-origin: left;
+  background: linear-gradient(90deg, #8b5cf6, #67e8f9);
+  animation: stepBar 3800ms linear forwards;
+}
+
+.stepBarPaused {
+  animation-play-state: paused;
+}
+
+@keyframes stepBar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.stepStage {
+  background:
+    radial-gradient(70% 60% at 50% 0%, rgb(124 58 237 / 0.22), transparent 70%),
+    linear-gradient(180deg, #120e20, #0b0914);
+  box-shadow: 0 50px 90px -40px rgb(76 29 149 / 0.8);
+}
+
+.stepScene {
+  height: 100%;
+  animation: sceneIn 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sceneIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+    filter: blur(6px);
+  }
+}
+
+.popIn {
+  opacity: 0;
+  animation: popIn 500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.dropIn {
+  animation: dropIn 700ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.95);
+  }
+}
+
+/* A border of light that runs around the final call to action. */
+.glowBorder {
+  position: relative;
+  isolation: isolate;
+}
+
+.glowBorder::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--flowy-cta-angle, 0deg), transparent 0deg, #a78bfa 60deg, #67e8f9 100deg, transparent 160deg, transparent 360deg);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  animation: ctaSpin 6s linear infinite;
+}
+
+@property --flowy-cta-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes ctaSpin {
+  to {
+    --flowy-cta-angle: 360deg;
+  }
+}
+
+.statNumber {
+  background: linear-gradient(180deg, #fff, #c4b5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word {
+    animation: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+
+  .marquee,
+  .stepBar,
+  .stepScene,
+  .popIn,
+  .dropIn,
+  .glowBorder::before {
+    animation: none;
+  }
+
+  .popIn {
+    opacity: 1;
+  }
+}
