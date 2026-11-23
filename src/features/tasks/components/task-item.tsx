@@ -576,13 +576,13 @@ export function TaskItem({
                     {task.due_time ? ` · ${task.due_time.slice(0, 5)}` : ""}
                   </span>
                 ) : task.due_time ? (
-                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-amber-500/12 px-2.5 text-amber-500">
+                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-amber-500/15 px-2.5 text-amber-500">
                     <Clock3 className="size-3.5" aria-hidden="true" />
                     {task.due_time.slice(0, 5)}
                   </span>
                 ) : null}
                 {task.recurrence ? (
-                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-sky-500/12 px-2.5 text-sky-500">
+                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-sky-500/15 px-2.5 text-sky-500">
                     <Repeat2 className="size-3.5" aria-hidden="true" />
                     {recurrenceLabel(task.recurrence, task.recurrence_days)}
                   </span>
