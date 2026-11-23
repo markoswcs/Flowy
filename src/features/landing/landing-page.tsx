@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Repeat2,
   Search,
+  SlidersHorizontal,
   Smartphone,
   Sparkles,
   Sun,
@@ -106,181 +107,156 @@ function Eyebrow({ children }: { children: ReactNode }) {
   );
 }
 
-// The home screen as it really is: same navigation, tabs, search bar and
-// task chips, with sample tasks.
 const mockTasks = [
-  {
-    title: "Enviar proposta para o cliente",
-    when: "Hoje · 14:00",
-    folder: "Trabalho",
-    done: true,
-  },
-  {
-    title: "Revisar o contrato da Maria",
-    when: "Hoje · 16:30",
-    folder: "Trabalho",
-    done: false,
-  },
-  {
-    title: "Academia",
-    when: "Amanhã · 07:00",
-    folder: "Pessoal",
-    repeat: true,
-    done: false,
-  },
-  {
-    title: "Planejar a campanha de novembro",
-    when: "Sex",
-    folder: "Trabalho",
-    done: false,
-  },
+  { title: "Enviar proposta para o cliente", when: "Hoje · 14:00", tone: "today", folder: ["Trabalho", "#a78bfa"], done: true },
+  { title: "Revisar o contrato da Maria", when: "Hoje · 16:30", tone: "today", folder: ["Trabalho", "#a78bfa"], done: false },
+  { title: "Estudar inglês", when: "Hoje", tone: "today", repeat: "Dias úteis", folder: ["Pessoal", "#4ade80"], done: false },
+  { title: "Planejar a campanha de novembro", when: "Sex", tone: "later", folder: ["Trabalho", "#a78bfa"], done: false },
 ];
 
+// The home screen as it is today: sidebar, greeting with the calendar button,
+// Hoje / Próximas / Todas, search with voice and filters, the streak and the tasks.
 function AppMock() {
   return (
-    <div className="flex h-full overflow-hidden rounded-[1.4rem] text-left">
-      <aside className="hidden w-48 shrink-0 flex-col border-r border-white/5 bg-white/[0.02] p-3 sm:flex">
-        <div className="mb-5 flex items-center gap-2 px-2 pt-1 text-sm font-semibold">
-          <Image
-            src="/logo.png"
-            alt=""
-            width={22}
-            height={22}
-            className="rounded-md"
-          />
-          Flowy
+    <div className="flex h-full overflow-hidden rounded-[1.4rem] bg-[#111111] text-left">
+      <aside className="hidden w-48 shrink-0 flex-col border-r border-white/[0.06] bg-[#151515] p-3 sm:flex">
+        <div className="mb-5 flex items-center gap-2 px-2 pt-1">
+          <Image src="/logo.png" alt="" width={20} height={20} />
+          <span className="font-[family-name:var(--font-display)] text-sm font-bold tracking-tight">Flowy</span>
         </div>
         {[
           { label: "Início", icon: Home },
           { label: "Notas", icon: NotebookPen },
           { label: "Mapas", icon: Network },
           { label: "Desenhos", icon: PenTool },
+          { label: "Treinos", icon: Dumbbell },
         ].map(({ label, icon: Icon }, index) => (
           <div
             key={label}
             className={cn(
-              "mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs",
-              index === 0 ? styles.mockActive : "text-white/50",
+              "mb-0.5 flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-xs",
+              index === 0 ? "bg-white/[0.06] font-medium text-white" : "text-white/55",
             )}
           >
-            <Icon className="size-3.5" />
+            <span
+              className={cn(
+                "grid size-6 place-items-center rounded-full",
+                index === 0 && "bg-[#18181d] shadow-[0_0_0_1.5px_rgb(167_139_250/0.8),0_0_10px_rgb(167_139_250/0.45)]",
+              )}
+            >
+              <Icon className="size-3.5" />
+            </span>
             {label}
           </div>
         ))}
-        <p className="mb-1.5 mt-5 px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white/30">
-          Pastas
-        </p>
+        <p className="mb-1.5 mt-5 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-white/35">Pastas</p>
         {[
-          ["Trabalho", "#a78bfa"],
-          ["Pessoal", "#4ade80"],
-        ].map(([name, color]) => (
-          <div
-            key={name}
-            className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-white/50"
-          >
-            <Folder className="size-3.5" style={{ color }} /> {name}
+          ["Trabalho", "#a78bfa", 2],
+          ["Pessoal", "#4ade80", 1],
+        ].map(([name, color, count]) => (
+          <div key={name as string} className="flex items-center gap-2.5 px-2 py-1.5 text-xs text-white/60">
+            <Folder className="size-3.5" style={{ color: color as string }} />
+            <span className="flex-1">{name}</span>
+            <span className="rounded-full bg-white/[0.07] px-1.5 text-[9px]">{count}</span>
           </div>
         ))}
       </aside>
 
       <div className="relative min-w-0 flex-1 p-4 sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-600">
-              <Sun className="size-4 text-white" />
-            </span>
-            <p className="truncate font-[family-name:var(--font-display)] text-lg font-bold tracking-tight sm:text-xl">
-              Boa tarde, Ana
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-rose-500">
+                <Sun className="size-4 text-white" />
+              </span>
+              <p className="truncate font-[family-name:var(--font-display)] text-xl font-bold tracking-tight sm:text-2xl">
+                Boa tarde, Ana
+              </p>
+            </div>
+            <p className="mt-1 flex items-center gap-1.5 text-[10px] text-white/55">
+              <Sparkles className="size-3" /> 3 tarefas para hoje. Comece por “Revisar o contrato da Maria”.
             </p>
           </div>
+          <span className="grid size-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.03]">
+            <CalendarDays className="size-3.5 text-white/70" />
+          </span>
         </div>
 
-        <div className="mt-4 flex gap-1 text-[10px] text-white/45">
-          {["Todas", "Hoje", "Atrasadas", "Próximas", "Concluídas"].map(
-            (item, index) => (
-              <span
-                key={item}
-                className={cn(
-                  "rounded-full px-2.5 py-1",
-                  index === 0 && cn(styles.mockActive, "text-white"),
-                  index === 2 || index === 4 ? "hidden sm:inline" : "",
-                )}
-              >
-                {item}
-              </span>
-            ),
-          )}
+        <div className="mt-4 inline-flex rounded-xl border border-white/10 bg-white/[0.02] p-0.5 text-[10px] text-white/55">
+          {["Hoje", "Próximas", "Todas"].map((item, index) => (
+            <span key={item} className={cn("rounded-lg px-4 py-1", index === 0 && "border border-white/15 bg-[#1b1b1b] font-semibold text-white")}>
+              {item}
+            </span>
+          ))}
         </div>
 
-        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/25 px-3 py-2.5 text-[11px] text-white/75">
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2 text-[11px] text-white/75">
           <Search className="size-3.5 shrink-0 text-white/40" />
           <span className="min-w-0 flex-1 truncate">
-            <span
-              className={cn(
-                styles.typing,
-                "inline-block max-w-full align-bottom",
-              )}
-            >
-              Reunião com o time amanhã às 15h
-            </span>
+            <span className={cn(styles.typing, "inline-block max-w-full align-bottom")}>Reunião com o time amanhã às 15h</span>
           </span>
           <Mic className="size-3.5 shrink-0 text-white/40" />
+          <span className="hidden items-center gap-1 text-white/55 sm:inline-flex">
+            <SlidersHorizontal className="size-3" /> Filtros
+          </span>
         </div>
 
-        <p className="mb-2 mt-4 text-[9px] font-bold uppercase tracking-[0.2em] text-white/35">
-          Hoje
+        <p className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-white/60">
+          <span className="grid size-5 place-items-center rounded-full bg-orange-500/15">
+            <Flame className="size-3 text-orange-400" />
+          </span>
+          <strong className="text-white">12</strong> dias seguidos
         </p>
-        <div className="space-y-2">
+
+        <p className="mb-1.5 mt-3 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-white/45">
+          Hoje <span className="rounded-full bg-white/[0.08] px-1.5 tracking-normal">3</span>
+        </p>
+        <div className="space-y-1.5">
           {mockTasks.map((task, index) => (
             <div
               key={task.title}
               className={cn(
-                "flex items-start gap-3 rounded-2xl border border-white/5 bg-white/[0.03] px-3 py-2.5",
-                // On phones the last one would sit under the "+" button.
+                "flex items-start gap-2.5 rounded-xl border border-white/[0.07] bg-[#161616] px-3 py-2",
                 index === mockTasks.length - 1 && "hidden sm:flex",
               )}
             >
               <span
                 className={cn(
                   "mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border-2",
-                  task.done
-                    ? "border-violet-500 bg-violet-500"
-                    : "border-white/30",
+                  task.done ? "border-transparent bg-violet-600" : "border-violet-400/60 bg-violet-500/10",
                 )}
               >
-                {task.done ? (
-                  <Check className="size-2.5 text-white" strokeWidth={3} />
-                ) : null}
+                {task.done ? <Check className="size-2.5 text-white" strokeWidth={3} /> : null}
               </span>
               <div className="min-w-0 flex-1">
-                <p
-                  className={cn(
-                    "truncate text-xs font-medium",
-                    task.done && "text-white/40 line-through",
-                  )}
-                >
-                  {task.title}
-                </p>
-                <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] text-white/45">
-                  <span className="inline-flex items-center gap-1 rounded-md border border-white/10 px-1.5 py-0.5">
+                <p className={cn("truncate text-xs font-medium", task.done && "text-white/40 line-through")}>{task.title}</p>
+                <p className="mt-1 flex flex-wrap items-center gap-1 text-[9px]">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5",
+                      task.tone === "today" && !task.done ? "bg-violet-500/20 text-violet-200 ring-1 ring-inset ring-violet-400/35" : "text-white/45",
+                    )}
+                  >
                     <CalendarDays className="size-2.5" />
                     {task.when}
                   </span>
                   {task.repeat ? (
-                    <span className="inline-flex items-center gap-1">
-                      <Repeat2 className="size-2.5" /> Diariamente
+                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-1.5 py-0.5 text-sky-400">
+                      <Repeat2 className="size-2.5" /> {task.repeat}
                     </span>
                   ) : null}
-                  <span className="inline-flex items-center gap-1">
-                    <Folder className="size-2.5" /> {task.folder}
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-white/75"
+                    style={{ backgroundColor: `${task.folder[1]}22` }}
+                  >
+                    <Folder className="size-2.5" style={{ color: task.folder[1] }} /> {task.folder[0]}
                   </span>
                 </p>
               </div>
             </div>
           ))}
         </div>
-
-        <span className="absolute bottom-4 right-4 grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 shadow-[0_10px_30px_-8px_rgb(124_58_237/0.9)] sm:bottom-5 sm:right-5">
+        <span className="absolute bottom-4 right-4 grid size-11 place-items-center rounded-2xl bg-violet-600 shadow-[0_10px_30px_-8px_rgb(124_58_237/0.9)]">
           <Plus className="size-5 text-white" />
         </span>
       </div>
@@ -689,7 +665,7 @@ export function LandingPage() {
                   <div
                     className={cn(
                       styles.float,
-                      "-bottom-6 right-24 hidden w-56 p-3 text-left lg:block",
+                      "-left-8 top-20 hidden w-56 p-3 text-left lg:block",
                     )}
                     style={depth(1.4)}
                   >
