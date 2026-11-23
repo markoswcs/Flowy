@@ -3,6 +3,7 @@
 import { Download, Trophy, Upload } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
+import { FeatureTip } from "@/components/feature-tip";
 import { Button } from "@/components/ui/button";
 import { localDateKey } from "@/features/tasks/date-utils";
 import { notify } from "@/providers/notification-provider";
@@ -193,10 +194,19 @@ export function TrainingStats({ history, logs }: { history: LoggedSet[]; logs: W
 
   return (
     <section className="space-y-4 rounded-3xl border border-border/60 bg-card/50 p-4 sm:p-6" aria-labelledby="training-stats-title">
-      <h2 id="training-stats-title" className="flex items-center gap-2 text-base font-semibold">
-        <Trophy className="size-5 flowy-ink" aria-hidden="true" />
-        Seu progresso
-      </h2>
+      <FeatureTip
+        id="treinos-progresso"
+        title="Seu progresso"
+        text="O ano de treinos em quadradinhos, tudo o que já levantou, suas melhores cargas e importar do Strong ou Hevy."
+        side="bottom"
+        align="start"
+        className="w-fit"
+      >
+        <h2 id="training-stats-title" className="flex items-center gap-2 text-base font-semibold">
+          <Trophy className="size-5 flowy-ink" aria-hidden="true" />
+          Seu progresso
+        </h2>
+      </FeatureTip>
 
       <YearHeatmap history={history} logs={logs} today={today} />
 

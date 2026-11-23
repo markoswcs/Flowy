@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { FeatureTip } from "@/components/feature-tip";
 import { parseSection } from "@/features/notes/note-sections";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -170,7 +171,15 @@ export function MobileNav() {
         className="flowy-mobile-nav fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 md:hidden"
       >
         <div className="grid h-[4.25rem] grid-cols-[1fr_1fr_4.75rem_1fr_1fr] items-center flowy-glass rounded-[2rem] border px-2">
-          {item(0)}
+          <FeatureTip
+            id="barra-segurar"
+            title="Troque os atalhos"
+            text="Segure qualquer botão desta barra e escolha outro atalho para ficar no lugar."
+            align="start"
+            className="h-full"
+          >
+            {item(0)}
+          </FeatureTip>
           {item(1)}
           {/* The create button floats in this slot. */}
           <span aria-hidden="true" />
