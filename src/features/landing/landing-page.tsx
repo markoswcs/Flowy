@@ -665,7 +665,7 @@ export function LandingPage() {
                   <div
                     className={cn(
                       styles.float,
-                      "-left-8 top-20 hidden w-56 p-3 text-left lg:block",
+                      "-top-9 left-[46%] hidden w-56 p-3 text-left lg:block",
                     )}
                     style={depth(1.4)}
                   >
