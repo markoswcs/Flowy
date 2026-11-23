@@ -34,21 +34,12 @@ function NavItem({
     >
       <span
         className={cn(
-          "grid h-10 w-14 place-items-center rounded-2xl transition-all duration-300",
-          active
-            ? "bg-foreground/[0.08] text-foreground [&_svg]:text-[var(--flowy-ink)]"
-            : "text-muted-foreground hover:text-foreground",
+          "grid place-items-center transition-all duration-300",
+          active ? "flowy-prism size-11" : "h-10 w-14 rounded-2xl text-muted-foreground hover:text-foreground",
         )}
       >
         {icon}
       </span>
-      <span
-        aria-hidden="true"
-        className={cn(
-          "absolute bottom-1 size-1 rounded-full bg-violet-400 transition-all duration-300",
-          active ? "scale-100 opacity-100" : "scale-0 opacity-0",
-        )}
-      />
     </Link>
   );
 }

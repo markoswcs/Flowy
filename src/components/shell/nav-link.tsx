@@ -38,17 +38,23 @@ export function NavLink({
         onNavigate?.();
       }}
       aria-current={active ? "page" : undefined}
+      // The prism ring marks the selected item; no travelling glow on top of it.
+      data-no-glow={active ? "" : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(
         "theme-sidebar-item flowy-glow-hover flex min-h-[42px] items-center gap-3 rounded-2xl px-4 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active && "theme-sidebar-active bg-foreground/[0.07] text-foreground",
+        active && "theme-sidebar-active flowy-prism-pill text-foreground",
+        active && !collapsed && "pl-1.5",
         collapsed && "justify-center px-0",
       )}
     >
-      <Icon
-        className={cn("size-[18px] shrink-0", active && "flowy-ink")}
-        aria-hidden="true"
-      />
+      {active ? (
+        <span className="flowy-prism size-8 shrink-0">
+          <Icon className="size-[17px]" aria-hidden="true" />
+        </span>
+      ) : (
+        <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+      )}
       {collapsed ? (
         <span className="sr-only">{item.label}</span>
       ) : (
