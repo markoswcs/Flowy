@@ -12,6 +12,10 @@ import { cn } from "@/lib/utils";
 import { WorkoutEditor } from "./components/workout-editor";
 import { WorkoutQuestionnaire } from "./components/questionnaire";
 import { WorkoutSession } from "./components/workout-session";
+import { BodyWeightCard } from "./components/body-weight-card";
+import { MuscleMap } from "./components/muscle-map";
+import { RestTimerBar } from "./components/rest-timer";
+import { useLoggedSets } from "./use-strength";
 import {
   buildSession,
   currentStreak,
@@ -194,6 +198,7 @@ function Dashboard({ profile, logs }: { profile: WorkoutProfile; logs: WorkoutLo
   const [editing, setEditing] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const update = useUpdatePreferences();
+  const sets = useLoggedSets();
   const today = localDateKey();
   const byDay = useMemo(() => new Map(logs.map((log) => [log.day, log])), [logs]);
   const todayKey = sessionKeyFor(profile, today);
@@ -254,9 +259,15 @@ function Dashboard({ profile, logs }: { profile: WorkoutProfile; logs: WorkoutLo
         </section>
       )}
 
+      <MuscleMap history={sets.data ?? []} />
+
+      <BodyWeightCard profile={profile} />
+
       <WeekPlans profile={profile} onEdit={setEditingKey} />
 
       <MonthView profile={profile} logs={byDay} today={today} />
+
+      <RestTimerBar />
 
       <div className="grid gap-2 sm:flex sm:flex-wrap">
         <Button type="button" variant="outline" onClick={() => setEditing(true)} className="h-11 w-full gap-2 sm:w-auto">

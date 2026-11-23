@@ -19,6 +19,8 @@ export interface WorkoutProfile {
   swaps: Record<string, string>;
   /** Workouts the person edited by hand: session key → its exercises, in order. */
   custom_sessions: Record<string, CustomExercise[]>;
+  /** Target body weight in kg (Peso corporal), if the person set one. */
+  body_weight_goal?: number | null;
   created_at: string;
   updated_at: string;
 }

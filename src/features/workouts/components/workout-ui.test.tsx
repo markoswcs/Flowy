@@ -30,6 +30,15 @@ const profile: WorkoutProfile = {
 };
 let currentProfile: WorkoutProfile = profile;
 
+vi.mock("../use-strength", () => ({
+  useLoggedSets: () => ({ data: [], isLoading: false }),
+  useBodyWeights: () => ({ data: [], isLoading: false }),
+  useSaveSet: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteSet: () => ({ mutate: vi.fn(), isPending: false }),
+  useSaveBodyWeight: () => ({ mutate: vi.fn(), isPending: false }),
+  useSaveWeightGoal: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock("../use-workouts", () => ({
   useWorkoutsEnabled: () => ({ enabled, loading: false }),
   useWorkoutProfile: () => ({ data: currentProfile, isLoading: false }),

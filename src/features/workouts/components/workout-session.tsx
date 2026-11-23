@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, Pencil, RefreshCw, SkipForward, Timer, Undo2 } from "lucide-react";
+import { Check, ChevronDown, ClipboardList, Pencil, RefreshCw, SkipForward, Timer, Undo2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,11 @@ import { cn } from "@/lib/utils";
 import { ExerciseFigure } from "../figure/exercise-figure";
 import { alternativesFor, formatDose, type PlannedExercise, type Session } from "../plan";
 import { FEELING_LABELS, type Feeling, type WorkoutLog, type WorkoutProfile } from "../types";
+import type { LoggedSet } from "../strength";
+import { useLoggedSets } from "../use-strength";
 import { useLogWorkout, useSaveCustomSession, useSwapExercise, useUndoWorkoutLog } from "../use-workouts";
+import { ExerciseHistory } from "./exercise-history";
+import { SetLogger } from "./set-logger";
 
 const FEELING_MESSAGES: Record<Feeling, string> = {
   easy: "Boa! O próximo treino vai ser um pouco mais puxado.",
@@ -23,13 +27,24 @@ function ExerciseRow({
   profile,
   index,
   session,
+  day,
+  history,
+  logOpen,
 }: {
   item: PlannedExercise;
   profile: WorkoutProfile;
   index: number;
   session: Session;
+  day: string;
+  /** Undefined while loading: the sets are pre-filled from it, so they wait. */
+  history: LoggedSet[] | undefined;
+  /** Set logging starts open on today's workout. */
+  logOpen: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [logging, setLogging] = useState(logOpen);
+  const [showHistory, setShowHistory] = useState(false);
+  const doneToday = (history ?? []).filter((set) => set.exercise_id === item.exercise.id && set.day === day).length;
   const [swapping, setSwapping] = useState(false);
   const swap = useSwapExercise();
   const saveCustom = useSaveCustomSession();
@@ -73,6 +88,18 @@ function ExerciseRow({
       <div className="mt-2.5 flex flex-wrap gap-1.5 pl-11">
         <button
           type="button"
+          onClick={() => setLogging((value) => !value)}
+          aria-expanded={logging}
+          className={cn(
+            "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium",
+            logging ? "border-primary/50 bg-primary/10 text-foreground" : "border-border/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+          )}
+        >
+          <ClipboardList className="size-3.5" aria-hidden="true" />
+          Séries{doneToday ? ` · ${doneToday} feita${doneToday > 1 ? "s" : ""}` : ""}
+        </button>
+        <button
+          type="button"
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
           className="inline-flex items-center gap-1 rounded-full border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -92,6 +119,11 @@ function ExerciseRow({
           </button>
         ) : null}
       </div>
+
+      {logging && history ? (
+        <SetLogger item={item} day={day} history={history} onHistory={() => setShowHistory(true)} />
+      ) : null}
+      {showHistory && history ? <ExerciseHistory exercise={item.exercise} history={history} onClose={() => setShowHistory(false)} /> : null}
 
       {open ? (
         <div className="mt-3 space-y-2 text-sm animate-in fade-in slide-in-from-top-1 sm:pl-11">
@@ -146,6 +178,7 @@ export function WorkoutSession({
   const [askFeeling, setAskFeeling] = useState(false);
   const logWorkout = useLogWorkout();
   const undo = useUndoWorkoutLog();
+  const sets = useLoggedSets();
 
   function finish(feeling: Feeling) {
     logWorkout.mutate(
@@ -201,7 +234,16 @@ export function WorkoutSession({
 
       <ol className="mt-3 space-y-2">
         {session.exercises.map((item, index) => (
-          <ExerciseRow key={`${item.exercise.id}-${index}`} item={item} profile={profile} index={index} session={session} />
+          <ExerciseRow
+            key={`${item.exercise.id}-${index}`}
+            item={item}
+            profile={profile}
+            index={index}
+            session={session}
+            day={day}
+            history={sets.data}
+            logOpen={title === "Treino de hoje" && !log}
+          />
         ))}
       </ol>
 
