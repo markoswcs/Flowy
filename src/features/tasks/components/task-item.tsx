@@ -483,8 +483,8 @@ export function TaskItem({
   const dateToneClass = !dateChip
     ? "text-muted-foreground"
     : when?.tone === "overdue"
-      ? "bg-destructive/15 text-destructive"
-      : "flowy-active";
+      ? "bg-destructive/15 text-destructive ring-1 ring-inset ring-destructive/30"
+      : "bg-violet-500/20 flowy-ink ring-1 ring-inset ring-violet-400/35";
 
   return (
     <article
@@ -536,8 +536,8 @@ export function TaskItem({
               "mt-px flex size-[1.4rem] shrink-0 items-center justify-center border-2 transition-all duration-200 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 disabled:opacity-50",
               selecting ? "rounded-md" : "rounded-full",
               (selecting ? selected : completed)
-                ? "border-violet-500 bg-violet-500 text-white"
-                : "border-muted-foreground/50 hover:border-violet-400",
+                ? "border-transparent bg-gradient-to-br from-violet-400 via-primary to-violet-700 text-white shadow-[0_0_12px_-2px] shadow-violet-500/80"
+                : "border-violet-400/60 bg-violet-500/10 hover:border-violet-300 hover:bg-violet-500/20 hover:shadow-[0_0_10px_-2px] hover:shadow-violet-500/70",
             )}
           >
             {(selecting ? selected : completed) ? (
@@ -576,19 +576,22 @@ export function TaskItem({
                     {task.due_time ? ` · ${task.due_time.slice(0, 5)}` : ""}
                   </span>
                 ) : task.due_time ? (
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-amber-500/12 px-2.5 text-amber-500">
                     <Clock3 className="size-3.5" aria-hidden="true" />
                     {task.due_time.slice(0, 5)}
                   </span>
                 ) : null}
                 {task.recurrence ? (
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex h-6 items-center gap-1 rounded-full bg-sky-500/12 px-2.5 text-sky-500">
                     <Repeat2 className="size-3.5" aria-hidden="true" />
                     {recurrenceLabel(task.recurrence, task.recurrence_days)}
                   </span>
                 ) : null}
                 {task.folder ? (
-                  <span className="inline-flex max-w-40 items-center gap-1">
+                  <span
+                    className="inline-flex h-6 max-w-40 items-center gap-1 rounded-full bg-muted/50 px-2.5 text-foreground/80"
+                    style={task.folder.color ? { backgroundColor: `${task.folder.color}22` } : undefined}
+                  >
                     <FolderIcon
                       className="size-3.5 shrink-0"
                       style={{ color: task.folder.color ?? undefined }}
