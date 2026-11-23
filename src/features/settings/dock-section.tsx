@@ -53,7 +53,7 @@ export function DockSection() {
         <Smartphone className="size-5 flowy-ink" aria-hidden="true" />
         Barra de baixo
       </h2>
-      <p className="mt-1 text-sm text-muted-foreground">Toque num lugar da barra e depois no atalho que quer ali.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Toque num lugar da barra e depois no atalho que quer ali. Ou segure um botão da própria barra.</p>
 
       <div className="mt-3 grid grid-cols-[1fr_1fr_3rem_1fr_1fr] items-center gap-1 rounded-[1.75rem] border border-border/60 bg-card/40 p-2">
         {place(0)}
