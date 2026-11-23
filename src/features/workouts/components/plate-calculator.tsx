@@ -90,7 +90,7 @@ export function PlateCalculator({ initial, onClose }: { initial: number; onClose
                 if (Number.isFinite(value)) setTarget(Math.min(500, value));
               }}
               aria-label="Peso total em kg"
-              className="w-24 bg-transparent text-center text-4xl font-bold tabular-nums outline-none"
+              className="w-24 border-0 bg-transparent p-0 text-center text-4xl font-bold tabular-nums shadow-none outline-none focus:ring-0"
             />
             <span className="text-sm text-muted-foreground">kg</span>
           </label>

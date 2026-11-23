@@ -69,7 +69,7 @@ export function KanbanCard({
           id={`card-title-${card.id}`}
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="w-full bg-transparent text-sm font-medium outline-none"
+          className="w-full border-0 bg-transparent p-0 text-sm font-medium shadow-none outline-none focus:ring-0"
           autoFocus
         />
         <label className="sr-only" htmlFor={`card-description-${card.id}`}>

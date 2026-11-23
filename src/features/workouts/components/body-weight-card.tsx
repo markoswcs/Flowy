@@ -88,7 +88,7 @@ export function BodyWeightCard({ profile }: { profile: WorkoutProfile }) {
             onChange={(event) => setValue(event.target.value.replace(/[^\d.,]/g, "").slice(0, 5))}
             placeholder="Peso de hoje"
             aria-label="Peso de hoje em kg"
-            className="h-11 w-full min-w-0 bg-transparent text-base tabular-nums outline-none"
+            className="h-11 w-full min-w-0 border-0 bg-transparent p-0 text-base tabular-nums shadow-none outline-none focus:ring-0"
           />
           <span className="text-sm text-muted-foreground">kg</span>
         </label>
@@ -128,7 +128,7 @@ export function BodyWeightCard({ profile }: { profile: WorkoutProfile }) {
               onChange={(event) => setGoalDraft(event.target.value.replace(/[^\d.,]/g, "").slice(0, 5))}
               placeholder="Meta"
               aria-label="Meta de peso em kg"
-              className="h-10 w-20 bg-transparent text-base tabular-nums outline-none"
+              className="h-10 w-20 border-0 bg-transparent p-0 text-base tabular-nums shadow-none outline-none focus:ring-0"
             />
             <span className="text-sm text-muted-foreground">kg</span>
           </label>

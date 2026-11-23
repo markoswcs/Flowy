@@ -114,7 +114,7 @@ export default function MapEditor({ note }: { note: Note }) {
           value={map.title}
           onChange={(event) => map.setTitle(event.target.value)}
           placeholder={UNTITLED_MAP}
-          className="w-full min-w-0 bg-transparent px-2 py-2 text-base font-semibold outline-none placeholder:text-muted-foreground sm:text-lg"
+          className="w-full min-w-0 border-0 bg-transparent px-2 py-2 shadow-none focus:ring-0 text-base font-semibold outline-none placeholder:text-muted-foreground sm:text-lg"
           aria-label="Título do mapa"
         />
         <span

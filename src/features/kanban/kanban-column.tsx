@@ -200,7 +200,7 @@ export function KanbanColumnView({
             placeholder="Título do card"
             disabled={Boolean(taskId)}
             autoFocus
-            className="w-full bg-transparent text-sm outline-none disabled:opacity-50"
+            className="w-full border-0 bg-transparent p-0 text-sm shadow-none outline-none focus:ring-0 disabled:opacity-50"
           />
           {tasks.length > 0 && (
             <select
