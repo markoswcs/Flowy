@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { FeatureTip } from "@/components/feature-tip";
@@ -12,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { DOCK_ITEMS, placeInDock, resolveDock } from "./dock-items";
 import { useDock, useSaveDock } from "./use-dock";
 
-const HOLD_MS = 450;
+const HOLD_MS = 350;
 
 function NavItem({
   label,
@@ -29,58 +28,73 @@ function NavItem({
   editing: boolean;
   onHold: () => void;
 }) {
+  const router = useRouter();
   const timer = useRef<number | null>(null);
   const held = useRef(false);
+  const origin = useRef({ x: 0, y: 0 });
+  const [pressing, setPressing] = useState(false);
 
   const cancel = () => {
     if (timer.current) window.clearTimeout(timer.current);
     timer.current = null;
+    setPressing(false);
   };
 
+  // A button, not a link: on iPhone, holding a link hands the gesture to
+  // Safari (link preview, drag) and our hold never finishes.
   return (
-    <Link
-      href={href}
+    <button
+      type="button"
       aria-label={label}
       title={`${label} (segure para trocar)`}
       aria-current={active ? "page" : undefined}
-      // The ring already marks the active tab; the travelling glow stuck on
-      // touch screens and doubled the indicator.
+      // The ring already marks the active tab; no travelling glow on top.
       data-no-glow
-      onPointerDown={() => {
+      onPointerEnter={() => router.prefetch(href)}
+      onPointerDown={(event) => {
         held.current = false;
-        cancel();
+        origin.current = { x: event.clientX, y: event.clientY };
+        if (timer.current) window.clearTimeout(timer.current);
+        setPressing(true);
         timer.current = window.setTimeout(() => {
+          timer.current = null;
           held.current = true;
+          setPressing(false);
           navigator.vibrate?.(15);
           onHold();
         }, HOLD_MS);
       }}
+      onPointerMove={(event) => {
+        if (!timer.current) return;
+        const dx = event.clientX - origin.current.x;
+        const dy = event.clientY - origin.current.y;
+        if (dx * dx + dy * dy > 100) cancel();
+      }}
       onPointerUp={cancel}
-      onPointerLeave={cancel}
       onPointerCancel={cancel}
       onContextMenu={(event) => event.preventDefault()}
-      // iOS lifts a held link to drag it (and freezes while doing so).
-      draggable={false}
-      onDragStart={(event) => event.preventDefault()}
-      onClick={(event) => {
+      onClick={() => {
         // A hold opens the editor; it must not also open the page.
         if (held.current) {
-          event.preventDefault();
           held.current = false;
+          return;
         }
+        router.push(href);
       }}
-      className="relative grid h-full touch-manipulation select-none place-items-center rounded-2xl transition-transform [-webkit-touch-callout:none] [-webkit-user-drag:none] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+      className="relative grid h-full w-full select-none place-items-center rounded-2xl [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [touch-action:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
     >
       <span
         className={cn(
-          "grid place-items-center transition-all duration-300",
+          "grid place-items-center transition-all",
+          pressing ? "scale-90 duration-[350ms] ease-out" : "duration-200",
           active ? "flowy-prism size-10" : "h-10 w-14 rounded-2xl text-muted-foreground hover:text-foreground",
+          pressing && !active && "bg-primary/15 text-foreground",
           editing && "scale-110 bg-primary/15 text-foreground",
         )}
       >
         {icon}
       </span>
-    </Link>
+    </button>
   );
 }
 

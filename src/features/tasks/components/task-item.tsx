@@ -513,6 +513,9 @@ export function TaskItem({
       }}
       data-selected={selecting ? selected : undefined}
       className={cn(
+        // Holding the card opens its actions: on iPhone, text selection and the
+        // callout would take the gesture over and cancel the hold.
+        !editing && "select-none [-webkit-touch-callout:none]",
         "group relative mb-2 overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-sm transition-all duration-200 hover:border-border hover:bg-card/70 animate-scale-in [-webkit-touch-callout:none]",
         selecting && "cursor-pointer select-none",
         selected && "border-violet-400/60 bg-violet-500/10 shadow-[0_0_0_1px_rgb(167_139_250/0.4)]",
