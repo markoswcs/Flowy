@@ -755,7 +755,6 @@ export function TextNoteEditor({ note }: { note: Note }) {
               <BarButton
                 icon={marks.link ? Unlink : LinkIcon}
                 label={marks.link ? "Remover link" : "Adicionar link"}
-                caption="Link"
                 active={marks.link}
                 onClick={() =>
                   marks.link ? chain()?.unsetLink().run() : setSheet("link")
@@ -810,6 +809,7 @@ export function TextNoteEditor({ note }: { note: Note }) {
             <BarButton
               icon={marks.link ? Unlink : LinkIcon}
               label={marks.link ? "Remover link" : "Adicionar link"}
+              caption="Link"
               active={marks.link}
               onClick={() =>
                 marks.link ? chain()?.unsetLink().run() : setSheet("link")
