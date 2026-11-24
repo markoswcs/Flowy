@@ -11,6 +11,7 @@ import {
   EyeOff,
   Flame,
   Lock,
+  Snowflake,
   Trophy,
   X,
   Zap,
@@ -226,8 +227,11 @@ function MyStreak({ doneDays }: { doneDays: string[] }) {
             >
               {count}
             </p>
-            <p className="mt-1 text-lg font-bold">
+            <p className="mt-1 text-lg font-bold leading-tight">
               {count === 1 ? "dia seguido" : "dias seguidos"}
+              <span className="block text-sm font-medium text-white/80">
+                concluindo tarefas
+              </span>
             </p>
             <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-black/20 px-2.5 py-0.5 text-xs font-bold">
               <Zap className="size-3.5" /> {level.name}
@@ -249,6 +253,60 @@ function MyStreak({ doneDays }: { doneDays: string[] }) {
                 ? "Sua sequência está congelada. Conclua 1 tarefa hoje para ela voltar."
                 : "Conclua uma tarefa e acenda sua primeira chama!"}
         </p>
+      </section>
+
+      {/* How it works, in three steps, for whoever is seeing it for the first time. */}
+      <section
+        className="rounded-[1.5rem] border border-border/60 bg-card/50 p-4"
+        aria-label="Como funciona"
+      >
+        <p className="font-bold">Como funciona o foguinho</p>
+        <ol className="mt-3 space-y-3">
+          {[
+            {
+              icon: Check,
+              color: "#34d399",
+              title: "Conclua 1 tarefa no dia",
+              text: "Qualquer tarefa riscada acende o foguinho daquele dia.",
+            },
+            {
+              icon: Flame,
+              color: "#fb923c",
+              title: "Volte todo dia",
+              text: "Cada dia seguido com uma tarefa concluída soma 1 à sua sequência.",
+            },
+            {
+              icon: Zap,
+              color: "#a855f7",
+              title: "Suba de nível",
+              text: "Faísca, Chama, Fogueira, Vulcão e Lenda: o foguinho muda de cor e de efeito.",
+            },
+            {
+              icon: Snowflake,
+              color: "#38bdf8",
+              title: "Esqueceu um dia?",
+              text: "A sequência congela, mas não apaga. Só dois dias seguidos sem tarefa zeram tudo.",
+            },
+          ].map(({ icon: Icon, color, title, text }, index) => (
+            <li key={title} className="flex gap-3">
+              <span
+                className="relative grid size-9 shrink-0 place-items-center rounded-full"
+                style={{ backgroundColor: `${color}26`, color }}
+              >
+                <Icon className="size-4" strokeWidth={2.5} />
+                <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-card text-[9px] font-bold text-muted-foreground">
+                  {index + 1}
+                </span>
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">{title}</span>
+                <span className="block text-xs leading-5 text-muted-foreground">
+                  {text}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* This week: done days are joined by a band. */}
@@ -374,11 +432,6 @@ function MyStreak({ doneDays }: { doneDays: string[] }) {
       </div>
 
       <StreakMonth done={done} today={today} />
-
-      <p className="rounded-2xl bg-muted/30 px-4 py-3 text-xs leading-5 text-muted-foreground">
-        Conclua pelo menos 1 tarefa por dia. Um dia perdido congela a sequência,
-        mas não quebra; dois seguidos, sim.
-      </p>
     </div>
   );
 }

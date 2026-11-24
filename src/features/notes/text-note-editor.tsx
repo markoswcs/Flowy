@@ -166,18 +166,23 @@ async function fileToDataUrl(file: File): Promise<string | null> {
 }
 
 function imageFiles(data: DataTransfer | null) {
-  return Array.from(data?.files ?? []).filter((file) => file.type.startsWith("image/"));
+  return Array.from(data?.files ?? []).filter((file) =>
+    file.type.startsWith("image/"),
+  );
 }
 
 function BarButton({
   icon: Icon,
   label,
+  caption,
   active,
   disabled,
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
+  /** Short name under the icon (bottom bar), so every button says what it does. */
+  caption?: string;
   active?: boolean;
   disabled?: boolean;
   onClick: () => void;
@@ -191,14 +196,23 @@ function BarButton({
       aria-label={label}
       aria-pressed={active}
       title={label}
+      data-no-glow
       className={cn(
-        "grid size-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition-[transform,background-color,color] active:scale-90 disabled:opacity-30 motion-reduce:transform-none",
+        "shrink-0 rounded-xl text-muted-foreground transition-[transform,background-color,color] active:scale-90 disabled:opacity-30 motion-reduce:transform-none",
+        caption
+          ? "flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 sm:w-16 sm:flex-none"
+          : "grid size-11 place-items-center",
         active
-          ? "bg-foreground/10 text-foreground"
+          ? "bg-primary/15 text-foreground"
           : "hover:bg-accent hover:text-foreground",
       )}
     >
-      <Icon className="size-5" />
+      <Icon className="size-5 shrink-0" />
+      {caption ? (
+        <span className="w-full truncate text-center text-[10px] font-medium leading-none">
+          {caption}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -344,7 +358,9 @@ export function TextNoteEditor({ note }: { note: Note }) {
   // Keeps the formatting bar above the on-screen keyboard.
   useEffect(() => trackVisualViewport(), []);
 
-  const insertImageRef = useRef<(file: File) => Promise<unknown>>(async () => {});
+  const insertImageRef = useRef<(file: File) => Promise<unknown>>(
+    async () => {},
+  );
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -354,7 +370,11 @@ export function TextNoteEditor({ note }: { note: Note }) {
       ImageExtension.configure({
         inline: false,
         allowBase64: true,
-        HTMLAttributes: { class: "flowy-editor-image", loading: "lazy", decoding: "async" },
+        HTMLAttributes: {
+          class: "flowy-editor-image",
+          loading: "lazy",
+          decoding: "async",
+        },
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -735,6 +755,7 @@ export function TextNoteEditor({ note }: { note: Note }) {
               <BarButton
                 icon={marks.link ? Unlink : LinkIcon}
                 label={marks.link ? "Remover link" : "Adicionar link"}
+                caption="Link"
                 active={marks.link}
                 onClick={() =>
                   marks.link ? chain()?.unsetLink().run() : setSheet("link")
@@ -747,37 +768,43 @@ export function TextNoteEditor({ note }: { note: Note }) {
 
       {editor ? (
         <div
-          className="flowy-note-toolbar fixed left-1/2 z-40 w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2"
+          className="flowy-note-toolbar fixed left-1/2 z-40 w-[calc(100%-1rem)] max-w-xl -translate-x-1/2"
           role="toolbar"
           aria-label="Formatação"
         >
-          <div className="flowy-glass flowy-glass-strong flex items-center gap-0.5 overflow-x-auto rounded-[1.4rem] border p-1.5 [scrollbar-width:none]">
+          {/* Every button fits on screen (no hidden ones to scroll to). */}
+          <div className="flowy-glass flowy-glass-strong flex items-center justify-between gap-0.5 rounded-[1.4rem] border p-1 sm:justify-center">
             <BarButton
               icon={Type}
               label="Estilos de texto"
+              caption="Texto"
               active={sheet === "text"}
               onClick={() => setSheet(sheet === "text" ? null : "text")}
             />
             <BarButton
               icon={CheckSquare}
               label="Lista de tarefas"
+              caption="Tarefas"
               active={marks.task}
               onClick={() => chain()?.toggleTaskList().run()}
             />
             <BarButton
               icon={List}
               label="Lista"
+              caption="Lista"
               active={marks.bullet}
               onClick={() => chain()?.toggleBulletList().run()}
             />
             <BarButton
               icon={ImagePlus}
               label="Inserir imagem"
+              caption="Imagem"
               onClick={openImagePicker}
             />
             <BarButton
               icon={PencilLine}
               label="Inserir desenho à mão"
+              caption="Desenho"
               onClick={() => setDrawingOpen(true)}
             />
             <BarButton
@@ -788,16 +815,18 @@ export function TextNoteEditor({ note }: { note: Note }) {
                 marks.link ? chain()?.unsetLink().run() : setSheet("link")
               }
             />
-            <span className="mx-1 h-6 w-px shrink-0 bg-border" />
+            <span className="mx-0.5 h-8 w-px shrink-0 bg-border" />
             <BarButton
               icon={Undo2}
               label="Desfazer"
+              caption="Desfazer"
               disabled={!marks.canUndo}
               onClick={() => chain()?.undo().run()}
             />
             <BarButton
               icon={Redo2}
               label="Refazer"
+              caption="Refazer"
               disabled={!marks.canRedo}
               onClick={() => chain()?.redo().run()}
             />
@@ -1043,16 +1072,24 @@ export function TextNoteEditor({ note }: { note: Note }) {
                 data-no-glow
                 className={cn(
                   "grid size-11 place-items-center rounded-full border-2 transition-transform active:scale-90",
-                  noteColor === color.value ? "scale-110 border-foreground" : "border-transparent",
+                  noteColor === color.value
+                    ? "scale-110 border-foreground"
+                    : "border-transparent",
                 )}
                 style={{ backgroundColor: color.value ?? "hsl(var(--muted))" }}
               >
                 {/* The solid hue in the middle, so each choice is easy to tell apart. */}
                 <span
                   className="grid size-6 place-items-center rounded-full"
-                  style={{ backgroundColor: color.value ? color.value.slice(0, 7) : "transparent" }}
+                  style={{
+                    backgroundColor: color.value
+                      ? color.value.slice(0, 7)
+                      : "transparent",
+                  }}
                 >
-                  {noteColor === color.value ? <Check className="size-3.5 text-white drop-shadow" /> : null}
+                  {noteColor === color.value ? (
+                    <Check className="size-3.5 text-white drop-shadow" />
+                  ) : null}
                 </span>
               </button>
             ))}

@@ -1301,7 +1301,7 @@
   /* Sits right above the on-screen keyboard (visual viewport, see
      trackVisualViewport) and above the home indicator otherwise. */
   top: calc(
-    var(--flow-vv-top, 0px) + var(--flow-vv-height, 100dvh) - 3.75rem -
+    var(--flow-vv-top, 0px) + var(--flow-vv-height, 100dvh) - 4.5rem -
       max(0.75rem, env(safe-area-inset-bottom))
   );
 }

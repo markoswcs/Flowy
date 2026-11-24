@@ -1,12 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  BookOpen,
-  CalendarClock,
-  Check,
-  Trophy,
-} from "lucide-react";
+import { BookOpen, CalendarClock, Check, Trophy } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -81,12 +76,12 @@ function StreakChip() {
             style={{ color: frozen ? "#7dd3fc" : level.color }}
           >
             {status === "none"
-              ? "Conclua uma tarefa para começar"
+              ? "Conclua 1 tarefa por dia e acenda o foguinho"
               : frozen
                 ? "Congelada · conclua 1 tarefa hoje"
                 : status === "waiting"
-                  ? `${level.name} · falta 1 tarefa hoje`
-                  : `${level.name} · ver ranking`}
+                  ? "Conclua 1 tarefa hoje para manter"
+                  : "concluindo tarefas · ver ranking"}
           </span>
         </span>
         <Trophy
