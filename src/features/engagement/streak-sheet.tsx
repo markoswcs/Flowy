@@ -2,6 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
   Crown,
   Dumbbell,
   Eye,
@@ -28,7 +31,7 @@ import {
 
 import { streakState } from "./engagement";
 import { FlameArt } from "./flame-art";
-import { LEVELS, hours, levelOf, longestStreak } from "./streak-levels";
+import { hours, levelOf, longestStreak } from "./streak-levels";
 
 const MEDALS = ["#fbbf24", "#cbd5e1", "#f59e0b"];
 
@@ -65,132 +68,312 @@ function Avatar({
   );
 }
 
-/** Your streak: the flame, the last two weeks, the level and the record. */
+const WEEK_SHORT = ["D", "S", "T", "Q", "Q", "S", "S"];
+const MONTHS = [
+  "janeiro",
+  "fevereiro",
+  "março",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
+];
+
+/** A month where streak days join into one orange band, like a habit tracker. */
+function StreakMonth({ done, today }: { done: Set<string>; today: string }) {
+  const [offset, setOffset] = useState(0);
+  const base = new Date(`${today.slice(0, 7)}-01T12:00:00`);
+  base.setMonth(base.getMonth() + offset);
+  const year = base.getFullYear();
+  const month = base.getMonth();
+  const first = new Date(year, month, 1).getDay();
+  const total = new Date(year, month + 1, 0).getDate();
+  const cells = [
+    ...Array.from({ length: first }, () => null),
+    ...Array.from({ length: total }, (_, index) =>
+      localDateKey(new Date(year, month, index + 1)),
+    ),
+  ];
+  const doneInMonth = cells.filter((day) => day && done.has(day)).length;
+
+  return (
+    <section className="rounded-[1.5rem] border border-border/60 bg-card/50 p-4">
+      <div className="flex items-center justify-between">
+        <p className="font-bold capitalize">
+          {MONTHS[month]}{" "}
+          <span className="font-medium text-muted-foreground">{year}</span>
+        </p>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            data-no-glow
+            onClick={() => setOffset(offset - 1)}
+            disabled={offset <= -3}
+            aria-label="Mês anterior"
+            className="grid size-8 place-items-center rounded-full hover:bg-muted disabled:opacity-30"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <button
+            type="button"
+            data-no-glow
+            onClick={() => setOffset(offset + 1)}
+            disabled={offset >= 0}
+            aria-label="Próximo mês"
+            className="grid size-8 place-items-center rounded-full hover:bg-muted disabled:opacity-30"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+      </div>
+      <p className="mt-0.5 text-xs text-muted-foreground">
+        <b className="text-orange-400">{doneInMonth}</b>{" "}
+        {doneInMonth === 1 ? "dia" : "dias"} com tarefa concluída
+      </p>
+      <div className="mt-3 grid grid-cols-7 gap-y-1.5 text-center">
+        {WEEK_SHORT.map((letter, index) => (
+          <span
+            key={index}
+            className="pb-1 text-[11px] font-bold text-muted-foreground"
+          >
+            {letter}
+          </span>
+        ))}
+        {cells.map((day, index) => {
+          if (!day) return <span key={`pad-${index}`} />;
+          const lit = done.has(day);
+          const column = index % 7;
+          // The band joins a day to its neighbours in the same row.
+          const left = lit && column > 0 && done.has(addDays(day, -1));
+          const right = lit && column < 6 && done.has(addDays(day, 1));
+          return (
+            <span
+              key={day}
+              className="relative flex h-9 items-center justify-center"
+            >
+              {lit ? (
+                <span
+                  className={cn(
+                    "absolute inset-y-0.5 bg-gradient-to-b from-orange-400 to-orange-600",
+                    left ? "left-0" : "left-1 rounded-l-full",
+                    right ? "right-0" : "right-1 rounded-r-full",
+                  )}
+                  aria-hidden="true"
+                />
+              ) : null}
+              <span
+                className={cn(
+                  "relative grid size-8 place-items-center rounded-full text-xs font-bold tabular-nums",
+                  lit
+                    ? "text-white"
+                    : day > today
+                      ? "text-muted-foreground/40"
+                      : "text-muted-foreground",
+                  day === today && !lit && "ring-2 ring-orange-400/70",
+                  day === today && lit && "ring-2 ring-white/80",
+                )}
+              >
+                {Number(day.slice(8))}
+              </span>
+            </span>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/** Your streak, in the style of a language-learning app: the big number, the week, a goal and the month. */
 function MyStreak({ doneDays }: { doneDays: string[] }) {
   const today = localDateKey();
   const { count, status } = streakState(doneDays, today);
   const level = levelOf(count);
   const best = Math.max(longestStreak(doneDays), count);
   const done = new Set(doneDays);
-  const last = Array.from({ length: 14 }, (_, index) =>
-    addDays(today, index - 13),
-  );
-  const month = doneDays.filter((day) => day > addDays(today, -30)).length;
+  // This week, Sunday first.
+  const start = addDays(today, -new Date(`${today}T12:00:00`).getDay());
+  const week = Array.from({ length: 7 }, (_, index) => addDays(start, index));
+  const goal = level.next?.min ?? Math.ceil((count + 1) / 30) * 30 + 30;
+  const goalStart = level.next ? level.min : goal - 30;
+  const goalProgress = Math.min(1, (count - goalStart) / (goal - goalStart));
+  const frozen = status === "frozen";
 
   return (
-    <div className="space-y-5">
-      <div
-        className="relative overflow-hidden rounded-[1.75rem] border border-white/10 p-6 text-center"
+    <div className="space-y-4">
+      {/* The big number and the flame, on a warm band. */}
+      <section
+        className="relative overflow-hidden rounded-[1.75rem] p-5 text-white"
         style={{
-          background: `radial-gradient(120% 90% at 50% 0%, ${level.color}40, transparent 70%)`,
+          background: frozen
+            ? "linear-gradient(135deg, #0ea5e9, #1e3a8a)"
+            : `linear-gradient(135deg, ${level.color}, #7c2d12)`,
         }}
       >
-        <span className="mx-auto grid place-items-center">
-          <FlameArt days={count} size={112} frozen={status === "frozen"} />
-        </span>
-        <p
-          key={count}
-          className="mt-3 font-brand text-6xl font-extrabold leading-none tabular-nums animate-in zoom-in-50 fade-in duration-500"
-        >
-          {count}
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {count === 1 ? "dia seguido" : "dias seguidos"}
-        </p>
-        <p
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
-          style={{ backgroundColor: `${level.color}26`, color: level.color }}
-        >
-          <Zap className="size-3.5" /> {level.name}
-        </p>
-        {level.next ? (
-          <div className="mx-auto mt-4 max-w-xs">
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full transition-[width] duration-700"
-                style={{
-                  width: `${Math.max(6, level.progress * 100)}%`,
-                  background: `linear-gradient(90deg, ${level.color}, ${level.next.color})`,
-                }}
-              />
-            </div>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Faltam <b className="text-foreground">{level.toNext}</b>{" "}
-              {level.toNext === 1 ? "dia" : "dias"} para{" "}
-              <b style={{ color: level.next.color }}>{level.next.name}</b>
+        <span
+          aria-hidden="true"
+          className="absolute -right-10 -top-10 size-44 rounded-full bg-white/10 blur-2xl"
+        />
+        <div className="relative flex items-center justify-between gap-3">
+          <div>
+            <p
+              key={count}
+              className="font-brand text-7xl font-extrabold leading-none tabular-nums drop-shadow-md animate-in zoom-in-50 fade-in duration-500"
+            >
+              {count}
+            </p>
+            <p className="mt-1 text-lg font-bold">
+              {count === 1 ? "dia seguido" : "dias seguidos"}
+            </p>
+            <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-black/20 px-2.5 py-0.5 text-xs font-bold">
+              <Zap className="size-3.5" /> {level.name}
             </p>
           </div>
-        ) : (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Nível máximo. Você é uma lenda.
-          </p>
-        )}
-        <p className="mt-4 text-sm">
+          <FlameArt
+            days={count}
+            size={120}
+            frozen={frozen}
+            className="flowy-flame-pop"
+          />
+        </div>
+        <p className="relative mt-4 text-sm font-medium text-white/90">
           {status === "lit"
-            ? "Hoje já está garantido. Volte amanhã!"
+            ? "Você está pegando fogo! Hoje já está garantido."
             : status === "waiting"
-              ? "Conclua 1 tarefa hoje para a chama crescer."
-              : status === "frozen"
-                ? "Ontem passou em branco. Conclua 1 tarefa hoje e a sequência volta."
-                : "Conclua uma tarefa para acender a primeira chama."}
+              ? "Conclua 1 tarefa hoje para não perder a sequência!"
+              : frozen
+                ? "Sua sequência está congelada. Conclua 1 tarefa hoje para ela voltar."
+                : "Conclua uma tarefa e acenda sua primeira chama!"}
         </p>
-      </div>
+      </section>
 
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Últimas 2 semanas
-        </p>
-        <div className="grid grid-cols-7 gap-1.5">
-          {last.map((day) => {
+      {/* This week: done days are joined by a band. */}
+      <section className="rounded-[1.5rem] border border-border/60 bg-card/50 p-4">
+        <div className="grid grid-cols-7 text-center">
+          {week.map((day, index) => {
             const lit = done.has(day);
+            const left = lit && index > 0 && done.has(week[index - 1]!);
+            const right = lit && index < 6 && done.has(week[index + 1]!);
             const isToday = day === today;
             return (
-              <span
-                key={day}
-                title={day}
-                className={cn(
-                  "flex aspect-square flex-col items-center justify-center rounded-xl text-[10px] font-semibold",
-                  lit ? "text-white" : "bg-muted/40 text-muted-foreground",
-                  isToday && "ring-2 ring-primary/60",
-                )}
-                style={
-                  lit
-                    ? {
-                        background: "linear-gradient(160deg, #fb923c, #ef4444)",
-                      }
-                    : undefined
-                }
-              >
-                {lit ? <Flame className="size-4" /> : Number(day.slice(8))}
-              </span>
+              <div key={day} className="flex flex-col items-center gap-2">
+                <span
+                  className={cn(
+                    "text-xs font-bold",
+                    isToday ? "text-orange-400" : "text-muted-foreground",
+                  )}
+                >
+                  {WEEK_SHORT[index]}
+                </span>
+                <span className="relative flex h-10 w-full items-center justify-center">
+                  {lit ? (
+                    <span
+                      className={cn(
+                        "absolute inset-y-1 bg-orange-500/30",
+                        left ? "left-0" : "left-1/2",
+                        right ? "right-0" : "right-1/2",
+                      )}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  <span
+                    className={cn(
+                      "relative grid size-10 place-items-center rounded-full",
+                      lit
+                        ? "bg-gradient-to-b from-orange-400 to-orange-600 text-white shadow-[0_4px_0] shadow-orange-800"
+                        : "bg-muted/50",
+                      isToday && !lit && "ring-2 ring-orange-400/70",
+                    )}
+                  >
+                    {lit ? (
+                      <Check className="size-5" strokeWidth={3.5} />
+                    ) : day > today ? null : (
+                      <span className="size-2 rounded-full bg-muted-foreground/40" />
+                    )}
+                  </span>
+                </span>
+              </div>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
+      {/* A goal to reach: the next level. */}
+      <section className="rounded-[1.5rem] border border-border/60 bg-card/50 p-4">
+        <div className="flex items-center justify-between">
+          <p className="font-bold">Meta de sequência</p>
+          <p
+            className="text-sm font-bold"
+            style={{ color: level.next?.color ?? level.color }}
+          >
+            {count}/{goal} dias
+          </p>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <FlameArt days={goalStart} size={28} />
+          <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-muted/60">
+            <div
+              className="h-full rounded-full transition-[width] duration-700"
+              style={{
+                width: `${Math.max(8, goalProgress * 100)}%`,
+                background: `linear-gradient(90deg, ${level.color}, ${level.next?.color ?? level.color})`,
+              }}
+            />
+            <span
+              className="absolute inset-x-2 top-1 h-1 rounded-full bg-white/25"
+              aria-hidden="true"
+            />
+          </div>
+          <FlameArt days={goal} size={34} />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {level.next ? (
+            <>
+              Mais <b className="text-foreground">{level.toNext}</b>{" "}
+              {level.toNext === 1 ? "dia" : "dias"} e seu foguinho vira{" "}
+              <b style={{ color: level.next.color }}>{level.next.name}</b>.
+            </>
+          ) : (
+            "Você já é uma lenda. Cada 30 dias a mais é uma nova meta."
+          )}
+        </p>
+      </section>
+
+      <div className="grid grid-cols-2 gap-2">
         {[
-          { label: "Recorde", value: best, icon: Trophy, color: "#fbbf24" },
-          { label: "Dias no mês", value: month, icon: Flame, color: "#fb923c" },
           {
-            label: "Nível",
-            value: LEVELS.findIndex((item) => item.name === level.name),
-            icon: Zap,
-            color: level.color,
+            label: "Recorde",
+            value: `${best} ${best === 1 ? "dia" : "dias"}`,
+            icon: Trophy,
+            color: "#fbbf24",
           },
+          { label: "Nível", value: level.name, icon: Zap, color: level.color },
         ].map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
-            className="rounded-2xl border border-border/60 bg-card/50 p-3"
+            className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/50 p-3"
           >
-            <Icon className="mx-auto size-4" style={{ color }} />
-            <p className="mt-1 font-brand text-2xl font-bold tabular-nums">
-              {value}
-            </p>
-            <p className="text-[11px] text-muted-foreground">{label}</p>
+            <span
+              className="grid size-10 place-items-center rounded-xl"
+              style={{ backgroundColor: `${color}26`, color }}
+            >
+              <Icon className="size-5" />
+            </span>
+            <span>
+              <span className="block font-bold">{value}</span>
+              <span className="block text-xs text-muted-foreground">
+                {label}
+              </span>
+            </span>
           </div>
         ))}
       </div>
+
+      <StreakMonth done={done} today={today} />
 
       <p className="rounded-2xl bg-muted/30 px-4 py-3 text-xs leading-5 text-muted-foreground">
         Conclua pelo menos 1 tarefa por dia. Um dia perdido congela a sequência,
