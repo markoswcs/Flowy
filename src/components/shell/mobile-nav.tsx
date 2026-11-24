@@ -59,6 +59,9 @@ function NavItem({
       onPointerLeave={cancel}
       onPointerCancel={cancel}
       onContextMenu={(event) => event.preventDefault()}
+      // iOS lifts a held link to drag it (and freezes while doing so).
+      draggable={false}
+      onDragStart={(event) => event.preventDefault()}
       onClick={(event) => {
         // A hold opens the editor; it must not also open the page.
         if (held.current) {
@@ -66,7 +69,7 @@ function NavItem({
           held.current = false;
         }
       }}
-      className="relative grid h-full select-none place-items-center rounded-2xl transition-transform [-webkit-touch-callout:none] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+      className="relative grid h-full touch-manipulation select-none place-items-center rounded-2xl transition-transform [-webkit-touch-callout:none] [-webkit-user-drag:none] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
     >
       <span
         className={cn(
@@ -84,6 +87,15 @@ function NavItem({
 /** The list that opens when a shortcut is held: pick what goes in that place. */
 function DockPicker({ slot, keys, onClose }: { slot: number; keys: string[]; onClose: () => void }) {
   const save = useSaveDock();
+  // The finger that held the button lifts right after the list opens; that
+  // lift must not count as a tap on the backdrop (it closed the list at once).
+  const openedAt = useRef(0);
+  useEffect(() => {
+    openedAt.current = performance.now();
+  }, []);
+  const closeFromBackdrop = () => {
+    if (performance.now() - openedAt.current > 450) onClose();
+  };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -102,7 +114,7 @@ function DockPicker({ slot, keys, onClose }: { slot: number; keys: string[]; onC
 
   return (
     <>
-      <button type="button" aria-label="Fechar" onClick={onClose} className="fixed inset-0 z-30 animate-in fade-in bg-black/40 md:hidden" />
+      <button type="button" aria-label="Fechar" onClick={closeFromBackdrop} className="fixed inset-0 z-30 animate-in fade-in bg-black/40 md:hidden" />
       <div
         role="dialog"
         aria-label="Trocar atalho"
