@@ -5,9 +5,7 @@ import {
   BookOpen,
   CalendarClock,
   Check,
-  Flame,
   Moon,
-  Snowflake,
   Trophy,
 } from "lucide-react";
 import { useState } from "react";
@@ -23,6 +21,7 @@ import { listCompletionDays } from "@/services/tasks";
 import { ClassNowCard } from "@/features/classes/class-now-card";
 
 import { OPEN_DUMP_EVENT } from "./brain-dump";
+import { FlameArt } from "./flame-art";
 import { StreakSheet } from "./streak-sheet";
 import { levelOf } from "./streak-levels";
 import {
@@ -68,29 +67,7 @@ function StreakChip() {
         }}
         aria-label={`${count} ${count === 1 ? "dia seguido" : "dias seguidos"}. Ver sequência e ranking`}
       >
-        <span
-          className={cn(
-            "grid size-8 shrink-0 place-items-center rounded-full",
-            frozen ? "bg-sky-400/15 text-sky-300" : "",
-          )}
-          style={
-            frozen
-              ? undefined
-              : { backgroundColor: `${level.color}30`, color: level.color }
-          }
-        >
-          {frozen ? (
-            <Snowflake className="flowy-frost size-4" aria-hidden="true" />
-          ) : (
-            <Flame
-              className={cn(
-                "size-4",
-                status === "lit" ? "flowy-flame" : "flowy-ember",
-              )}
-              aria-hidden="true"
-            />
-          )}
-        </span>
+        <FlameArt days={count} size={32} frozen={frozen} />
         <span className="min-w-0 leading-tight">
           <span
             key={count}

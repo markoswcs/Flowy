@@ -2150,3 +2150,61 @@ html.reduce-motion
   ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after {
   animation: none !important;
 }
+
+/* ---------- Streak flame (FlameArt): transform and opacity only ---------- */
+.flowy-flame-dance {
+  transform-origin: 50% 92%;
+  animation: flowy-flame-dance 1.8s ease-in-out infinite;
+}
+.flowy-flame-core {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: flowy-flame-core 1.2s ease-in-out infinite;
+}
+.flowy-flame-glow {
+  animation: flowy-flame-glow 2.2s ease-in-out infinite;
+}
+.flowy-flame-ember {
+  opacity: 0;
+  animation: flowy-flame-ember 2.2s ease-out infinite;
+}
+.flowy-flame-sparkle {
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: flowy-flame-sparkle 2s ease-in-out infinite;
+}
+.flowy-flame-halo {
+  animation: flowy-flame-halo 6s linear infinite;
+  border-style: dashed;
+}
+@keyframes flowy-flame-dance {
+  0%, 100% { transform: scale(1, 1) rotate(-1deg); }
+  50% { transform: scale(1.04, 0.97) rotate(1.5deg); }
+}
+@keyframes flowy-flame-core {
+  0%, 100% { transform: scaleY(1); opacity: 0.95; }
+  50% { transform: scaleY(1.12); opacity: 1; }
+}
+@keyframes flowy-flame-glow {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+@keyframes flowy-flame-ember {
+  0% { opacity: 0; transform: translateY(0) scale(1); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-160%) translateX(30%) scale(0.4); }
+}
+@keyframes flowy-flame-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+@keyframes flowy-flame-halo {
+  to { transform: rotate(360deg); }
+}
+html.reduce-motion :is(.flowy-flame-dance, .flowy-flame-core, .flowy-flame-glow, .flowy-flame-ember, .flowy-flame-sparkle, .flowy-flame-halo) {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.flowy-flame-dance, .flowy-flame-core, .flowy-flame-glow, .flowy-flame-ember, .flowy-flame-sparkle, .flowy-flame-halo) {
+    animation: none !important;
+  }
+}

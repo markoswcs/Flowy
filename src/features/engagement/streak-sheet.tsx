@@ -8,7 +8,6 @@ import {
   EyeOff,
   Flame,
   Lock,
-  Snowflake,
   Trophy,
   X,
   Zap,
@@ -22,11 +21,13 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import {
   getLeaderboard,
+  setCheer,
   setRankingVisible,
   type RankEntry,
 } from "@/services/ranking";
 
 import { streakState } from "./engagement";
+import { FlameArt } from "./flame-art";
 import { LEVELS, hours, levelOf, longestStreak } from "./streak-levels";
 
 const MEDALS = ["#fbbf24", "#cbd5e1", "#f59e0b"];
@@ -84,31 +85,8 @@ function MyStreak({ doneDays }: { doneDays: string[] }) {
           background: `radial-gradient(120% 90% at 50% 0%, ${level.color}40, transparent 70%)`,
         }}
       >
-        <span
-          className={cn(
-            "mx-auto grid size-24 place-items-center rounded-full",
-            status === "frozen" ? "bg-sky-400/15 text-sky-300" : "",
-          )}
-          style={
-            status === "frozen"
-              ? undefined
-              : {
-                  backgroundColor: `${level.color}26`,
-                  color: level.color,
-                  boxShadow: `0 0 60px ${level.color}55`,
-                }
-          }
-        >
-          {status === "frozen" ? (
-            <Snowflake className="flowy-frost size-12" />
-          ) : (
-            <Flame
-              className={cn(
-                "size-12",
-                status === "lit" ? "flowy-flame" : "flowy-ember",
-              )}
-            />
-          )}
+        <span className="mx-auto grid place-items-center">
+          <FlameArt days={count} size={112} frozen={status === "frozen"} />
         </span>
         <p
           key={count}
@@ -222,7 +200,230 @@ function MyStreak({ doneDays }: { doneDays: string[] }) {
   );
 }
 
-/** Everyone's flames: a podium for the top three and the rest in a list. */
+/** "ativo hoje", "ativo ontem", "ativo há 3 dias". */
+function lastSeen(day: string | null | undefined) {
+  if (!day) return null;
+  const today = localDateKey();
+  if (day === today) return "ativo hoje";
+  if (day === addDays(today, -1)) return "ativo ontem";
+  const diff = Math.round(
+    (Date.parse(`${today}T12:00:00`) - Date.parse(`${day}T12:00:00`)) /
+      86_400_000,
+  );
+  return `ativo há ${diff} dias`;
+}
+
+/** An avatar inside a ring in the colour of the person's level, like a story. */
+function StoryRing({ entry, size }: { entry: RankEntry; size: number }) {
+  const level = levelOf(entry.streak);
+  return (
+    <span
+      className="relative inline-grid shrink-0 place-items-center rounded-full p-[2.5px]"
+      style={{
+        background: entry.streak
+          ? `conic-gradient(${level.color}, ${level.next?.color ?? "#22d3ee"}, ${level.color})`
+          : "hsl(var(--muted))",
+      }}
+    >
+      <span className="rounded-full bg-card p-[2px]">
+        <Avatar entry={entry} size={size} />
+      </span>
+      <span className="absolute -bottom-1 -right-1 rounded-full bg-card p-0.5">
+        <FlameArt days={entry.streak} size={Math.round(size * 0.42)} />
+      </span>
+    </span>
+  );
+}
+
+/** One person in the feed: who, the flame, the week, training and "Dar força". */
+function PersonCard({
+  entry,
+  place,
+  highlight,
+}: {
+  entry: RankEntry;
+  place: number | null;
+  highlight: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const level = levelOf(entry.streak);
+  const cheer = useMutation({
+    mutationFn: (on: boolean) => setCheer(entry.user_id, on),
+    onMutate: (on) => {
+      queryClient.setQueryData<RankEntry[]>(["leaderboard"], (list) =>
+        list?.map((item) =>
+          item.user_id === entry.user_id
+            ? {
+                ...item,
+                cheered_today: on,
+                cheers: (item.cheers ?? 0) + (on ? 1 : -1),
+              }
+            : item,
+        ),
+      );
+      if (on) navigator.vibrate?.(12);
+    },
+    onError: () => {
+      toast.error("Não foi possível mandar agora.");
+      void queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    },
+  });
+  const seen = lastSeen(entry.last_active);
+  const social = entry.cheers !== undefined;
+
+  return (
+    <article
+      id={`rank-${entry.user_id}`}
+      className={cn(
+        "scroll-mt-4 overflow-hidden rounded-[1.5rem] border bg-card/60 transition-shadow duration-500",
+        entry.is_me ? "border-primary/40" : "border-border/60",
+        highlight && "shadow-[0_0_0_2px] shadow-primary",
+      )}
+    >
+      <header className="flex items-center gap-3 p-3.5 pb-2">
+        <StoryRing entry={entry} size={38} />
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5">
+            <span className="truncate font-semibold">
+              {entry.is_me ? "Você" : entry.name}
+            </span>
+            <span
+              className="shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold"
+              style={{
+                backgroundColor: `${level.color}26`,
+                color: level.color,
+              }}
+            >
+              {level.name}
+            </span>
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {seen ?? (entry.visible ? "no ranking" : "perfil privado")}
+          </p>
+        </div>
+        {place ? (
+          <span
+            className="grid size-9 shrink-0 place-items-center rounded-full font-brand text-sm font-extrabold"
+            style={
+              place <= 3
+                ? { background: MEDALS[place - 1], color: "#1c1917" }
+                : { background: "hsl(var(--muted))" }
+            }
+          >
+            {place === 1 ? <Crown className="size-4" /> : `${place}º`}
+          </span>
+        ) : (
+          <EyeOff className="size-4 text-muted-foreground" />
+        )}
+      </header>
+
+      <div
+        className="flex items-center gap-4 px-3.5 py-2"
+        style={{
+          background: `linear-gradient(90deg, ${level.color}1f, transparent 70%)`,
+        }}
+      >
+        <FlameArt days={entry.streak} size={56} />
+        <div className="min-w-0">
+          <p className="font-brand text-3xl font-extrabold leading-none tabular-nums">
+            {entry.streak}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {entry.streak === 0
+              ? "sem sequência agora"
+              : entry.streak === 1
+                ? "dia seguido"
+                : "dias seguidos"}{" "}
+            · {entry.active_days} ativos no mês
+          </p>
+        </div>
+      </div>
+
+      {entry.week?.length ? (
+        <div className="grid grid-cols-7 gap-1 px-3.5 pt-2.5">
+          {entry.week.map((lit, index) => (
+            <span key={index} className="flex flex-col items-center gap-1">
+              <span
+                className={cn(
+                  "h-1.5 w-full rounded-full",
+                  lit ? "" : "bg-muted/60",
+                )}
+                style={
+                  lit
+                    ? {
+                        background: `linear-gradient(90deg, ${level.color}, ${level.next?.color ?? level.color})`,
+                      }
+                    : undefined
+                }
+              />
+              <span className="text-[9px] text-muted-foreground">
+                {WEEK_LETTERS[(new Date().getDay() + index + 1) % 7]}
+              </span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {entry.trains ? (
+        <p className="mx-3.5 mt-3 flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+          <Dumbbell className="size-4 shrink-0" />
+          {entry.workouts
+            ? `${entry.workouts} ${entry.workouts === 1 ? "treino" : "treinos"} no mês · ${hours(entry.workout_minutes)} treinando`
+            : "Começou a treinar no Flowy"}
+        </p>
+      ) : null}
+
+      <footer className="mt-3 flex items-center gap-2 border-t border-border/40 px-3.5 py-2.5">
+        {social ? (
+          entry.is_me ? (
+            <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Flame className="size-4 text-orange-400" />
+              {entry.cheers
+                ? `${entry.cheers} ${entry.cheers === 1 ? "pessoa te deu" : "forças recebidas"} força esta semana`
+                : "Ninguém te deu força ainda esta semana"}
+            </p>
+          ) : (
+            <>
+              <button
+                type="button"
+                data-no-glow
+                disabled={cheer.isPending}
+                onClick={() => cheer.mutate(!entry.cheered_today)}
+                className={cn(
+                  "inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold transition-all active:scale-90",
+                  entry.cheered_today
+                    ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white"
+                    : "bg-muted/50 text-foreground hover:bg-muted",
+                )}
+              >
+                <Flame
+                  className={cn(
+                    "size-4",
+                    entry.cheered_today ? "flowy-flame" : "text-orange-400",
+                  )}
+                />
+                {entry.cheered_today ? "Força enviada" : "Dar força"}
+              </button>
+              <span className="text-xs text-muted-foreground">
+                {entry.cheers
+                  ? `${entry.cheers} ${entry.cheers === 1 ? "força" : "forças"} esta semana`
+                  : "Seja o primeiro a dar força"}
+              </span>
+            </>
+          )
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            {entry.active_days} dias ativos no mês
+          </span>
+        )}
+      </footer>
+    </article>
+  );
+}
+
+const WEEK_LETTERS = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+/** The ranking as a little social network: stories on top, everyone's card below. */
 function Ranking() {
   const queryClient = useQueryClient();
   const board = useQuery({
@@ -230,6 +431,8 @@ function Ranking() {
     queryFn: getLeaderboard,
     staleTime: 60_000,
   });
+  const [focus, setFocus] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "trains">("all");
   const privacy = useMutation({
     mutationFn: setRankingVisible,
     onSuccess: () =>
@@ -239,10 +442,24 @@ function Ranking() {
   const entries = board.data ?? [];
   const me = entries.find((entry) => entry.is_me);
   const listed = entries.filter((entry) => entry.visible);
-  const podium = listed.slice(0, 3);
-  const rest = listed.slice(3);
-  const myPlace =
-    me && me.visible ? listed.findIndex((entry) => entry.is_me) + 1 : null;
+  const shown = listed.filter((entry) => filter === "all" || entry.trains);
+  const placeOf = (entry: RankEntry) =>
+    entry.visible
+      ? listed.findIndex((item) => item.user_id === entry.user_id) + 1
+      : null;
+
+  function openStory(entry: RankEntry) {
+    setFocus(entry.user_id);
+    if (filter === "trains" && !entry.trains) setFilter("all");
+    window.setTimeout(
+      () =>
+        document
+          .getElementById(`rank-${entry.user_id}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50,
+    );
+    window.setTimeout(() => setFocus(null), 1800);
+  }
 
   if (board.isLoading)
     return <div className="h-64 animate-pulse rounded-[1.75rem] bg-muted/30" />;
@@ -254,172 +471,109 @@ function Ranking() {
     );
 
   return (
-    <div className="space-y-5">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={me?.visible ?? true}
-        disabled={privacy.isPending || !me}
-        onClick={() => privacy.mutate(!(me?.visible ?? true))}
-        className="flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 text-left"
-      >
-        <span
-          className={cn(
-            "grid size-10 shrink-0 place-items-center rounded-xl",
-            me?.visible
-              ? "bg-emerald-500/15 text-emerald-400"
-              : "bg-muted text-muted-foreground",
-          )}
+    <div className="space-y-4">
+      {/* Stories: everyone's flame at a glance; a tap jumps to their card. */}
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+        {[...(me ? [me] : []), ...listed.filter((entry) => !entry.is_me)].map(
+          (entry) => (
+            <button
+              key={entry.user_id}
+              type="button"
+              data-no-glow
+              onClick={() => openStory(entry)}
+              className="flex w-16 shrink-0 flex-col items-center gap-1"
+            >
+              <StoryRing entry={entry} size={52} />
+              <span
+                className={cn(
+                  "w-full truncate text-center text-[11px]",
+                  entry.is_me
+                    ? "font-semibold flowy-ink"
+                    : "text-muted-foreground",
+                )}
+              >
+                {entry.is_me ? "Você" : entry.name.split(" ")[0]}
+              </span>
+            </button>
+          ),
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div
+          className="flex rounded-full bg-muted/40 p-0.5 text-xs font-semibold"
+          role="group"
+          aria-label="Filtrar"
+        >
+          {(
+            [
+              ["all", "Todos"],
+              ["trains", "Quem treina"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              data-no-glow
+              aria-pressed={filter === value}
+              onClick={() => setFilter(value)}
+              className={cn(
+                "rounded-full px-3 py-1.5 transition-colors",
+                filter === value
+                  ? "bg-background text-foreground shadow"
+                  : "text-muted-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          role="switch"
+          data-no-glow
+          aria-checked={me?.visible ?? true}
+          disabled={privacy.isPending || !me}
+          onClick={() => privacy.mutate(!(me?.visible ?? true))}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-xs font-semibold"
         >
           {me?.visible ? (
-            <Eye className="size-5" />
+            <Eye className="size-3.5 text-emerald-400" />
           ) : (
-            <Lock className="size-5" />
+            <Lock className="size-3.5" />
           )}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold">
-            {me?.visible ? "Você aparece no ranking" : "Perfil privado"}
-          </span>
-          <span className="block text-xs text-muted-foreground">
-            {me?.visible
-              ? "Só seu nome, foto e números. Toque para ficar privado."
-              : "Ninguém vê você aqui. Toque para participar."}
-          </span>
-        </span>
-        <span
-          className={cn(
-            "relative h-6 w-10 shrink-0 rounded-full transition-colors",
-            me?.visible ? "bg-emerald-500" : "bg-muted",
-          )}
-        >
-          <span
-            className={cn(
-              "absolute top-0.5 size-5 rounded-full bg-white shadow transition-all",
-              me?.visible ? "left-[1.125rem]" : "left-0.5",
-            )}
-          />
-        </span>
-      </button>
+          {me?.visible ? "Público" : "Privado"}
+        </button>
+      </div>
 
-      {podium.length ? (
-        <div className="flex items-end justify-center gap-2 pt-4">
-          {[podium[1], podium[0], podium[2]].map((entry, slot) => {
-            if (!entry) return <div key={slot} className="flex-1" />;
-            const place = slot === 1 ? 1 : slot === 0 ? 2 : 3;
-            const height = place === 1 ? "h-28" : place === 2 ? "h-20" : "h-14";
-            return (
-              <div
-                key={entry.user_id}
-                className="flex min-w-0 flex-1 flex-col items-center animate-in fade-in slide-in-from-bottom-4"
-                style={{ animationDelay: `${place * 120}ms` }}
-              >
-                {place === 1 ? (
-                  <Crown className="mb-1 size-6 animate-bounce text-amber-300" />
-                ) : null}
-                <div
-                  className="rounded-full p-0.5"
-                  style={{ background: MEDALS[place - 1] }}
-                >
-                  <Avatar entry={entry} size={place === 1 ? 64 : 52} />
-                </div>
-                <p
-                  className={cn(
-                    "mt-1.5 w-full truncate text-center text-xs font-semibold",
-                    entry.is_me && "flowy-ink",
-                  )}
-                >
-                  {entry.is_me ? "Você" : entry.name.split(" ")[0]}
-                </p>
-                <p className="inline-flex items-center gap-0.5 text-xs font-bold text-orange-400">
-                  <Flame className="size-3.5" /> {entry.streak}
-                </p>
-                <div
-                  className={cn(
-                    "mt-1.5 grid w-full place-items-start justify-center rounded-t-2xl pt-2 font-brand text-2xl font-extrabold text-black/70",
-                    height,
-                  )}
-                  style={{
-                    background: `linear-gradient(180deg, ${MEDALS[place - 1]}, ${MEDALS[place - 1]}88)`,
-                  }}
-                >
-                  {place}
-                </div>
-              </div>
-            );
-          })}
+      {me && !me.visible ? (
+        <p className="rounded-2xl bg-muted/30 px-3.5 py-2.5 text-xs text-muted-foreground">
+          Seu perfil está privado: ninguém vê você aqui. Toque em “Privado” para
+          participar.
+        </p>
+      ) : null}
+
+      {shown.length ? (
+        <div className="space-y-3">
+          {shown.map((entry) => (
+            <PersonCard
+              key={entry.user_id}
+              entry={entry}
+              place={placeOf(entry)}
+              highlight={focus === entry.user_id}
+            />
+          ))}
         </div>
       ) : (
         <p className="py-8 text-center text-sm text-muted-foreground">
-          Ninguém no ranking ainda. Seja o primeiro!
+          Ninguém aqui ainda. Seja o primeiro!
         </p>
       )}
-
-      {rest.length ? (
-        <ol className="space-y-1.5">
-          {rest.map((entry, index) => (
-            <RankRow key={entry.user_id} entry={entry} place={index + 4} />
-          ))}
-        </ol>
-      ) : null}
 
       {me && !me.visible ? (
-        <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Só você vê
-          </p>
-          <RankRow entry={me} place={null} />
-        </div>
-      ) : myPlace && myPlace > 3 ? (
-        <p className="text-center text-xs text-muted-foreground">
-          Você está em {myPlace}º lugar. Bora subir!
-        </p>
+        <PersonCard entry={me} place={null} highlight={focus === me.user_id} />
       ) : null}
     </div>
-  );
-}
-
-function RankRow({ entry, place }: { entry: RankEntry; place: number | null }) {
-  const level = levelOf(entry.streak);
-  return (
-    <li
-      className={cn(
-        "flex list-none items-center gap-3 rounded-2xl border p-2.5",
-        entry.is_me
-          ? "border-primary/50 bg-primary/[0.08]"
-          : "border-border/50 bg-card/40",
-      )}
-    >
-      <span className="w-6 shrink-0 text-center font-brand text-sm font-bold text-muted-foreground">
-        {place ?? <EyeOff className="mx-auto size-4" />}
-      </span>
-      <Avatar entry={entry} size={36} />
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5">
-          <span className="truncate text-sm font-semibold">
-            {entry.is_me ? "Você" : entry.name}
-          </span>
-          <span
-            className="shrink-0 rounded-full px-1.5 py-px text-[9px] font-bold"
-            style={{ backgroundColor: `${level.color}26`, color: level.color }}
-          >
-            {level.name}
-          </span>
-        </span>
-        <span className="mt-0.5 flex flex-wrap gap-x-2.5 text-[11px] text-muted-foreground">
-          <span>{entry.active_days} dias ativos</span>
-          {entry.trains ? (
-            <span className="inline-flex items-center gap-1 text-emerald-400">
-              <Dumbbell className="size-3" /> {entry.workouts} treinos ·{" "}
-              {hours(entry.workout_minutes)}
-            </span>
-          ) : null}
-        </span>
-      </span>
-      <span className="inline-flex shrink-0 items-center gap-0.5 font-brand text-lg font-extrabold text-orange-400">
-        <Flame className="size-4" /> {entry.streak}
-      </span>
-    </li>
   );
 }
 
