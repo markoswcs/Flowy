@@ -26,23 +26,60 @@ const EVENING_PROMPT: PushPayload = {
   tag: "evening-prompt",
 };
 
-/** 19h: the streak is at risk. */
-function streakNudge(streak: number): PushPayload {
-  return {
-    title: "Não deixe seu foguinho apagar",
-    body: `Você está com ${streak} ${streak === 1 ? "dia seguido" : "dias seguidos"}. Conclua 1 tarefa hoje para manter a sequência.`,
-    url: "/app",
-    tag: "streak-nudge",
-  };
-}
+const pick = <T>(list: T[]) => list[Math.floor(Math.random() * list.length)]!;
+const days = (count: number) => `${count} ${count === 1 ? "dia" : "dias"}`;
 
-/** 12h, after 3 quiet days: an invitation to come back and plan. */
-const COMEBACK: PushPayload = {
-  title: "Bora organizar o dia?",
-  body: "Abra o Flowy, veja o que tem para hoje e anote suas tarefas. Leva menos de um minuto.",
-  url: "/app",
-  tag: "comeback",
-};
+/** For someone with a streak: keep the flame lit. */
+const STREAK_LINES: ((
+  streak: number,
+) => Pick<PushPayload, "title" | "body">)[] = [
+  (streak) => ({
+    title: "Seu foguinho está esperando",
+    body: `São ${days(streak)} seguidos. Conclua 1 tarefa hoje e mantenha a chama acesa.`,
+  }),
+  (streak) => ({
+    title: "Não deixe a fogueira apagar",
+    body: `Falta só 1 tarefa hoje para chegar a ${days(streak + 1)} seguidos.`,
+  }),
+  (streak) => ({
+    title: `${days(streak)} seguidos, bora pro próximo?`,
+    body: "Qual tarefa você consegue riscar agora?",
+  }),
+  (streak) => ({
+    title: "Ainda dá tempo hoje",
+    body: `Sua sequência de ${days(streak)} continua com uma tarefa concluída. Leva um minuto.`,
+  }),
+];
+
+/** For everyone else: come and organise the day. */
+const ORGANIZE_LINES: Pick<PushPayload, "title" | "body">[] = [
+  {
+    title: "Bora se organizar hoje?",
+    body: "Abra o Flowy e anote o que você precisa fazer.",
+  },
+  {
+    title: "Qual tarefa você tem para hoje?",
+    body: "Coloque no Flowy e tire da cabeça.",
+  },
+  {
+    title: "Anote suas tarefas",
+    body: "Um minuto agora deixa o resto do dia mais leve.",
+  },
+  {
+    title: "Venha se organizar",
+    body: "Veja o que tem para hoje e acenda seu foguinho concluindo uma tarefa.",
+  },
+  {
+    title: "O que não pode esquecer hoje?",
+    body: "Escreva no Flowy e ele te lembra na hora certa.",
+  },
+];
+
+/** The once-a-day nudge, with a different line each time. */
+function dailyNudge(streak: number): PushPayload {
+  const line = streak > 0 ? pick(STREAK_LINES)(streak) : pick(ORGANIZE_LINES);
+  return { ...line, url: "/app", tag: "daily-nudge" };
+}
 
 interface DueReminder extends TaskReminder {
   user_id: string;
@@ -84,36 +121,22 @@ async function handle(request: NextRequest) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const [
-    remindersResult,
-    digestsResult,
-    eveningResult,
-    streakResult,
-    comebackResult,
-  ] = await Promise.all([
-    admin.rpc("claim_due_task_reminders"),
-    admin.rpc("claim_morning_digests"),
-    admin.rpc("claim_evening_prompts"),
-    admin.rpc("claim_streak_nudges"),
-    admin.rpc("claim_comeback_nudges"),
-  ]);
-  // Engagement pushes (migration 20261124210000) never block the rest.
-  if (streakResult.error)
-    console.error("Falha ao buscar avisos do foguinho.", streakResult.error);
-  if (comebackResult.error)
-    console.error("Falha ao buscar convites de volta.", comebackResult.error);
-  const engagement = [
-    ...((streakResult.data ?? []) as { user_id: string; streak: number }[]).map(
-      (row) => ({
-        userId: row.user_id,
-        payload: streakNudge(row.streak),
-      }),
-    ),
-    ...((comebackResult.data ?? []) as { user_id: string }[]).map((row) => ({
-      userId: row.user_id,
-      payload: COMEBACK,
-    })),
-  ];
+  const [remindersResult, digestsResult, eveningResult, nudgeResult] =
+    await Promise.all([
+      admin.rpc("claim_due_task_reminders"),
+      admin.rpc("claim_morning_digests"),
+      admin.rpc("claim_evening_prompts"),
+      admin.rpc("claim_daily_nudges"),
+    ]);
+  // The daily nudge (migration 20261124230000) never blocks the rest.
+  if (nudgeResult.error)
+    console.error("Falha ao buscar lembretes do dia.", nudgeResult.error);
+  const engagement = (
+    (nudgeResult.data ?? []) as { user_id: string; streak: number }[]
+  ).map((row) => ({
+    userId: row.user_id,
+    payload: dailyNudge(row.streak),
+  }));
   if (remindersResult.error) {
     console.error("Falha ao buscar lembretes.", remindersResult.error);
     return NextResponse.json(

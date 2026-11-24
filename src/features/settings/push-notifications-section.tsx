@@ -133,7 +133,7 @@ export function PushNotificationsSection() {
         <SwitchRow
           icon={<Flame className="size-5" />}
           title="Foguinho e lembretes"
-          description="Às 19h, se o seu foguinho ainda não acendeu hoje. E um convite para voltar se você sumir por uns dias."
+          description="No máximo 1 aviso por dia, no fim da tarde, só se você ainda não concluiu nem criou nenhuma tarefa."
           checked={preferences.data?.engagement_pushes !== false}
           disabled={!preferences.data || updatePreferences.isPending}
           onToggle={() =>
