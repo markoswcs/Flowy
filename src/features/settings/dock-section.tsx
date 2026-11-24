@@ -3,7 +3,12 @@
 import { Smartphone } from "lucide-react";
 import { useState } from "react";
 
-import { DEFAULT_DOCK, DOCK_ITEMS, placeInDock, resolveDock } from "@/components/shell/dock-items";
+import {
+  DEFAULT_DOCK,
+  DOCK_ITEMS,
+  placeInDock,
+  resolveDock,
+} from "@/components/shell/dock-items";
 import { useDock, useSaveDock } from "@/components/shell/use-dock";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -21,7 +26,9 @@ export function DockSection() {
 
   function choose(key: string) {
     const next = placeInDock(keys, slot, key);
-    save.mutate(next, { onError: () => toast.error("Não foi possível salvar. Tente de novo.") });
+    save.mutate(next, {
+      onError: () => toast.error("Não foi possível salvar. Tente de novo."),
+    });
     setSlot((slot + 1) % keys.length);
   }
 
@@ -38,7 +45,9 @@ export function DockSection() {
         aria-label={`Lugar ${index + 1}: ${item.label}`}
         className={cn(
           "flex flex-col items-center gap-1 rounded-2xl py-2 text-[11px] font-medium transition-colors",
-          slot === index ? "bg-primary/15 text-foreground ring-2 ring-primary/60" : "text-muted-foreground",
+          slot === index
+            ? "bg-primary/15 text-foreground ring-2 ring-primary/60"
+            : "text-muted-foreground",
         )}
       >
         <Icon className="size-5" aria-hidden="true" />
@@ -49,23 +58,36 @@ export function DockSection() {
 
   return (
     <section aria-labelledby="dock-heading" className="md:hidden">
-      <h2 id="dock-heading" className="flex items-center gap-2 text-base font-semibold">
+      <h2
+        id="dock-heading"
+        className="flex items-center gap-2 text-base font-semibold"
+      >
         <Smartphone className="size-5 flowy-ink" aria-hidden="true" />
         Barra de baixo
       </h2>
-      <p className="mt-1 text-sm text-muted-foreground">Toque num lugar da barra e depois no atalho que quer ali. Ou segure um botão da própria barra.</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Toque num lugar da barra e depois no atalho que quer ali. Ou segure um
+        botão da própria barra.
+      </p>
 
       <div className="mt-3 grid grid-cols-[1fr_1fr_3rem_1fr_1fr] items-center gap-1 rounded-[1.75rem] border border-border/60 bg-card/40 p-2">
         {place(0)}
         {place(1)}
-        <span className="mx-auto grid size-9 place-items-center rounded-full bg-primary text-lg font-bold text-primary-foreground" aria-hidden="true">
+        <span
+          className="mx-auto grid size-9 place-items-center rounded-full bg-primary text-lg font-bold text-primary-foreground"
+          aria-hidden="true"
+        >
           +
         </span>
         {place(2)}
         {place(3)}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5" role="group" aria-label={`Atalho para o lugar ${slot + 1}`}>
+      <div
+        className="mt-3 flex flex-wrap gap-1.5"
+        role="group"
+        aria-label={`Atalho para o lugar ${slot + 1}`}
+      >
         {DOCK_ITEMS.map((item) => {
           const Icon = item.icon;
           const inBar = keys.includes(item.key);

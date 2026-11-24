@@ -7,9 +7,20 @@ import { Button } from "@/components/ui/button";
 
 import { SwitchRow } from "@/components/ui/switch-row";
 import { ReminderCheckPanel } from "@/features/settings/reminder-check-panel";
-import { usePushNotifications, type PushStatus } from "@/features/settings/use-push-notifications";
-import { usePreferences, useUpdatePreferences } from "@/features/settings/use-settings";
-import { blockedHelp, deviceKind, installHelp, isInAppBrowser } from "@/lib/push/device-help";
+import {
+  usePushNotifications,
+  type PushStatus,
+} from "@/features/settings/use-push-notifications";
+import {
+  usePreferences,
+  useUpdatePreferences,
+} from "@/features/settings/use-settings";
+import {
+  blockedHelp,
+  deviceKind,
+  installHelp,
+  isInAppBrowser,
+} from "@/lib/push/device-help";
 
 function describe(status: PushStatus): string {
   // Statuses other than "loading" only exist in the browser.
@@ -49,7 +60,9 @@ export function PushNotificationsSection() {
       { morning_digest: !digestOn },
       {
         onSuccess: () =>
-          toast.success(digestOn ? "Resumo da manhã desativado" : "Resumo da manhã ativado"),
+          toast.success(
+            digestOn ? "Resumo da manhã desativado" : "Resumo da manhã ativado",
+          ),
         onError: () => toast.error("Não foi possível salvar a preferência."),
       },
     );
@@ -69,10 +82,11 @@ export function PushNotificationsSection() {
     }
   }
 
-
   return (
     <section aria-labelledby="notifications-heading">
-      <h2 id="notifications-heading" className="text-base font-semibold">Notificações</h2>
+      <h2 id="notifications-heading" className="text-base font-semibold">
+        Notificações
+      </h2>
       <SwitchRow
         icon={<Bell className="size-5" />}
         title="Lembretes de tarefas"
@@ -103,14 +117,21 @@ export function PushNotificationsSection() {
               { evening_prompt: !preferences.data?.evening_prompt },
               {
                 onSuccess: () =>
-                  toast.success(preferences.data?.evening_prompt ? "Aviso da noite desativado" : "Aviso da noite ativado"),
-                onError: () => toast.error("Não foi possível salvar a preferência."),
+                  toast.success(
+                    preferences.data?.evening_prompt
+                      ? "Aviso da noite desativado"
+                      : "Aviso da noite ativado",
+                  ),
+                onError: () =>
+                  toast.error("Não foi possível salvar a preferência."),
               },
             )
           }
         />
       ) : null}
-      {status === "unsupported" && typeof Notification !== "undefined" && Notification.permission === "default" ? (
+      {status === "unsupported" &&
+      typeof Notification !== "undefined" &&
+      Notification.permission === "default" ? (
         <Button
           type="button"
           variant="outline"
@@ -119,7 +140,9 @@ export function PushNotificationsSection() {
           onClick={() =>
             void Notification.requestPermission().then((permission) =>
               permission === "granted"
-                ? toast.success("Pronto: com o Flowy aberto, os avisos aparecem na hora")
+                ? toast.success(
+                    "Pronto: com o Flowy aberto, os avisos aparecem na hora",
+                  )
                 : toast.error("Permissão não concedida"),
             )
           }

@@ -87,7 +87,7 @@ export function AnnouncementCard() {
   );
 }
 
-async function amIAdmin() {
+export async function amIAdmin() {
   const { supabase } = await getAuthenticatedClient();
   const { data, error } = await supabase.rpc("is_app_admin");
   return !error && data === true;
