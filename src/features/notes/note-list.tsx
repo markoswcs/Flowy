@@ -1,19 +1,22 @@
 "use client";
 
 import {
+  Download,
   FileText,
   Folder,
-  Pencil,
-  Plus,
-  Search,
-  Star,
-  Trash2,
+  LayoutGrid,
+  List,
   Network,
   PenTool,
+  Plus,
+  Search,
+  Sparkles,
+  Star,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "@/lib/toast";
 import { notify } from "@/providers/notification-provider";
@@ -41,7 +44,12 @@ import {
 } from "@/features/notes/section-tutorial";
 import { TemplatePicker } from "@/features/mindmap/components/template-picker";
 import type { TemplateId } from "@/features/mindmap/types";
-import type { NoteKind } from "@/types/content";
+import type { Note, NoteKind } from "@/types/content";
+import {
+  NOTE_TEMPLATES,
+  type NoteTemplate,
+} from "@/features/notes/note-templates";
+import { cn } from "@/lib/utils";
 import { holdOverlay } from "@/lib/overlay";
 
 const MAP_TITLES: Partial<Record<TemplateId, string>> = {
@@ -103,11 +111,186 @@ const SECTION_ICON: Record<NoteSection, typeof FileText> = {
   desenho: PenTool,
 };
 
-const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
+const SECTION_TONE: Record<
+  NoteSection,
+  { solid: string; soft: string; ink: string }
+> = {
+  nota: {
+    solid: "bg-gradient-to-br from-amber-400 to-orange-500",
+    soft: "from-amber-500/15",
+    ink: "text-amber-300",
+  },
+  mapa: {
+    solid: "bg-gradient-to-br from-violet-500 to-indigo-600",
+    soft: "from-violet-500/15",
+    ink: "text-violet-300",
+  },
+  desenho: {
+    solid: "bg-gradient-to-br from-sky-400 to-cyan-600",
+    soft: "from-sky-500/15",
+    ink: "text-sky-300",
+  },
+};
+
+/** What each space can do, shown where people start (so they see it exists). */
+const SECTION_TIPS: Record<
+  NoteSection,
+  { icon: typeof FileText; title: string; text: string }[]
+> = {
+  nota: [],
+  mapa: [
+    {
+      icon: Network,
+      title: "Ramos com Tab e Enter",
+      text: "Tab cria um filho, Enter cria um irmão.",
+    },
+    {
+      icon: Sparkles,
+      title: "Cores e ícones",
+      text: "Toque num tópico para mudar cor, forma e ícone.",
+    },
+    {
+      icon: Download,
+      title: "Exporte em imagem",
+      text: "Salve o mapa em PNG para compartilhar.",
+    },
+  ],
+  desenho: [
+    {
+      icon: PenTool,
+      title: "Formas e setas",
+      text: "Retângulos, losangos e setas que se ligam.",
+    },
+    {
+      icon: Sparkles,
+      title: "Traço à mão",
+      text: "Rabisque livre com o dedo ou a caneta.",
+    },
+    {
+      icon: Download,
+      title: "Exporte em imagem",
+      text: "Salve o desenho em PNG ou SVG.",
+    },
+  ],
+};
+
+type Sort = "recent" | "az";
+const SORTS: { value: Sort; label: string }[] = [
+  { value: "recent", label: "Recentes" },
+  { value: "az", label: "A–Z" },
+];
+const LAYOUT_KEY = "flowy:notes-layout";
+
+const layoutListeners = new Set<() => void>();
+function readLayout(): "grid" | "list" {
+  try {
+    return window.localStorage.getItem(LAYOUT_KEY) === "list" ? "list" : "grid";
+  } catch {
+    return "grid";
+  }
+}
+function subscribeLayout(listener: () => void) {
+  layoutListeners.add(listener);
+  return () => layoutListeners.delete(listener);
+}
+
+const relative = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
+/** "há 5 minutos", "ontem", "há 3 semanas". */
+function edited(iso: string) {
+  const seconds = (new Date(iso).getTime() - Date.now()) / 1000;
+  const steps: [Intl.RelativeTimeFormatUnit, number][] = [
+    ["year", 31_536_000],
+    ["month", 2_592_000],
+    ["week", 604_800],
+    ["day", 86_400],
+    ["hour", 3_600],
+    ["minute", 60],
+  ];
+  for (const [unit, size] of steps) {
+    if (Math.abs(seconds) >= size)
+      return relative.format(Math.round(seconds / size), unit);
+  }
+  return "agora";
+}
+
+/** A small picture of what is inside: lines of text, branches or a sketch. */
+function Preview({ note }: { note: Note }) {
+  if (note.kind === "mindmap") {
+    return (
+      <svg viewBox="0 0 120 56" className="h-14 w-full" aria-hidden="true">
+        <g
+          stroke="currentColor"
+          strokeOpacity="0.35"
+          strokeWidth="1.4"
+          fill="none"
+        >
+          <path d="M60 28 C 44 28, 40 10, 22 10" />
+          <path d="M60 28 C 44 28, 40 46, 22 46" />
+          <path d="M60 28 C 76 28, 80 10, 98 10" />
+          <path d="M60 28 C 76 28, 80 46, 98 46" />
+        </g>
+        <rect
+          x="44"
+          y="20"
+          width="32"
+          height="16"
+          rx="8"
+          className="fill-violet-500"
+        />
+        {[
+          [22, 10],
+          [22, 46],
+          [98, 10],
+          [98, 46],
+        ].map(([x, y]) => (
+          <rect
+            key={`${x}-${y}`}
+            x={x! - 13}
+            y={y! - 6}
+            width="26"
+            height="12"
+            rx="6"
+            fill="currentColor"
+            fillOpacity="0.14"
+          />
+        ))}
+      </svg>
+    );
+  }
+  if (note.kind === "excalidraw") {
+    return (
+      <svg viewBox="0 0 120 56" className="h-14 w-full" aria-hidden="true">
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity="0.4"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect
+            x="8"
+            y="14"
+            width="34"
+            height="24"
+            rx="4"
+            className="stroke-sky-400"
+            strokeOpacity="0.9"
+          />
+          <path d="M42 26 L 62 26" />
+          <path d="M58 22 L 62 26 L 58 30" />
+          <path d="M80 10 L 98 28 L 80 46 L 62 28 Z" />
+          <path
+            d="M98 28 C 106 20, 112 34, 116 26"
+            className="stroke-sky-400"
+            strokeOpacity="0.9"
+          />
+        </g>
+      </svg>
+    );
+  }
+  return null;
+}
 
 export function NoteList() {
   const router = useRouter();
@@ -146,6 +329,191 @@ export function NoteList() {
     );
   }, [deferredSearch, notes.data, section]);
 
+  const [sort, setSort] = useState<Sort>("recent");
+  const layout = useSyncExternalStore(subscribeLayout, readLayout, () => "grid" as const);
+  const [filter, setFilter] = useState("all");
+
+  function chooseLayout(value: "grid" | "list") {
+    try {
+      window.localStorage.setItem(LAYOUT_KEY, value);
+    } catch {
+      // Private mode: the grid stays.
+    }
+    layoutListeners.forEach((listener) => listener());
+  }
+
+  const ofSection = (notes.data ?? []).filter(
+    (note) => note.kind === SECTION_KIND[section],
+  );
+  const favoritesCount = ofSection.filter((note) => note.is_favorite).length;
+  const folderChips = [
+    ...new Map(
+      ofSection
+        .filter((note) => note.folder)
+        .map((note) => [
+          note.folder!.id,
+          { id: note.folder!.id, name: note.folder!.name },
+        ]),
+    ).values(),
+  ];
+  const visibleNotes = filteredNotes
+    .filter((note) =>
+      filter === "all"
+        ? true
+        : filter === "fav"
+          ? note.is_favorite
+          : note.folder?.id === filter,
+    )
+    .sort((a, b) =>
+      sort === "az"
+        ? (a.title || "").localeCompare(b.title || "", "pt-BR")
+        : b.updated_at.localeCompare(a.updated_at),
+    );
+  const groups =
+    filter === "all" && favoritesCount
+      ? [
+          {
+            title: "Favoritas",
+            items: visibleNotes.filter((note) => note.is_favorite),
+          },
+          {
+            title: "Todas",
+            items: visibleNotes.filter((note) => !note.is_favorite),
+          },
+        ]
+      : [{ title: "Todas", items: visibleNotes }];
+
+  function actions(note: Note, compact = false) {
+    return (
+      <div
+        className={cn(
+          "z-10 flex items-center gap-0.5",
+          compact ? "" : "absolute right-2 top-2",
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => handleFavorite(note.id, !note.is_favorite)}
+          className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-110 hover:bg-amber-500/15 hover:text-amber-400 active:scale-95"
+          aria-label={`${note.is_favorite ? "Remover" : "Adicionar"} ${note.title || "nota"} dos favoritos`}
+        >
+          <Star
+            className={cn(
+              "size-4",
+              note.is_favorite && "fill-amber-400 text-amber-400",
+            )}
+            aria-hidden="true"
+          />
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            setNotePendingDeletion({
+              id: note.id,
+              title: note.title || "Sem título",
+            })
+          }
+          className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-110 hover:bg-destructive/10 hover:text-destructive active:scale-95"
+          aria-label={`Mover ${note.title || "nota"} para a lixeira`}
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+        </button>
+      </div>
+    );
+  }
+
+  function renderCard(note: Note) {
+    const tone = SECTION_TONE[section];
+    return (
+      <article
+        className={cn(
+          "group relative flex h-full min-h-48 flex-col overflow-hidden rounded-[1.4rem] border border-border/70 bg-gradient-to-b to-card/60 p-4 pt-11 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl sm:p-5 sm:pt-12",
+          tone.soft,
+        )}
+        style={note.color ? { backgroundColor: note.color } : undefined}
+      >
+        <Link
+          href={`/app/notes/${note.id}`}
+          className="absolute inset-0 rounded-[1.4rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+          aria-label={`Abrir ${note.title || "sem título"}`}
+        />
+        <span
+          className={cn(
+            "pointer-events-none absolute left-4 top-3.5 text-[10px] font-bold uppercase tracking-widest sm:left-5",
+            tone.ink,
+          )}
+        >
+          {section === "nota"
+            ? "Nota"
+            : section === "mapa"
+              ? "Mapa"
+              : "Desenho"}
+        </span>
+        {actions(note)}
+        <div className={cn("pointer-events-none relative", tone.ink)}>
+          <Preview note={note} />
+        </div>
+        <div className="pointer-events-none relative min-w-0">
+          <h3 className="line-clamp-2 text-base font-bold leading-5 sm:text-lg sm:leading-6">
+            {note.title || "Sem título"}
+          </h3>
+          {note.kind === "text" ? (
+            <p className="mt-2 line-clamp-4 text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
+              {note.plain_text || "Nota vazia"}
+            </p>
+          ) : note.kind === "mindmap" && note.plain_text ? (
+            <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
+              {note.plain_text}
+            </p>
+          ) : null}
+        </div>
+        <footer className="pointer-events-none relative mt-auto flex flex-wrap items-center gap-1.5 pt-4 text-[11px] text-muted-foreground">
+          {note.folder ? (
+            <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5">
+              <Folder className="size-3 shrink-0" aria-hidden="true" />
+              <span className="truncate">{note.folder.name}</span>
+            </span>
+          ) : null}
+          <time dateTime={note.updated_at}>{edited(note.updated_at)}</time>
+        </footer>
+      </article>
+    );
+  }
+
+  function renderRow(note: Note) {
+    const Icon = SECTION_ICON[section];
+    return (
+      <article className="group relative flex items-center gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 transition-colors hover:border-primary/40 hover:bg-card">
+        <Link
+          href={`/app/notes/${note.id}`}
+          className="absolute inset-0 rounded-2xl"
+          aria-label={`Abrir ${note.title || "sem título"}`}
+        />
+        <span
+          className={cn(
+            "pointer-events-none grid size-10 shrink-0 place-items-center rounded-xl text-white",
+            SECTION_TONE[section].solid,
+          )}
+        >
+          <Icon className="size-5" aria-hidden="true" />
+        </span>
+        <span className="pointer-events-none min-w-0 flex-1">
+          <span className="block truncate font-semibold">
+            {note.title || "Sem título"}
+          </span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {edited(note.updated_at)}
+            {note.folder ? ` · ${note.folder.name}` : ""}
+            {note.kind === "text" && note.plain_text
+              ? ` · ${note.plain_text}`
+              : ""}
+          </span>
+        </span>
+        <div className="relative">{actions(note, true)}</div>
+      </article>
+    );
+  }
+
   const overlayOpen = Boolean(notePendingDeletion);
   useEffect(() => {
     if (!overlayOpen) return;
@@ -171,7 +539,11 @@ export function NoteList() {
     if (searchParams.has(NEW_PARAM)) router.replace(SECTION_HREF.mapa);
   }
 
-  async function handleCreate(kind: NoteKind, template?: TemplateId) {
+  async function handleCreate(
+    kind: NoteKind,
+    template?: TemplateId,
+    noteTemplate?: NoteTemplate,
+  ) {
     try {
       const note = await create.mutateAsync({
         kind,
@@ -180,7 +552,8 @@ export function NoteList() {
             ? ((template && MAP_TITLES[template]) ?? "Mapa mental sem título")
             : kind === "excalidraw"
               ? "Desenho sem título"
-              : undefined,
+              : noteTemplate?.title || undefined,
+        ...(noteTemplate?.content ? { content: noteTemplate.content } : {}),
       });
       setPickerOpen(false);
       const query = template ? `?${TEMPLATE_PARAM}=${template}` : "";
@@ -225,16 +598,65 @@ export function NoteList() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8">
-      <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-medium flowy-ink">{pageCopy.eyebrow}</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
-            {pageCopy.title}
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            {pageCopy.description}
-          </p>
+    <div className="mx-auto w-full max-w-6xl space-y-6">
+      {/* The three spaces side by side, one tap apart. */}
+      <nav
+        aria-label="Espaços"
+        className="flex gap-1 rounded-2xl border border-border/60 bg-card/40 p-1"
+      >
+        {(Object.keys(SECTION_COPY) as NoteSection[]).map((value) => {
+          const Icon = SECTION_ICON[value];
+          const active = value === section;
+          const total = (notes.data ?? []).filter(
+            (note) => note.kind === SECTION_KIND[value],
+          ).length;
+          return (
+            <Link
+              key={value}
+              href={SECTION_HREF[value]}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
+                active
+                  ? cn("text-white shadow-lg", SECTION_TONE[value].solid)
+                  : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+              )}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {SECTION_COPY[value].title}
+              {notes.data ? (
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 text-[11px] tabular-nums",
+                    active ? "bg-white/20" : "bg-muted/60",
+                  )}
+                >
+                  {total}
+                </span>
+              ) : null}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex items-center gap-4">
+          <span
+            className={cn(
+              "grid size-14 shrink-0 place-items-center rounded-2xl text-white shadow-xl",
+              SECTION_TONE[section].solid,
+            )}
+          >
+            <EmptyIcon className="size-7" aria-hidden="true" />
+          </span>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              {pageCopy.title}
+            </h1>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
+              {pageCopy.description}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <TutorialButton key={section} section={section} />
@@ -251,19 +673,191 @@ export function NoteList() {
 
       <SectionTutorial key={section} section={section} />
 
-      <label className="relative block">
-        <span className="sr-only">{pageCopy.search}</span>
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden="true"
-        />
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={pageCopy.search}
-          className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring"
-        />
-      </label>
+      {/* Ways to start, always in sight. */}
+      <section aria-label="Começar com">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Começar com
+        </p>
+        <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+          {section === "nota" ? (
+            NOTE_TEMPLATES.map((template) => {
+              const Icon = template.icon;
+              return (
+                <button
+                  key={template.id}
+                  type="button"
+                  disabled={create.isPending}
+                  onClick={() => void handleCreate("text", undefined, template)}
+                  className="group flex w-36 shrink-0 flex-col gap-2 rounded-2xl border border-border/60 bg-card/50 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card disabled:opacity-60"
+                >
+                  <span
+                    className={cn(
+                      "grid size-9 place-items-center rounded-xl transition-transform group-hover:scale-110",
+                      template.tone,
+                    )}
+                  >
+                    <Icon className="size-[18px]" aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold">
+                      {template.label}
+                    </span>
+                    <span className="block text-[11px] leading-4 text-muted-foreground">
+                      {template.hint}
+                    </span>
+                  </span>
+                </button>
+              );
+            })
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={startCreate}
+                disabled={create.isPending}
+                className="group flex w-44 shrink-0 flex-col gap-2 rounded-2xl border border-border/60 bg-card/50 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card"
+              >
+                <span
+                  className={cn(
+                    "grid size-9 place-items-center rounded-xl text-white",
+                    SECTION_TONE[section].solid,
+                  )}
+                >
+                  <Plus className="size-[18px]" aria-hidden="true" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold">
+                    {section === "mapa"
+                      ? "Escolher um modelo"
+                      : "Quadro em branco"}
+                  </span>
+                  <span className="block text-[11px] leading-4 text-muted-foreground">
+                    {section === "mapa"
+                      ? "Mapa, organograma ou linha do tempo"
+                      : "Desenhe livre, com formas e setas"}
+                  </span>
+                </span>
+              </button>
+              {SECTION_TIPS[section].map(({ icon: Icon, title, text }) => (
+                <div
+                  key={title}
+                  className="flex w-52 shrink-0 gap-2.5 rounded-2xl border border-dashed border-border/60 p-3"
+                >
+                  <Icon
+                    className="mt-0.5 size-4 shrink-0 flowy-ink"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    <span className="block text-xs font-semibold">{title}</span>
+                    <span className="block text-[11px] leading-4 text-muted-foreground">
+                      {text}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* Search, order and how to see them. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="relative min-w-0 flex-1 basis-56">
+          <span className="sr-only">{pageCopy.search}</span>
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={pageCopy.search}
+            className="h-11 w-full rounded-xl border border-border/70 bg-card/40 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
+          />
+        </label>
+        <div
+          className="flex rounded-xl border border-border/70 bg-card/40 p-0.5"
+          role="group"
+          aria-label="Ordenar"
+        >
+          {SORTS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={sort === option.value}
+              onClick={() => setSort(option.value)}
+              className={cn(
+                "rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
+                sort === option.value
+                  ? "bg-primary/15 text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <div
+          className="flex rounded-xl border border-border/70 bg-card/40 p-0.5"
+          role="group"
+          aria-label="Ver como"
+        >
+          {(["grid", "list"] as const).map((value) => {
+            const Icon = value === "grid" ? LayoutGrid : List;
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={layout === value}
+                aria-label={value === "grid" ? "Ver em grade" : "Ver em lista"}
+                onClick={() => chooseLayout(value)}
+                className={cn(
+                  "grid size-9 place-items-center rounded-lg transition-colors",
+                  layout === value
+                    ? "bg-primary/15 text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="size-4" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {folderChips.length || favoritesCount ? (
+        <div
+          className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0"
+          role="group"
+          aria-label="Filtrar"
+        >
+          {[
+            { id: "all", name: "Tudo" },
+            ...(favoritesCount ? [{ id: "fav", name: "Favoritas" }] : []),
+            ...folderChips,
+          ].map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              aria-pressed={filter === chip.id}
+              onClick={() => setFilter(chip.id)}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors",
+                filter === chip.id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/40 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {chip.id === "fav" ? (
+                <Star className="size-3.5" />
+              ) : chip.id !== "all" ? (
+                <Folder className="size-3.5" />
+              ) : null}
+              {chip.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {notes.isLoading ? (
         <div
@@ -271,16 +865,16 @@ export function NoteList() {
           aria-label="Carregando notas"
         >
           {Array.from({ length: 6 }, (_, index) => (
-            <Skeleton key={index} className="h-52 w-full rounded-xl" />
+            <Skeleton key={index} className="h-52 w-full rounded-2xl" />
           ))}
         </div>
       ) : notes.isError ? (
         <section
-          className="rounded-xl border border-destructive/30 bg-destructive/5 p-6"
+          className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6"
           aria-live="polite"
         >
           <h2 className="font-medium text-destructive">
-            Não foi possível carregar as notas.
+            Não foi possível carregar.
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Verifique sua conexão e tente novamente.
@@ -293,122 +887,57 @@ export function NoteList() {
             Tentar novamente
           </Button>
         </section>
-      ) : filteredNotes.length === 0 ? (
-        <section className="flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 text-center">
-          <span className="grid size-11 place-items-center rounded-lg bg-muted text-muted-foreground">
-            <EmptyIcon className="size-5" aria-hidden="true" />
+      ) : visibleNotes.length === 0 ? (
+        <section className="flex min-h-64 flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border px-6 text-center">
+          <span
+            className={cn(
+              "grid size-14 place-items-center rounded-2xl text-white shadow-xl",
+              SECTION_TONE[section].solid,
+            )}
+          >
+            <EmptyIcon className="size-7" aria-hidden="true" />
           </span>
           <h2 className="mt-4 text-lg font-semibold">
-            {search ? pageCopy.notFound : pageCopy.empty}
+            {search || filter !== "all" ? pageCopy.notFound : pageCopy.empty}
           </h2>
           <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
-            {search
-              ? "Tente outro termo ou limpe a pesquisa."
+            {search || filter !== "all"
+              ? "Tente outro termo ou limpe os filtros."
               : pageCopy.emptyHint}
           </p>
-          {!search ? (
-            <Button
-              className="mt-5"
-              type="button"
-              onClick={startCreate}
-              loading={create.isPending}
-            >
-              <Plus className="size-4" aria-hidden="true" />
-              {pageCopy.create}
-            </Button>
-          ) : null}
         </section>
       ) : (
-        <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-          {filteredNotes.map((note) => (
-            <li key={note.id}>
-              <article
-                className="flowy-glow-hover group relative flex min-h-44 flex-col rounded-2xl border border-border/80 bg-card p-4 pt-12 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/30 hover:shadow-md active:translate-y-0 sm:min-h-48 sm:p-5 sm:pt-12"
-                style={note.color ? { backgroundColor: note.color } : undefined}
-              >
-                <Link
-                  href={`/app/notes/${note.id}`}
-                  className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                  aria-label={`Abrir nota ${note.title || "sem título"}`}
-                />
-                <div className="relative pointer-events-none min-w-0">
-                  <h2 className="line-clamp-2 text-base font-semibold leading-5 sm:text-lg sm:leading-6">
-                    {note.kind === "excalidraw" ? (
-                      <PenTool
-                        className="mr-1 inline size-4 flowy-ink"
-                        aria-hidden="true"
-                      />
-                    ) : note.kind === "mindmap" ? (
-                      <Network
-                        className="mr-1 inline size-4 flowy-ink"
-                        aria-hidden="true"
-                      />
+        <div className="space-y-6">
+          {groups.map((group) =>
+            group.items.length ? (
+              <section key={group.title} aria-label={group.title}>
+                {groups.length > 1 ? (
+                  <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    {group.title === "Favoritas" ? (
+                      <Star className="size-3.5 fill-current text-amber-400" />
                     ) : null}
-                    {note.title || "Sem título"}
+                    {group.title}
                   </h2>
-                  <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground sm:mt-3 sm:text-sm sm:leading-6">
-                    {note.kind === "excalidraw"
-                      ? "Desenho"
-                      : note.kind === "mindmap"
-                        ? note.plain_text || "Mapa mental"
-                        : note.plain_text || "Nota vazia"}
-                  </p>
-                </div>
-
-                <footer className="pointer-events-none relative mt-auto flex items-end justify-between gap-2 pt-4">
-                  <div className="pointer-events-none min-w-0 space-y-1 text-[11px] text-muted-foreground sm:space-y-2 sm:text-xs">
-                    {note.folder ? (
-                      <span className="flex min-w-0 items-center gap-1.5">
-                        <Folder
-                          className="size-3.5 shrink-0"
-                          aria-hidden="true"
-                        />
-                        <span className="truncate">{note.folder.name}</span>
-                      </span>
-                    ) : null}
-                    <time dateTime={note.updated_at}>
-                      Editada {dateFormatter.format(new Date(note.updated_at))}
-                    </time>
-                  </div>
-                </footer>
-                <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleFavorite(note.id, !note.is_favorite)}
-                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-105 hover:bg-accent hover:flowy-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
-                    aria-label={`${note.is_favorite ? "Remover" : "Adicionar"} ${note.title || "nota"} dos favoritos`}
-                  >
-                    <Star
-                      className={`size-4 ${note.is_favorite ? "fill-primary flowy-ink" : ""}`}
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <Link
-                    href={`/app/notes/${note.id}`}
-                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-105 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
-                    aria-label={`Editar ${note.title || "nota"}`}
-                  >
-                    <Pencil className="size-4" aria-hidden="true" />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNotePendingDeletion({
-                        id: note.id,
-                        title: note.title || "Sem título",
-                      })
-                    }
-                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition-all hover:scale-105 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive active:scale-95"
-                    aria-label={`Mover ${note.title || "nota"} para a lixeira`}
-                  >
-                    <Trash2 className="size-4" aria-hidden="true" />
-                  </button>
-                </div>
-              </article>
-            </li>
-          ))}
-        </ul>
+                ) : null}
+                <ul
+                  className={
+                    layout === "grid"
+                      ? "grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3"
+                      : "space-y-2"
+                  }
+                >
+                  {group.items.map((note) => (
+                    <li key={note.id}>
+                      {layout === "grid" ? renderCard(note) : renderRow(note)}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null,
+          )}
+        </div>
       )}
+
       {notePendingDeletion
         ? createPortal(
             <div

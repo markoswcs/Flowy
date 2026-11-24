@@ -70,6 +70,9 @@ export async function createNote(
     folderId?: string | null;
     title?: string;
     kind?: NoteKind;
+    /** A ready-made start (note templates). */
+    content?: JSONContent;
+    plainText?: string;
   },
 ): Promise<Note> {
   const userId = await authenticatedUserId(client);
@@ -79,8 +82,8 @@ export async function createNote(
       user_id: userId,
       folder_id: input?.folderId ?? null,
       title: input?.title?.trim() || "Sem título",
-      content: EMPTY_DOCUMENT,
-      plain_text: "",
+      content: input?.content ?? EMPTY_DOCUMENT,
+      plain_text: input?.plainText ?? "",
       ...(input?.kind && input.kind !== "text" ? { kind: input.kind } : {}),
     })
     .select("*, folder:folders(id,name)")

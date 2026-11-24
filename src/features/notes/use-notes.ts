@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSONContent } from "@tiptap/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { createClient } from "@/lib/supabase/client";
@@ -48,6 +49,8 @@ export function useCreateNote() {
       title?: string;
       folderId?: string | null;
       kind?: NoteKind;
+      content?: JSONContent;
+      plainText?: string;
     }) =>
       createNote(client, input),
     onSuccess: (note) => {
