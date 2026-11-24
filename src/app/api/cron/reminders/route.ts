@@ -3,20 +3,45 @@ import { timingSafeEqual } from "node:crypto";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { buildMorningDigest, type MorningDigest } from "@/lib/push/morning-digest";
+import {
+  buildMorningDigest,
+  type MorningDigest,
+} from "@/lib/push/morning-digest";
 import { buildTaskReminder, type TaskReminder } from "@/lib/push/task-reminder";
-import { sendPush, type PushPayload, type StoredPushSubscription } from "@/lib/push/web-push";
+import {
+  sendPush,
+  type PushPayload,
+  type StoredPushSubscription,
+} from "@/lib/push/web-push";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** 21h: a nudge to empty the head before sleeping (opens the quick dump). */
+/** 21h: a nudge to plan tomorrow before sleeping (opens the upcoming tasks). */
 const EVENING_PROMPT: PushPayload = {
   title: "Algo para amanhã?",
   body: "Anote agora o que não pode esquecer e durma tranquilo.",
-  url: "/app?view=upcoming&despejar=1",
+  url: "/app?view=upcoming",
   tag: "evening-prompt",
+};
+
+/** 19h: the streak is at risk. */
+function streakNudge(streak: number): PushPayload {
+  return {
+    title: "Não deixe seu foguinho apagar",
+    body: `Você está com ${streak} ${streak === 1 ? "dia seguido" : "dias seguidos"}. Conclua 1 tarefa hoje para manter a sequência.`,
+    url: "/app",
+    tag: "streak-nudge",
+  };
+}
+
+/** 12h, after 3 quiet days: an invitation to come back and plan. */
+const COMEBACK: PushPayload = {
+  title: "Bora organizar o dia?",
+  body: "Abra o Flowy, veja o que tem para hoje e anote suas tarefas. Leva menos de um minuto.",
+  url: "/app",
+  tag: "comeback",
 };
 
 interface DueReminder extends TaskReminder {
@@ -34,7 +59,9 @@ function isAuthorized(request: NextRequest) {
 
   const expected = Buffer.from(`Bearer ${secret}`);
   const received = Buffer.from(header);
-  return expected.length === received.length && timingSafeEqual(expected, received);
+  return (
+    expected.length === received.length && timingSafeEqual(expected, received)
+  );
 }
 
 // Called every minute by the pg_cron job `flowy-task-reminders` (see supabase/README.md).
@@ -57,14 +84,42 @@ async function handle(request: NextRequest) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const [remindersResult, digestsResult, eveningResult] = await Promise.all([
+  const [
+    remindersResult,
+    digestsResult,
+    eveningResult,
+    streakResult,
+    comebackResult,
+  ] = await Promise.all([
     admin.rpc("claim_due_task_reminders"),
     admin.rpc("claim_morning_digests"),
     admin.rpc("claim_evening_prompts"),
+    admin.rpc("claim_streak_nudges"),
+    admin.rpc("claim_comeback_nudges"),
   ]);
+  // Engagement pushes (migration 20261124210000) never block the rest.
+  if (streakResult.error)
+    console.error("Falha ao buscar avisos do foguinho.", streakResult.error);
+  if (comebackResult.error)
+    console.error("Falha ao buscar convites de volta.", comebackResult.error);
+  const engagement = [
+    ...((streakResult.data ?? []) as { user_id: string; streak: number }[]).map(
+      (row) => ({
+        userId: row.user_id,
+        payload: streakNudge(row.streak),
+      }),
+    ),
+    ...((comebackResult.data ?? []) as { user_id: string }[]).map((row) => ({
+      userId: row.user_id,
+      payload: COMEBACK,
+    })),
+  ];
   if (remindersResult.error) {
     console.error("Falha ao buscar lembretes.", remindersResult.error);
-    return NextResponse.json({ error: "Falha ao buscar lembretes." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Falha ao buscar lembretes." },
+      { status: 500 },
+    );
   }
   // A failing digest (e.g. migration not applied yet) must not block reminders.
   if (digestsResult.error) {
@@ -75,16 +130,32 @@ async function handle(request: NextRequest) {
   if (eveningResult.error) {
     console.error("Falha ao buscar avisos da noite.", eveningResult.error);
   }
-  const evenings = ((eveningResult.data ?? []) as { user_id: string }[]).map((row) => row.user_id);
+  const evenings = ((eveningResult.data ?? []) as { user_id: string }[]).map(
+    (row) => row.user_id,
+  );
 
   const due = (remindersResult.data ?? []) as DueReminder[];
   const digests = ((digestsResult.data ?? []) as MorningDigestRow[])
-    .map((digest) => ({ userId: digest.user_id, payload: buildMorningDigest(digest) }))
+    .map((digest) => ({
+      userId: digest.user_id,
+      payload: buildMorningDigest(digest),
+    }))
     .filter((digest): digest is { userId: string; payload: PushPayload } =>
       Boolean(digest.payload),
     );
-  if (due.length === 0 && digests.length === 0 && evenings.length === 0) {
-    return NextResponse.json({ reminders: 0, digests: 0, evenings: 0, sent: 0 });
+  if (
+    due.length === 0 &&
+    digests.length === 0 &&
+    evenings.length === 0 &&
+    engagement.length === 0
+  ) {
+    return NextResponse.json({
+      reminders: 0,
+      digests: 0,
+      evenings: 0,
+      engagement: 0,
+      sent: 0,
+    });
   }
 
   const userIds = [
@@ -92,6 +163,7 @@ async function handle(request: NextRequest) {
       ...due.map((reminder) => reminder.user_id),
       ...digests.map((digest) => digest.userId),
       ...evenings,
+      ...engagement.map((item) => item.userId),
     ]),
   ];
   const { data: subscriptions, error: subscriptionsError } = await admin
@@ -100,7 +172,10 @@ async function handle(request: NextRequest) {
     .in("user_id", userIds);
   if (subscriptionsError) {
     console.error("Falha ao buscar inscrições push.", subscriptionsError);
-    return NextResponse.json({ error: "Falha ao buscar inscrições." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Falha ao buscar inscrições." },
+      { status: 500 },
+    );
   }
 
   const byUser = new Map<string, StoredPushSubscription[]>();
@@ -116,39 +191,63 @@ async function handle(request: NextRequest) {
   async function deliver(userId: string, payload: PushPayload) {
     const userSubscriptions = byUser.get(userId) ?? [];
     const result = await sendPush(userSubscriptions, payload);
-    const retry = result.sent === 0 && userSubscriptions.length > result.expired.length;
+    const retry =
+      result.sent === 0 && userSubscriptions.length > result.expired.length;
     return { ...result, retry };
   }
 
-  const [reminderResults, digestResults, eveningResults] = await Promise.all([
-    Promise.all(
-      due.map(async (reminder) => ({
-        id: reminder.task_id,
-        ...(await deliver(reminder.user_id, buildTaskReminder(reminder))),
-      })),
-    ),
-    Promise.all(
-      digests.map(async (digest) => ({
-        id: digest.userId,
-        ...(await deliver(digest.userId, digest.payload)),
-      })),
-    ),
-    Promise.all(
-      evenings.map(async (userId) => ({ id: userId, ...(await deliver(userId, EVENING_PROMPT)) })),
-    ),
-  ]);
+  const [reminderResults, digestResults, eveningResults, engagementResults] =
+    await Promise.all([
+      Promise.all(
+        due.map(async (reminder) => ({
+          id: reminder.task_id,
+          ...(await deliver(reminder.user_id, buildTaskReminder(reminder))),
+        })),
+      ),
+      Promise.all(
+        digests.map(async (digest) => ({
+          id: digest.userId,
+          ...(await deliver(digest.userId, digest.payload)),
+        })),
+      ),
+      Promise.all(
+        evenings.map(async (userId) => ({
+          id: userId,
+          ...(await deliver(userId, EVENING_PROMPT)),
+        })),
+      ),
+      // Best effort: a missed engagement push is simply not sent again today.
+      Promise.all(
+        engagement.map(async (item) => ({
+          id: item.userId,
+          ...(await deliver(item.userId, item.payload)),
+        })),
+      ),
+    ]);
 
-  const results = [...reminderResults, ...digestResults, ...eveningResults];
+  const results = [
+    ...reminderResults,
+    ...digestResults,
+    ...eveningResults,
+    ...engagementResults,
+  ];
   const sent = results.reduce((total, result) => total + result.sent, 0);
   const expired = results.flatMap((result) => result.expired);
-  const retryTasks = reminderResults.filter((result) => result.retry).map((result) => result.id);
-  const retryDigests = digestResults.filter((result) => result.retry).map((result) => result.id);
+  const retryTasks = reminderResults
+    .filter((result) => result.retry)
+    .map((result) => result.id);
+  const retryDigests = digestResults
+    .filter((result) => result.retry)
+    .map((result) => result.id);
 
   if (expired.length > 0) {
     await admin.from("push_subscriptions").delete().in("endpoint", expired);
   }
   if (retryTasks.length > 0) {
-    await admin.from("tasks").update({ reminder_sent_for: null }).in("id", retryTasks);
+    await admin
+      .from("tasks")
+      .update({ reminder_sent_for: null })
+      .in("id", retryTasks);
   }
   if (retryDigests.length > 0) {
     await admin
@@ -157,15 +256,21 @@ async function handle(request: NextRequest) {
       .in("user_id", retryDigests);
   }
 
-  const retryEvenings = eveningResults.filter((result) => result.retry).map((result) => result.id);
+  const retryEvenings = eveningResults
+    .filter((result) => result.retry)
+    .map((result) => result.id);
   if (retryEvenings.length > 0) {
-    await admin.from("user_preferences").update({ evening_prompt_sent_on: null }).in("user_id", retryEvenings);
+    await admin
+      .from("user_preferences")
+      .update({ evening_prompt_sent_on: null })
+      .in("user_id", retryEvenings);
   }
 
   return NextResponse.json({
     reminders: due.length,
     digests: digests.length,
     evenings: evenings.length,
+    engagement: engagement.length,
     sent,
     expired: expired.length,
     retry: retryTasks.length + retryDigests.length,

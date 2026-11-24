@@ -112,6 +112,8 @@ export interface UserPreferences {
   morning_digest: boolean;
   /** 21h "anything for tomorrow?" push; off by default. */
   evening_prompt?: boolean;
+  /** Streak-at-risk (19h) and come-back (12h) pushes; on by default. */
+  engagement_pushes?: boolean;
   /** Treinos module, off until the person turns it on. */
   workouts_enabled: boolean;
   created_at: string;

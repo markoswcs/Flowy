@@ -68,6 +68,7 @@ export async function updatePreferences(
       | "default_task_view"
       | "morning_digest"
       | "evening_prompt"
+      | "engagement_pushes"
       | "workouts_enabled"
     >
   >,

@@ -5,7 +5,6 @@ import {
   BookOpen,
   CalendarClock,
   Check,
-  Moon,
   Trophy,
 } from "lucide-react";
 import { useState } from "react";
@@ -20,7 +19,6 @@ import { listCompletionDays } from "@/services/tasks";
 
 import { ClassNowCard } from "@/features/classes/class-now-card";
 
-import { OPEN_DUMP_EVENT } from "./brain-dump";
 import { FlameArt } from "./flame-art";
 import { StreakSheet } from "./streak-sheet";
 import { levelOf } from "./streak-levels";
@@ -201,27 +199,12 @@ function Deadlines() {
   );
 }
 
-// A plain shortcut: it opens something, it is not a state.
-const shortcut =
-  "inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-border/60 px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground";
-
-/** Extras of the "Hoje" view: the streak, the brain dump and tests coming up. */
+/** Extras of the "Hoje" view: the streak, the class now and tests coming up. */
 export function TodayBoosts() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <StreakChip />
-        <div className="flex shrink-0 gap-1.5">
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new Event(OPEN_DUMP_EVENT))}
-            className={shortcut}
-            title="Esvaziar a cabeça: anote tudo de uma vez"
-          >
-            <Moon className="size-4 shrink-0" aria-hidden="true" />
-            Esvaziar
-          </button>
-        </div>
       </div>
       <ClassNowCard />
       <Deadlines />

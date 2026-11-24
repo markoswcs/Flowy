@@ -2077,12 +2077,12 @@ html.reduce-motion .flowy-prism::after {
       [aria-current="page"],
       .flowy-glow
     ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after {
-    /* Opacity only: the phone's compositor animates it without repainting. */
+    /* The light keeps travelling around the item; only the blurred shadows
+       (what froze iPhones) are left out on phones. */
     animation:
-      flowy-glow-in 220ms ease-out,
-      flowy-glow-breathe 2.4s ease-in-out 220ms infinite !important;
+      flowy-glow-spin 3s linear infinite,
+      flowy-glow-in 220ms ease-out !important;
     filter: none !important;
-    will-change: opacity;
   }
 
   /* The round ring turns as a whole (a transform, also free on phones). */
@@ -2219,4 +2219,27 @@ html.reduce-motion :is(.flowy-flame-dance, .flowy-flame-core, .flowy-flame-glow,
   :is(.flowy-flame-dance, .flowy-flame-core, .flowy-flame-glow, .flowy-flame-ember, .flowy-flame-sparkle, .flowy-flame-halo, .flowy-flame-pop) {
     animation: none !important;
   }
+}
+
+/* The selection light in the colours of the bottom bar's ring (the "casinha"):
+   a faint rail with a comet of violet, pink, orange, gold and sky. */
+:where(
+    [aria-pressed="true"],
+    [role="radio"][aria-checked="true"],
+    [role="tab"][aria-selected="true"],
+    [aria-current="page"],
+    .flowy-glow
+  ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after {
+  background: conic-gradient(
+    from var(--flowy-glow-angle),
+    rgb(139 92 246 / 0.22) 0deg,
+    rgb(139 92 246 / 0.22) 190deg,
+    #8b5cf6 235deg,
+    #ec4899 270deg,
+    #fb923c 298deg,
+    #fde68a 318deg,
+    #ffffff 330deg,
+    #38bdf8 345deg,
+    rgb(139 92 246 / 0.22) 360deg
+  );
 }

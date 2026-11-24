@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Moon, Sunrise } from "lucide-react";
+import { Bell, Moon, Sunrise, Flame } from "lucide-react";
 import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
@@ -109,7 +109,7 @@ export function PushNotificationsSection() {
         <SwitchRow
           icon={<Moon className="size-5" />}
           title="Aviso da noite"
-          description="Às 21h, um lembrete para anotar o que não pode esquecer amanhã. Um toque e você escreve tudo de uma vez."
+          description="Às 21h, um lembrete para anotar o que não pode esquecer amanhã."
           checked={preferences.data?.evening_prompt === true}
           disabled={!preferences.data || updatePreferences.isPending}
           onToggle={() =>
@@ -124,6 +124,35 @@ export function PushNotificationsSection() {
                   ),
                 onError: () =>
                   toast.error("Não foi possível salvar a preferência."),
+              },
+            )
+          }
+        />
+      ) : null}
+      {enabled ? (
+        <SwitchRow
+          icon={<Flame className="size-5" />}
+          title="Foguinho e lembretes"
+          description="Às 19h, se o seu foguinho ainda não acendeu hoje. E um convite para voltar se você sumir por uns dias."
+          checked={preferences.data?.engagement_pushes !== false}
+          disabled={!preferences.data || updatePreferences.isPending}
+          onToggle={() =>
+            updatePreferences.mutate(
+              {
+                engagement_pushes:
+                  preferences.data?.engagement_pushes === false,
+              },
+              {
+                onSuccess: () =>
+                  toast.success(
+                    preferences.data?.engagement_pushes === false
+                      ? "Lembretes do foguinho ativados"
+                      : "Lembretes do foguinho desativados",
+                  ),
+                onError: () =>
+                  toast.error(
+                    "Rode a atualização do banco das notificações e tente de novo.",
+                  ),
               },
             )
           }
