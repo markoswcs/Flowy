@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
           ]);
           if (tasks === null) tasksAllowed = false;
           console.info(`Google Agenda: ${events.length} eventos de ${agendas} agenda(s), ${tasks?.length ?? "sem permissão para"} tarefas.`);
-          return [...events, ...(tasks ?? [])];
+          return [...events, ...(tasks ?? [])].map((event) => ({ ...event, account: account.account_email }));
         } catch (error) {
           if (error instanceof GoogleRevokedError) {
             // Access removed on Google's side: forget that account.

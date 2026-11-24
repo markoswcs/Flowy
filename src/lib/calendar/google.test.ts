@@ -3,6 +3,29 @@ import { describe, expect, it } from "vitest";
 import { agendasToRead, taskToCalendarEvent, toCalendarEvent } from "./google";
 
 describe("toCalendarEvent", () => {
+  it("keeps the end time, place and Meet link of a meeting", () => {
+    expect(
+      toCalendarEvent(
+        {
+          summary: "Reunião",
+          start: { dateTime: "2026-11-26T14:00:00-03:00" },
+          end: { dateTime: "2026-11-26T14:15:00-03:00" },
+          location: "Sala 2",
+          hangoutLink: "https://meet.google.com/abc-defg-hij",
+          htmlLink: "javascript:alert(1)",
+        },
+        "America/Sao_Paulo",
+      ),
+    ).toEqual({
+      date: "2026-11-26",
+      time: "14:00",
+      endTime: "14:15",
+      title: "Reunião",
+      location: "Sala 2",
+      meet: "https://meet.google.com/abc-defg-hij",
+    });
+  });
+
   it("keeps all-day events without a time", () => {
     expect(toCalendarEvent({ summary: "Feriado da firma", start: { date: "2026-11-20" } }, "America/Sao_Paulo")).toEqual({
       date: "2026-11-20",

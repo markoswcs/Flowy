@@ -9,6 +9,15 @@ export interface CalendarEvent {
   title: string;
   /** "task" for a Google Tarefa; events have none. */
   kind?: "task";
+  /** HH:MM the event ends (same day), when known. */
+  endTime?: string;
+  location?: string;
+  /** Video call link (Google Meet), when the event has one. */
+  meet?: string;
+  /** Opens the event in Google Agenda. */
+  link?: string;
+  /** Which connected Google account it came from. */
+  account?: string;
 }
 
 interface Stamp {

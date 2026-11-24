@@ -109,13 +109,26 @@ interface GoogleEvent {
   status?: string;
   summary?: string;
   start?: { date?: string; dateTime?: string };
+  end?: { date?: string; dateTime?: string };
+  location?: string;
+  hangoutLink?: string;
+  htmlLink?: string;
+}
+
+/** Location, Meet link and the event's page, only the ones it has. */
+function details(event: GoogleEvent): Partial<CalendarEvent> {
+  const safe = (url?: string) => (url && /^https:\/\//.test(url) ? url : undefined);
+  const location = event.location?.trim().slice(0, 200);
+  const meet = safe(event.hangoutLink);
+  const link = safe(event.htmlLink);
+  return { ...(location ? { location } : {}), ...(meet ? { meet } : {}), ...(link ? { link } : {}) };
 }
 
 /** Google's start ("2026-11-16" or "2026-11-16T10:00:00-03:00") in the viewer's timezone. */
 export function toCalendarEvent(event: GoogleEvent, viewerZone: string): CalendarEvent | null {
   if (event.status === "cancelled" || !event.start) return null;
   const title = (event.summary ?? "").trim().slice(0, 200) || "(sem título)";
-  if (event.start.date) return { date: event.start.date, time: null, title };
+  if (event.start.date) return { date: event.start.date, time: null, title, ...details(event) };
   if (!event.start.dateTime) return null;
   const instant = new Date(event.start.dateTime);
   if (Number.isNaN(instant.getTime())) return null;
@@ -129,7 +142,24 @@ export function toCalendarEvent(event: GoogleEvent, viewerZone: string): Calenda
     hourCycle: "h23",
   }).formatToParts(instant);
   const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
-  return { date: `${get("year")}-${get("month")}-${get("day")}`, time: `${get("hour")}:${get("minute")}`, title };
+  const date = `${get("year")}-${get("month")}-${get("day")}`;
+  // The end time, when the event finishes on the same day.
+  let endTime: string | undefined;
+  const end = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+  if (end && !Number.isNaN(end.getTime())) {
+    const endParts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: viewerZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(end);
+    const pick = (type: string) => endParts.find((part) => part.type === type)?.value ?? "00";
+    if (`${pick("year")}-${pick("month")}-${pick("day")}` === date) endTime = `${pick("hour")}:${pick("minute")}`;
+  }
+  return { date, time: `${get("hour")}:${get("minute")}`, title, ...(endTime ? { endTime } : {}), ...details(event) };
 }
 
 interface GoogleCalendarEntry {
