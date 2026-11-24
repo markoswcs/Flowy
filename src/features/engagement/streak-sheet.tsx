@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { localDateKey } from "@/features/tasks/date-utils";
+import { useIntroOffered } from "@/lib/intro-preferences";
 import { holdOverlay } from "@/lib/overlay";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -191,6 +192,7 @@ function StreakMonth({ done, today }: { done: Set<string>; today: string }) {
 
 /** Your streak, in the style of a language-learning app: the big number, the week, a goal and the month. */
 function MyStreak({ doneDays }: { doneDays: string[] }) {
+  const [howToOffered, dismissHowTo] = useIntroOffered("streak:how-it-works");
   const today = localDateKey();
   const { count, status } = streakState(doneDays, today);
   const level = levelOf(count);
@@ -256,58 +258,71 @@ function MyStreak({ doneDays }: { doneDays: string[] }) {
       </section>
 
       {/* How it works, in three steps, for whoever is seeing it for the first time. */}
-      <section
-        className="rounded-[1.5rem] border border-border/60 bg-card/50 p-4"
-        aria-label="Como funciona"
-      >
-        <p className="font-bold">Como funciona o foguinho</p>
-        <ol className="mt-3 space-y-3">
-          {[
-            {
-              icon: Check,
-              color: "#34d399",
-              title: "Conclua 1 tarefa no dia",
-              text: "Qualquer tarefa riscada acende o foguinho daquele dia.",
-            },
-            {
-              icon: Flame,
-              color: "#fb923c",
-              title: "Volte todo dia",
-              text: "Cada dia seguido com uma tarefa concluída soma 1 à sua sequência.",
-            },
-            {
-              icon: Zap,
-              color: "#a855f7",
-              title: "Suba de nível",
-              text: "Faísca, Chama, Fogueira, Vulcão e Lenda: o foguinho muda de cor e de efeito.",
-            },
-            {
-              icon: Snowflake,
-              color: "#38bdf8",
-              title: "Esqueceu um dia?",
-              text: "A sequência congela, mas não apaga. Só dois dias seguidos sem tarefa zeram tudo.",
-            },
-          ].map(({ icon: Icon, color, title, text }, index) => (
-            <li key={title} className="flex gap-3">
-              <span
-                className="relative grid size-9 shrink-0 place-items-center rounded-full"
-                style={{ backgroundColor: `${color}26`, color }}
-              >
-                <Icon className="size-4" strokeWidth={2.5} />
-                <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-card text-[9px] font-bold text-muted-foreground">
-                  {index + 1}
+      {/* Shown until the person taps "Entendi", then never again (kept on the account). */}
+      {howToOffered ? (
+        <section
+          className="rounded-[1.5rem] border border-border/60 bg-card/50 p-4"
+          aria-label="Como funciona"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-bold">Como funciona o foguinho</p>
+          </div>
+          <ol className="mt-3 space-y-3">
+            {[
+              {
+                icon: Check,
+                color: "#34d399",
+                title: "Conclua 1 tarefa no dia",
+                text: "Qualquer tarefa riscada acende o foguinho daquele dia.",
+              },
+              {
+                icon: Flame,
+                color: "#fb923c",
+                title: "Volte todo dia",
+                text: "Cada dia seguido com uma tarefa concluída soma 1 à sua sequência.",
+              },
+              {
+                icon: Zap,
+                color: "#a855f7",
+                title: "Suba de nível",
+                text: "Faísca, Chama, Fogueira, Vulcão e Lenda: o foguinho muda de cor e de efeito.",
+              },
+              {
+                icon: Snowflake,
+                color: "#38bdf8",
+                title: "Esqueceu um dia?",
+                text: "A sequência congela, mas não apaga. Só dois dias seguidos sem tarefa zeram tudo.",
+              },
+            ].map(({ icon: Icon, color, title, text }, index) => (
+              <li key={title} className="flex gap-3">
+                <span
+                  className="relative grid size-9 shrink-0 place-items-center rounded-full"
+                  style={{ backgroundColor: `${color}26`, color }}
+                >
+                  <Icon className="size-4" strokeWidth={2.5} />
+                  <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-card text-[9px] font-bold text-muted-foreground">
+                    {index + 1}
+                  </span>
                 </span>
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold">{title}</span>
-                <span className="block text-xs leading-5 text-muted-foreground">
-                  {text}
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">{title}</span>
+                  <span className="block text-xs leading-5 text-muted-foreground">
+                    {text}
+                  </span>
                 </span>
-              </span>
-            </li>
-          ))}
-        </ol>
-      </section>
+              </li>
+            ))}
+          </ol>
+          <button
+            type="button"
+            data-no-glow
+            onClick={dismissHowTo}
+            className="mt-4 h-10 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground active:scale-[0.98]"
+          >
+            Entendi
+          </button>
+        </section>
+      ) : null}
 
       {/* This week: done days are joined by a band. */}
       <section className="rounded-[1.5rem] border border-border/60 bg-card/50 p-4">
