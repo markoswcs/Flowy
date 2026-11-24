@@ -132,6 +132,7 @@ export function FeedbackForm() {
             type="button"
             role="radio"
             aria-checked={kind === value}
+            data-no-glow
             onClick={() => setKind(value)}
             className={cn(
               "flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-sm font-semibold transition-all",

@@ -257,13 +257,10 @@
 
 @layer components {
   /* Quick and discreet: a short fade with a few pixels of travel. */
+  /* One short fade when the page changes: moving the whole page (and then its
+     content again) made switching tabs stutter on phones. */
   .app-page-transition {
-    animation: flowy-page-enter 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  .app-page-transition > * {
-    animation: flowy-content-settle 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: 40ms;
+    animation: flowy-page-fade 160ms ease-out both;
   }
 
   .flowy-list-item {
@@ -2096,5 +2093,11 @@ html.reduce-motion .flowy-prism::after {
 
   .flowy-tip-bubble {
     animation: flowy-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+}
+
+@keyframes flowy-page-fade {
+  from {
+    opacity: 0;
   }
 }

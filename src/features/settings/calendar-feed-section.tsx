@@ -175,7 +175,9 @@ function AgendaPicker() {
 
   return (
     <fieldset
-      className="mt-3 rounded-2xl border border-border/60 bg-card/40 p-3"
+      // min-w-0: a fieldset is as wide as its content by default, which let
+      // long agenda names push the list out of the card.
+      className="mt-3 min-w-0 rounded-2xl border border-border/60 bg-card/40 p-3"
       disabled={saving}
     >
       <legend className="px-1 text-sm font-medium">

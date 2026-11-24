@@ -171,6 +171,12 @@ export function MobileNav() {
   const items = resolveDock(dock.data);
   const keys = items.map((entry) => entry.key);
   const [editing, setEditing] = useState<number | null>(null);
+  const router = useRouter();
+  const hrefs = items.map((entry) => entry.href).join("|");
+  // Every shortcut's page is fetched ahead, so switching is instant.
+  useEffect(() => {
+    hrefs.split("|").forEach((href) => router.prefetch(href));
+  }, [hrefs, router]);
 
   const item = (index: number) => {
     const entry = items[index]!;

@@ -181,7 +181,7 @@ function SettingsNav({ active }: { active: string }) {
   return (
     <nav
       aria-label="Seções das configurações"
-      className="sticky top-14 z-20 -mx-4 bg-background/85 px-4 py-2 backdrop-blur lg:top-6 lg:mx-0 lg:self-start lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+      className="-mx-4 px-4 py-1 lg:sticky lg:top-6 lg:mx-0 lg:self-start lg:p-0"
     >
       <ul className="flex gap-1.5 overflow-x-auto lg:flex-col lg:gap-0.5">
         {NAV.map(({ id, label, icon: Icon }) => (
