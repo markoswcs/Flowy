@@ -330,10 +330,10 @@ export function CalendarView({ folders, categories }: { folders: Folder[]; categ
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-lg font-bold first-letter:uppercase">
               {selected === today ? "Hoje" : format(selectedDate, { weekday: "long" })}
-              <span className="font-medium text-muted-foreground">, {format(selectedDate, { day: "numeric", month: "long" })}</span>
             </h2>
-            <p className="text-xs text-muted-foreground">
-              {entries.length ? `${entries.length} ${entries.length === 1 ? "item" : "itens"} neste dia` : "Dia livre"}
+            <p className="truncate text-xs text-muted-foreground">
+              {format(selectedDate, { day: "numeric", month: "long" })} ·{" "}
+              {entries.length ? `${entries.length} ${entries.length === 1 ? "item" : "itens"}` : "dia livre"}
             </p>
           </div>
           <button
