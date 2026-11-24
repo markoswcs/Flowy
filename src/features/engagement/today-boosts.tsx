@@ -8,6 +8,7 @@ import {
   Flame,
   Moon,
   Snowflake,
+  Trophy,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -22,6 +23,8 @@ import { listCompletionDays } from "@/services/tasks";
 import { ClassNowCard } from "@/features/classes/class-now-card";
 
 import { OPEN_DUMP_EVENT } from "./brain-dump";
+import { StreakSheet } from "./streak-sheet";
+import { levelOf } from "./streak-levels";
 import {
   countdownLabel,
   countdowns,
@@ -36,68 +39,90 @@ function since(days: number) {
   return localDateKey(date);
 }
 
-/** Days in a row with at least one task done; says so in plain words. */
+/** Days in a row with at least one task done; a tap opens the flame and the ranking. */
 function StreakChip() {
   const today = localDateKey();
+  const [open, setOpen] = useState(false);
   const times = useQuery({
     queryKey: [...taskKeys.all, "completion-days"],
-    queryFn: () => listCompletionDays(since(60)),
+    queryFn: () => listCompletionDays(since(120)),
     staleTime: 60_000,
   });
   if (!times.data) return null;
   const { count, status } = streakState(times.data, today);
+  const level = levelOf(count);
+  const frozen = status === "frozen";
 
-  if (status === "none") {
-    return (
-      <p className="inline-flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
-        <Flame className="size-4 shrink-0" aria-hidden="true" />
-        <span className="truncate">Conclua uma tarefa e comece sua sequência</span>
-      </p>
-    );
-  }
-
-  const label = `${count} ${count === 1 ? "dia seguido" : "dias seguidos"}`;
-
-  if (status === "frozen") {
-    return (
-      <p className="flex min-w-0 items-center gap-2 text-sm" title="Ontem passou sem tarefa concluída. Conclua uma hoje para a sequência voltar.">
-        <span className="flowy-frost grid size-8 shrink-0 place-items-center rounded-full bg-sky-400/15 text-sky-300">
-          <Snowflake className="size-4" aria-hidden="true" />
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        data-no-glow
+        className="group flex min-w-0 items-center gap-2.5 rounded-full border py-1 pl-1 pr-3 text-left text-sm transition-all active:scale-95"
+        style={{
+          borderColor: frozen ? "rgb(56 189 248 / 0.35)" : `${level.color}55`,
+          background: frozen
+            ? "rgb(56 189 248 / 0.08)"
+            : `linear-gradient(90deg, ${level.color}26, transparent)`,
+        }}
+        aria-label={`${count} ${count === 1 ? "dia seguido" : "dias seguidos"}. Ver sequência e ranking`}
+      >
+        <span
+          className={cn(
+            "grid size-8 shrink-0 place-items-center rounded-full",
+            frozen ? "bg-sky-400/15 text-sky-300" : "",
+          )}
+          style={
+            frozen
+              ? undefined
+              : { backgroundColor: `${level.color}30`, color: level.color }
+          }
+        >
+          {frozen ? (
+            <Snowflake className="flowy-frost size-4" aria-hidden="true" />
+          ) : (
+            <Flame
+              className={cn(
+                "size-4",
+                status === "lit" ? "flowy-flame" : "flowy-ember",
+              )}
+              aria-hidden="true"
+            />
+          )}
         </span>
         <span className="min-w-0 leading-tight">
-          <span className="block truncate">
-            <span className="font-semibold text-sky-300">{label}</span>{" "}
-            <span className="text-muted-foreground">· congelada</span>
+          <span
+            key={count}
+            className="block truncate animate-in zoom-in-50 fade-in duration-500"
+          >
+            <span className="font-bold">{count}</span>{" "}
+            <span className="text-muted-foreground">
+              {count === 1 ? "dia seguido" : "dias seguidos"}
+            </span>
           </span>
-          <span className="block truncate text-xs text-muted-foreground">Conclua 1 tarefa hoje para voltar</span>
+          <span
+            className="block truncate text-[11px]"
+            style={{ color: frozen ? "#7dd3fc" : level.color }}
+          >
+            {status === "none"
+              ? "Conclua uma tarefa para começar"
+              : frozen
+                ? "Congelada · conclua 1 tarefa hoje"
+                : status === "waiting"
+                  ? `${level.name} · falta 1 tarefa hoje`
+                  : `${level.name} · ver ranking`}
+          </span>
         </span>
-      </p>
-    );
-  }
-
-  const lit = status === "lit";
-  return (
-    <p
-      className="flex min-w-0 items-center gap-2 text-sm"
-      title={lit ? "Você já concluiu uma tarefa hoje." : "Conclua uma tarefa hoje para manter a sequência."}
-    >
-      <span
-        className={cn(
-          "grid size-8 shrink-0 place-items-center rounded-full",
-          lit ? "bg-orange-500/15 text-orange-400" : "bg-orange-500/10 text-orange-400/60",
-        )}
-      >
-        <Flame className={cn("size-4", lit ? "flowy-flame" : "flowy-ember")} aria-hidden="true" />
-      </span>
-      <span className="min-w-0 leading-tight">
-        {/* Remounts when the number changes, so a new day pops in. */}
-        <span key={count} className="block truncate animate-in zoom-in-50 fade-in duration-500">
-          <span className="font-semibold">{count}</span>{" "}
-          <span className="text-muted-foreground">{count === 1 ? "dia seguido" : "dias seguidos"}</span>
-        </span>
-        {lit ? null : <span className="block truncate text-xs text-muted-foreground">Falta 1 tarefa hoje</span>}
-      </span>
-    </p>
+        <Trophy
+          className="ml-1 size-4 shrink-0 text-amber-300 transition-transform group-hover:scale-110"
+          aria-hidden="true"
+        />
+      </button>
+      {open ? (
+        <StreakSheet doneDays={times.data} onClose={() => setOpen(false)} />
+      ) : null}
+    </>
   );
 }
 

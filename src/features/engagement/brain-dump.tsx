@@ -47,7 +47,11 @@ export function BrainDump() {
     let timer = 0;
     if (url.searchParams.has("despejar")) {
       url.searchParams.delete("despejar");
-      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${url.pathname}${url.search}${url.hash}`,
+      );
       timer = window.setTimeout(show);
     }
     return () => {
@@ -76,7 +80,9 @@ export function BrainDump() {
     setSaving(true);
     try {
       for (const task of tasks) await create.mutateAsync(task);
-      notify(`${tasks.length} ${tasks.length === 1 ? "tarefa anotada" : "tarefas anotadas"}. Boa noite!`);
+      notify(
+        `${tasks.length} ${tasks.length === 1 ? "tarefa anotada" : "tarefas anotadas"}. Boa noite!`,
+      );
       setText("");
       setOpen(false);
     } catch {
@@ -87,11 +93,19 @@ export function BrainDump() {
   }
 
   return (
-    <div className="fixed inset-0 z-[250] flex items-end justify-center bg-black/50 p-3 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="dump-title">
+    <div
+      className="fixed inset-0 z-[250] flex items-end justify-center bg-black/50 p-3 backdrop-blur-sm sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dump-title"
+    >
       <div className="w-full max-w-lg rounded-3xl border border-border/60 bg-card p-5 shadow-soft animate-in fade-in slide-in-from-bottom-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 id="dump-title" className="flex items-center gap-2 text-lg font-semibold">
+            <h2
+              id="dump-title"
+              className="flex items-center gap-2 text-lg font-semibold"
+            >
               <Moon className="size-5 flowy-ink" aria-hidden="true" />
               Esvaziar a cabeça
             </h2>
@@ -99,7 +113,13 @@ export function BrainDump() {
               Uma coisa por linha. Sem data, vai para amanhã.
             </p>
           </div>
-          <Button type="button" variant="ghost" size="icon" aria-label="Fechar" onClick={() => setOpen(false)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Fechar"
+            onClick={() => setOpen(false)}
+          >
             <X className="size-5" />
           </Button>
         </div>
@@ -108,12 +128,22 @@ export function BrainDump() {
           value={text}
           onChange={(event) => setText(event.target.value)}
           rows={7}
-          placeholder={"Levar o carro na revisão\nLigar para a dentista 10h\nProva de Física sexta"}
+          placeholder={
+            "Levar o carro na revisão\nLigar para a dentista 10h\nProva de Física sexta"
+          }
           aria-label="O que você precisa lembrar, uma coisa por linha"
           className="mt-4 w-full resize-none rounded-2xl border border-input bg-background px-4 py-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
         />
-        <Button type="button" className="mt-3 h-11 w-full" disabled={!tasks.length} loading={saving} onClick={() => void save()}>
-          {tasks.length ? `Anotar ${tasks.length} ${tasks.length === 1 ? "tarefa" : "tarefas"}` : "Anotar"}
+        <Button
+          type="button"
+          className="mt-3 h-11 w-full"
+          disabled={!tasks.length}
+          loading={saving}
+          onClick={() => void save()}
+        >
+          {tasks.length
+            ? `Anotar ${tasks.length} ${tasks.length === 1 ? "tarefa" : "tarefas"}`
+            : "Anotar"}
         </Button>
       </div>
     </div>
