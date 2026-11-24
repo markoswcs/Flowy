@@ -160,6 +160,7 @@ function ClassForm({
               <button
                 key={weekday}
                 type="button"
+                data-no-glow
                 aria-pressed={on}
                 onClick={() =>
                   setDays(
@@ -219,6 +220,7 @@ function ClassForm({
           <button
             key={option.label}
             type="button"
+            data-no-glow
             aria-pressed={length(form) === option.minutes}
             onClick={() =>
               setForm({
@@ -571,6 +573,7 @@ export function ClassesPage() {
               <button
                 key={value}
                 type="button"
+                data-no-glow
                 aria-pressed={view === value}
                 onClick={() => setView(value)}
                 className={cn(

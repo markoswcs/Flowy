@@ -614,6 +614,7 @@ export function NoteList() {
             <Link
               key={value}
               href={SECTION_HREF[value]}
+              data-no-glow
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
@@ -784,6 +785,7 @@ export function NoteList() {
             <button
               key={option.value}
               type="button"
+              data-no-glow
               aria-pressed={sort === option.value}
               onClick={() => setSort(option.value)}
               className={cn(
@@ -808,6 +810,7 @@ export function NoteList() {
               <button
                 key={value}
                 type="button"
+                data-no-glow
                 aria-pressed={layout === value}
                 aria-label={value === "grid" ? "Ver em grade" : "Ver em lista"}
                 onClick={() => chooseLayout(value)}
@@ -839,6 +842,7 @@ export function NoteList() {
             <button
               key={chip.id}
               type="button"
+              data-no-glow
               aria-pressed={filter === chip.id}
               onClick={() => setFilter(chip.id)}
               className={cn(
