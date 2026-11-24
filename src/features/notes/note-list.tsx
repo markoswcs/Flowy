@@ -430,7 +430,17 @@ export function NoteList() {
           "group relative flex h-full min-h-48 flex-col overflow-hidden rounded-[1.4rem] border border-border/70 bg-gradient-to-b to-card/60 p-4 pt-11 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl sm:p-5 sm:pt-12",
           tone.soft,
         )}
-        style={note.color ? { backgroundColor: note.color } : undefined}
+        // A note's own colour replaces the section tint (the gradient image
+        // used to hide it).
+        style={
+          note.color
+            ? {
+                backgroundColor: note.color,
+                backgroundImage: `linear-gradient(180deg, ${note.color.slice(0, 7)}40, transparent 75%)`,
+                borderColor: `${note.color.slice(0, 7)}66`,
+              }
+            : undefined
+        }
       >
         <Link
           href={`/app/notes/${note.id}`}

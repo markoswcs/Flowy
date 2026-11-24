@@ -65,16 +65,17 @@ import { notify } from "@/providers/notification-provider";
 import { replaceNoteCategories } from "@/services/notes";
 import type { Note } from "@/types/content";
 
-/** Soft tints (with alpha) that read well on light and dark themes. */
+/** Tints (with alpha) strong enough to be seen on the dark themes too. */
 const NOTE_COLORS: { name: string; value: string | null }[] = [
   { name: "Sem cor", value: null },
-  { name: "Rosa", value: "#F43F5E2E" },
-  { name: "Laranja", value: "#F9731630" },
-  { name: "Amarelo", value: "#EAB30833" },
-  { name: "Verde", value: "#22C55E2B" },
-  { name: "Azul", value: "#3B82F630" },
-  { name: "Roxo", value: "#8B5CF633" },
-  { name: "Cinza", value: "#64748B33" },
+  { name: "Roxo", value: "#8B5CF64D" },
+  { name: "Azul", value: "#3B82F64D" },
+  { name: "Ciano", value: "#06B6D447" },
+  { name: "Verde", value: "#10B98147" },
+  { name: "Amarelo", value: "#FACC1540" },
+  { name: "Laranja", value: "#F973164D" },
+  { name: "Rosa", value: "#EC48994D" },
+  { name: "Cinza", value: "#94A3B840" },
 ];
 
 const MAX_IMAGE_CHARS = 1_500_000;
@@ -1039,12 +1040,20 @@ export function TextNoteEditor({ note }: { note: Note }) {
                   setNoteColor(color.value);
                   markChanged();
                 }}
-                className="grid size-10 place-items-center rounded-full border border-border"
-                style={{ backgroundColor: color.value ?? "hsl(var(--card))" }}
+                data-no-glow
+                className={cn(
+                  "grid size-11 place-items-center rounded-full border-2 transition-transform active:scale-90",
+                  noteColor === color.value ? "scale-110 border-foreground" : "border-transparent",
+                )}
+                style={{ backgroundColor: color.value ?? "hsl(var(--muted))" }}
               >
-                {noteColor === color.value ? (
-                  <Check className="size-4" />
-                ) : null}
+                {/* The solid hue in the middle, so each choice is easy to tell apart. */}
+                <span
+                  className="grid size-6 place-items-center rounded-full"
+                  style={{ backgroundColor: color.value ? color.value.slice(0, 7) : "transparent" }}
+                >
+                  {noteColor === color.value ? <Check className="size-3.5 text-white drop-shadow" /> : null}
+                </span>
               </button>
             ))}
           </div>

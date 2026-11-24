@@ -2077,13 +2077,19 @@ html.reduce-motion .flowy-prism::after {
       [aria-current="page"],
       .flowy-glow
     ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after {
-    animation: flowy-glow-in 220ms ease-out !important;
+    /* Opacity only: the phone's compositor animates it without repainting. */
+    animation:
+      flowy-glow-in 220ms ease-out,
+      flowy-glow-breathe 2.4s ease-in-out 220ms infinite !important;
     filter: none !important;
+    will-change: opacity;
   }
 
+  /* The round ring turns as a whole (a transform, also free on phones). */
   .flowy-prism::before,
   .flowy-prism::after {
-    animation: none !important;
+    animation: flowy-prism-turn 6s linear infinite !important;
+    will-change: transform;
   }
 
   .flowy-prism::after {
@@ -2100,4 +2106,47 @@ html.reduce-motion .flowy-prism::after {
   from {
     opacity: 0;
   }
+}
+
+@keyframes flowy-glow-breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes flowy-prism-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flowy-prism::before,
+  .flowy-prism::after {
+    animation: none !important;
+  }
+}
+
+/* Drawing on phones: while Excalidraw's main menu is open, the tool bar and
+   its toggle step aside so they never sit on top of the menu. */
+@media (max-width: 767px) {
+  .flowy-excalidraw:has(.dropdown-menu--mobile):not(:has(.App-toolbar__extra-tools-dropdown)) .App-toolbar-container,
+  .flowy-excalidraw:has(.dropdown-menu--mobile):not(:has(.App-toolbar__extra-tools-dropdown)) .flowy-mobile-tools-toggle {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* "Reduzir animações" always wins over the phone animations above. */
+html.reduce-motion .flowy-prism::before,
+html.reduce-motion .flowy-prism::after,
+html.reduce-motion
+  :where(
+    [aria-pressed="true"],
+    [role="radio"][aria-checked="true"],
+    [role="tab"][aria-selected="true"],
+    [aria-current="page"],
+    .flowy-glow
+  ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after {
+  animation: none !important;
 }
