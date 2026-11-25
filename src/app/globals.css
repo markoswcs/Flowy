@@ -125,6 +125,8 @@
   html {
     min-width: 320px;
     scroll-behavior: smooth;
+    /* What shows behind the safe areas follows the theme, not a fixed purple. */
+    background-color: hsl(var(--background));
   }
 
   /* Headings and the wordmark use the logo's typeface. */
