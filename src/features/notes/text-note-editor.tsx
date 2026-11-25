@@ -78,7 +78,8 @@ const NOTE_COLORS: { name: string; value: string | null }[] = [
   { name: "Cinza", value: "#94A3B840" },
 ];
 
-const MAX_IMAGE_CHARS = 1_500_000;
+/** Photos stay light: about 450 KB at most once encoded (they live in the note). */
+const MAX_IMAGE_CHARS = 600_000;
 
 const NO_MARKS = {
   h1: false,
@@ -148,9 +149,10 @@ function readAsDataUrl(file: Blob): Promise<string> {
 
 // Each step is smaller than the last; the first one that fits the note wins.
 const IMAGE_STEPS = [
-  [1280, 0.8],
-  [1024, 0.72],
-  [800, 0.62],
+  [1280, 0.72],
+  [1024, 0.65],
+  [800, 0.58],
+  [640, 0.5],
 ] as const;
 
 /** The image, resized and compressed before it is saved; null if it never fits. */

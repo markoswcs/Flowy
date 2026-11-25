@@ -33,6 +33,7 @@ import {
   type ClassSlotInput,
   type RoutineKind,
 } from "./schedule";
+import { SubjectSheet } from "./subject-sheet";
 import { useClasses, useDeleteClass, useSaveClass } from "./use-classes";
 
 // Monday first, like a work or school week.
@@ -343,11 +344,13 @@ function ClassForm({
 
 function ClassCard({
   slot,
+  onOpen,
   onEdit,
   onDelete,
   live,
 }: {
   slot: ClassSlot;
+  onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
   live?: boolean;
@@ -368,7 +371,7 @@ function ClassCard({
       />
       <button
         type="button"
-        onClick={onEdit}
+        onClick={onOpen}
         className="flex min-w-0 flex-1 items-center gap-3 pl-1 text-left"
       >
         <span
@@ -848,6 +851,7 @@ export function ClassesPage() {
   const newClass = () =>
     setEditing({ ...EMPTY, weekday: today === 0 ? 1 : today });
 
+  const [opened, setOpened] = useState<ClassSlot | null>(null);
   const edit = (slot: ClassSlot) =>
     setEditing({
       id: slot.id,
@@ -988,13 +992,13 @@ export function ClassesPage() {
               <div className="sm:hidden">
                 <DayView
                   slots={slots}
-                  onEdit={edit}
+                  onEdit={setOpened}
                   today={today}
                   ongoingId={ongoing?.id ?? null}
                 />
               </div>
               <div className="hidden sm:block">
-                <WeekGrid slots={slots} onEdit={edit} today={today} />
+                <WeekGrid slots={slots} onEdit={setOpened} today={today} />
               </div>
             </>
           ) : (
@@ -1018,7 +1022,7 @@ export function ClassesPage() {
                       </span>
                     ) : null}
                     <span className="text-xs font-normal text-muted-foreground">
-                      · {day.length} {day.length === 1 ? "aula" : "aulas"}
+                      · {day.length} {day.length === 1 ? "item" : "itens"}
                     </span>
                   </h2>
                   <ul className="space-y-2">
@@ -1027,6 +1031,7 @@ export function ClassesPage() {
                         <ClassCard
                           slot={slot}
                           live={ongoing?.id === slot.id}
+                          onOpen={() => setOpened(slot)}
                           onEdit={() => edit(slot)}
                           onDelete={() => remove.mutate(slot.id)}
                         />
@@ -1038,9 +1043,26 @@ export function ClassesPage() {
             })
           )}
           <p className="text-center text-xs text-muted-foreground">
-            Toque num item para editar.
+            Toque num item para ver a pasta e os horários.
           </p>
         </>
+      ) : null}
+      {opened ? (
+        <SubjectSheet
+          slot={opened}
+          slots={slots}
+          color={colorOf(opened.name)}
+          kindLabel={kindOf(opened).label}
+          onEdit={(slot) => {
+            setOpened(null);
+            edit(slot);
+            window.setTimeout(
+              () => window.scrollTo({ top: 0, behavior: "smooth" }),
+              50,
+            );
+          }}
+          onClose={() => setOpened(null)}
+        />
       ) : null}
     </div>
   );
