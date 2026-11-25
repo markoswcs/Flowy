@@ -915,7 +915,7 @@ export function ClassesPage() {
             })
           )}
           <p className="text-center text-xs text-muted-foreground">
-            Toque numa aula para editar.
+            Toque num item para editar.
           </p>
         </>
       ) : null}
