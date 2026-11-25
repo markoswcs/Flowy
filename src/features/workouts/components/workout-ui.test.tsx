@@ -49,7 +49,7 @@ vi.mock("../use-workouts", () => ({
   useUndoWorkoutLog: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-import { TodayWorkoutCard } from "./today-workout-card";
+import { TodayWorkoutCard, WorkoutDoneNote } from "./today-workout-card";
 import { WorkoutSession } from "./workout-session";
 
 beforeEach(() => {
@@ -72,7 +72,12 @@ describe("TodayWorkoutCard", () => {
     fireEvent.click(screen.getByRole("button", { name: /Concluí/ }));
     fireEvent.click(screen.getByRole("button", { name: "Difícil" }));
 
-    expect(mutate.mock.calls[0]![0]).toMatchObject({ day: today, session: "full_a", status: "done", feeling: "hard" });
+    expect(mutate.mock.calls[0]![0]).toMatchObject({
+      day: today,
+      session: "full_a",
+      status: "done",
+      feeling: "hard",
+    });
   });
 
   it("stays hidden for people who did not turn Treinos on", () => {
@@ -87,9 +92,21 @@ describe("TodayWorkoutCard", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("shrinks to a line once done", () => {
-    logs = [{ id: "l1", user_id: "u1", day: today, session: "full_a", status: "done", feeling: "ok", created_at: "" }];
-    render(<TodayWorkoutCard />);
+  it("leaves the list once done; the greeting note says so", () => {
+    logs = [
+      {
+        id: "l1",
+        user_id: "u1",
+        day: today,
+        session: "full_a",
+        status: "done",
+        feeling: "ok",
+        created_at: "",
+      },
+    ];
+    const { container } = render(<TodayWorkoutCard />);
+    expect(container.innerHTML).toBe("");
+    render(<WorkoutDoneNote />);
     expect(screen.getByText("Treino de hoje concluído")).toBeTruthy();
   });
 });
@@ -100,10 +117,15 @@ describe("WorkoutSession", () => {
     render(<WorkoutSession session={session} profile={profile} day={today} />);
 
     fireEvent.click(screen.getAllByRole("button", { name: /Como fazer/ })[0]!);
-    expect(screen.getByText(session.exercises[0]!.exercise.steps[0]!)).toBeTruthy();
+    expect(
+      screen.getByText(session.exercises[0]!.exercise.steps[0]!),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Pular hoje/ }));
-    expect(mutate.mock.calls[0]![0]).toMatchObject({ day: today, status: "skipped" });
+    expect(mutate.mock.calls[0]![0]).toMatchObject({
+      day: today,
+      status: "skipped",
+    });
   });
 });
 
@@ -112,16 +134,32 @@ describe("WorkoutEditor", () => {
     const { WorkoutEditor } = await import("./workout-editor");
     const session = buildSession(profile, "full_a");
     const onClose = vi.fn();
-    render(<WorkoutEditor session={session} profile={profile} onClose={onClose} />);
+    render(
+      <WorkoutEditor session={session} profile={profile} onClose={onClose} />,
+    );
 
     const first = session.exercises[0]!.exercise;
-    fireEvent.click(screen.getByRole("button", { name: `Tirar ${first.name}` }));
-    fireEvent.click(screen.getByRole("button", { name: /Adicionar exercício/ }));
-    fireEvent.change(screen.getByRole("searchbox", { name: "Buscar exercício" }), { target: { value: "rosca" } });
-    fireEvent.click(screen.getByRole("button", { name: "Adicionar Rosca direta com halteres" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: `Tirar ${first.name}` }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Adicionar exercício/ }),
+    );
+    fireEvent.change(
+      screen.getByRole("searchbox", { name: "Buscar exercício" }),
+      { target: { value: "rosca" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Adicionar Rosca direta com halteres",
+      }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Salvar treino" }));
 
-    const saved = saveCustom.mock.calls[0]![0] as { key: string; exercises: { id: string }[] };
+    const saved = saveCustom.mock.calls[0]![0] as {
+      key: string;
+      exercises: { id: string }[];
+    };
     expect(saved.key).toBe("full_a");
     const ids = saved.exercises.map(({ id }) => id);
     expect(ids).not.toContain(first.id);
@@ -133,6 +171,12 @@ describe("WorkoutEditor", () => {
     const session = buildSession(profile, "full_a");
     render(<WorkoutSession session={session} profile={profile} day={today} />);
     fireEvent.click(screen.getAllByRole("button", { name: /Como fazer/ })[0]!);
-    expect(screen.getAllByRole("img", { name: new RegExp(session.exercises[0]!.exercise.name.replace(/[()]/g, ".")) }).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("img", {
+        name: new RegExp(
+          session.exercises[0]!.exercise.name.replace(/[()]/g, "."),
+        ),
+      }).length,
+    ).toBeGreaterThan(0);
   });
 });

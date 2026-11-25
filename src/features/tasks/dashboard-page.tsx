@@ -38,7 +38,10 @@ import { StreakButton, TodayBoosts } from "@/features/engagement/today-boosts";
 import { CalendarView } from "@/features/calendar/calendar-view";
 import { AnnouncementCard } from "@/features/announcements/announcements";
 import { StartViewPicker } from "@/features/tasks/start-view-picker";
-import { TodayWorkoutCard } from "@/features/workouts/components/today-workout-card";
+import {
+  TodayWorkoutCard,
+  WorkoutDoneNote,
+} from "@/features/workouts/components/today-workout-card";
 import { useCategories } from "@/features/categories/use-categories";
 import { useFolders } from "@/features/folders/use-folders";
 import { TaskList } from "@/features/tasks/components/task-list";
@@ -341,6 +344,7 @@ function DashboardContent({
               <Sparkles className="mt-0.5 size-3.5 shrink-0 flowy-ink" />
               <span className="line-clamp-2">{personalPhrase ?? phrase}</span>
             </p>
+            <WorkoutDoneNote />
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <StreakButton />

@@ -19,6 +19,35 @@ import {
 } from "../use-workouts";
 
 /**
+ * A short note under the greeting once today's workout is done (or skipped),
+ * a link to Treinos; nothing otherwise.
+ */
+export function WorkoutDoneNote() {
+  const { enabled } = useWorkoutsEnabled();
+  const logsQuery = useWorkoutLogs(enabled);
+  if (!enabled || !logsQuery.data) return null;
+  const log = logsQuery.data.find((item) => item.day === localDateKey());
+  if (!log) return null;
+  return (
+    <Link
+      href="/app/workouts"
+      className={cn(
+        "inline-flex w-fit items-center gap-1 pl-1 text-xs font-medium transition-colors",
+        log.status === "done"
+          ? "text-emerald-400 hover:text-emerald-300"
+          : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      <Check className="size-3.5" aria-hidden="true" />
+      {log.status === "done"
+        ? "Treino de hoje concluído"
+        : "Treino de hoje pulado"}
+      <ChevronRight className="size-3 opacity-60" aria-hidden="true" />
+    </Link>
+  );
+}
+
+/**
  * Today's workout on the "Hoje" list, for people who turned Treinos on. Nothing
  * shows on rest days or before the plan exists; once done it shrinks to a line.
  */
@@ -37,26 +66,8 @@ export function TodayWorkoutCard() {
   const session = buildSession(profile, key);
   const log = logsQuery.data.find((item) => item.day === today);
 
-  if (log) {
-    return (
-      // Done: just a small badge, the day's tasks stay the focus.
-      <Link
-        href="/app/workouts"
-        className={cn(
-          "inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-          log.status === "done"
-            ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
-            : "bg-muted/50 text-muted-foreground",
-        )}
-      >
-        <Check className="size-3.5" aria-hidden="true" />
-        {log.status === "done"
-          ? "Treino de hoje concluído"
-          : "Treino de hoje pulado"}
-        <ChevronRight className="size-3.5 opacity-60" aria-hidden="true" />
-      </Link>
-    );
-  }
+  // Once done or skipped, the card leaves the list; the greeting mentions it.
+  if (log) return null;
 
   function finish(feeling: Feeling) {
     if (!profile || !key) return;
