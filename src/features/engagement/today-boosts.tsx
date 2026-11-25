@@ -12,7 +12,6 @@ import { notify } from "@/providers/notification-provider";
 import { cn } from "@/lib/utils";
 import { listCompletionDays } from "@/services/tasks";
 
-import { ClassNowCard } from "@/features/classes/class-now-card";
 
 import { FlameArt } from "./flame-art";
 import { StreakSheet } from "./streak-sheet";
@@ -184,11 +183,10 @@ function Deadlines() {
   );
 }
 
-/** Extras of the "Hoje" view: the streak, the class now and tests coming up. */
+/** Extras of the "Hoje" view: tests coming up. */
 export function TodayBoosts() {
   return (
     <div className="space-y-3">
-      <ClassNowCard />
       <Deadlines />
     </div>
   );

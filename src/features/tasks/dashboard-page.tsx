@@ -382,7 +382,7 @@ function DashboardContent({
           {tabIndex >= 0 ? (
             <span
               aria-hidden="true"
-              className="flowy-prism-pill absolute bottom-1 left-1 top-1 rounded-xl transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              className="absolute bottom-1 left-1 top-1 rounded-xl bg-foreground/[0.05] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 width: "calc((100% - 0.5rem) / 3)",
                 transform: `translateX(${tabIndex * 100}%)`,
@@ -404,19 +404,19 @@ function DashboardContent({
                 className={cn(
                   "relative z-10 min-w-0 truncate rounded-xl px-1 py-1.5 text-[13px] font-medium transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:px-4 sm:text-sm",
                   selected
-                    ? "text-foreground"
+                    ? "font-semibold text-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <span className="inline-flex items-center justify-center gap-2">
                   <span
                     className={cn(
-                      "grid size-7 shrink-0 place-items-center rounded-full transition-all duration-300",
+                      "grid size-6 shrink-0 place-items-center rounded-full transition-all duration-300",
                       selected ? "flowy-prism" : "",
                     )}
                   >
                     <tab.icon
-                      className={cn("size-4", selected ? "" : "opacity-70")}
+                      className={cn("size-3.5", selected ? "" : "size-4 opacity-70")}
                       aria-hidden="true"
                     />
                   </span>
