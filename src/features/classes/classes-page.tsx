@@ -17,11 +17,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { notify } from "@/providers/notification-provider";
 
 import {
   WEEKDAY_NAMES,
@@ -34,7 +36,12 @@ import {
   type RoutineKind,
 } from "./schedule";
 import { SubjectSheet } from "./subject-sheet";
-import { useClasses, useDeleteClass, useSaveClass } from "./use-classes";
+import {
+  useClasses,
+  useDeleteClass,
+  useRestoreClass,
+  useSaveClass,
+} from "./use-classes";
 
 // Monday first, like a work or school week.
 const WEEK = [1, 2, 3, 4, 5, 6, 0];
@@ -833,10 +840,82 @@ function WeekGrid({
   );
 }
 
+/** "Excluir Anatomia de quarta?" with what happens: the trash, 7 days, Desfazer. */
+function ConfirmDelete({
+  slot,
+  onCancel,
+  onConfirm,
+}: {
+  slot: ClassSlot;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[210] grid place-items-center p-4"
+      role="presentation"
+    >
+      <button
+        type="button"
+        aria-label="Cancelar"
+        onClick={onCancel}
+        className="absolute inset-0 animate-in fade-in bg-black/60"
+      />
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-routine-title"
+        className="relative w-full max-w-sm animate-in rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-2xl zoom-in-95"
+      >
+        <h2 id="delete-routine-title" className="text-lg font-bold">
+          Excluir {slot.name}?
+        </h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {WEEKDAY_NAMES[slot.weekday]}, {hhmm(slot.starts_at)}–
+          {hhmm(slot.ends_at)}. Vai para a lixeira e pode ser restaurado por 7
+          dias.
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="button" variant="destructive" onClick={onConfirm}>
+            Excluir
+          </Button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 /** The fixed weekly classes: what is on now, the week at a glance and the list by day. */
 export function ClassesPage() {
   const classes = useClasses();
   const remove = useDeleteClass();
+  const restore = useRestoreClass();
+  const [pendingDelete, setPendingDelete] = useState<ClassSlot | null>(null);
+
+  function confirmDelete(slot: ClassSlot) {
+    setPendingDelete(null);
+    remove.mutate(slot.id, {
+      onSuccess: (inTrash) =>
+        notify(inTrash ? "Movido para a lixeira" : "Excluído", {
+          description: slot.name,
+          ...(inTrash
+            ? {
+                action: {
+                  label: "Desfazer",
+                  onClick: () =>
+                    restore.mutate(slot.id, {
+                      onSuccess: () => notify("Restaurado"),
+                    }),
+                },
+              }
+            : {}),
+        }),
+    });
+  }
   const [editing, setEditing] = useState<
     (ClassSlotInput & { id?: string }) | null
   >(null);
@@ -1033,7 +1112,7 @@ export function ClassesPage() {
                           live={ongoing?.id === slot.id}
                           onOpen={() => setOpened(slot)}
                           onEdit={() => edit(slot)}
-                          onDelete={() => remove.mutate(slot.id)}
+                          onDelete={() => setPendingDelete(slot)}
                         />
                       </li>
                     ))}
@@ -1061,7 +1140,18 @@ export function ClassesPage() {
               50,
             );
           }}
+          onDelete={(slot) => {
+            setOpened(null);
+            setPendingDelete(slot);
+          }}
           onClose={() => setOpened(null)}
+        />
+      ) : null}
+      {pendingDelete ? (
+        <ConfirmDelete
+          slot={pendingDelete}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => confirmDelete(pendingDelete)}
         />
       ) : null}
     </div>

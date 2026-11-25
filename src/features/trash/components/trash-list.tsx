@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  CalendarRange,
   Columns3,
   FileText,
   Folder,
@@ -38,6 +39,7 @@ const kindLabels: Record<TrashItemKind, string> = {
   board: "Quadro",
   column: "Coluna",
   card: "Card",
+  routine: "Rotina",
 };
 
 function ItemIcon({ kind }: { kind: TrashItemKind }) {
@@ -51,6 +53,8 @@ function ItemIcon({ kind }: { kind: TrashItemKind }) {
   if (kind === "column")
     return <Columns3 className="size-4" aria-hidden="true" />;
   if (kind === "card") return <Square className="size-4" aria-hidden="true" />;
+  if (kind === "routine")
+    return <CalendarRange className="size-4" aria-hidden="true" />;
   return <ListTodo className="size-4" aria-hidden="true" />;
 }
 

@@ -50,6 +50,49 @@ function removalDate(deletedAt: string): string {
   ).toISOString();
 }
 
+const WEEKDAYS = [
+  "Domingo",
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado",
+];
+
+/**
+ * Deleted routine items. Before the routine-trash migration there is no
+ * deleted_at column: that is not an error for the trash, just nothing here.
+ */
+async function deletedRoutine(
+  supabase: Awaited<ReturnType<typeof getAuthenticatedClient>>["supabase"],
+  userId: string,
+): Promise<TrashItem[]> {
+  const { data, error } = await supabase
+    .from("class_slots")
+    .select("id,name,weekday,starts_at,ends_at,deleted_at")
+    .eq("user_id", userId)
+    .not("deleted_at", "is", null);
+  if (error || !data) return [];
+  return (
+    data as Array<{
+      id: string;
+      name: string;
+      weekday: number;
+      starts_at: string;
+      ends_at: string;
+      deleted_at: string;
+    }>
+  ).map((slot) => ({
+    id: slot.id,
+    kind: "routine",
+    title: slot.name,
+    detail: `${WEEKDAYS[slot.weekday] ?? ""} · ${slot.starts_at.slice(0, 5)}–${slot.ends_at.slice(0, 5)}`,
+    deleted_at: slot.deleted_at,
+    permanently_deleted_at: removalDate(slot.deleted_at),
+  }));
+}
+
 export async function listTrashItems(): Promise<TrashItem[]> {
   const { supabase, userId } = await getAuthenticatedClient();
   const [
@@ -176,6 +219,7 @@ export async function listTrashItems(): Promise<TrashItem[]> {
       deleted_at: card.deleted_at,
       permanently_deleted_at: removalDate(card.deleted_at),
     })),
+    ...(await deletedRoutine(supabase, userId)),
   ].sort(
     (left, right) =>
       new Date(right.deleted_at).getTime() -
@@ -191,7 +235,16 @@ export async function restoreTrashItem(
   if (kind === "folder") return restoreFolder(id);
   if (kind === "category") return restoreCategory(id);
 
-  const { supabase } = await getAuthenticatedClient();
+  const { supabase, userId } = await getAuthenticatedClient();
+  if (kind === "routine") {
+    const { error } = await supabase
+      .from("class_slots")
+      .update({ deleted_at: null })
+      .eq("id", id)
+      .eq("user_id", userId);
+    if (error) throw error;
+    return;
+  }
   if (kind === "note") return restoreNote(supabase, id);
   if (kind === "board") return updateBoard(supabase, id, { deleted_at: null });
   if (kind === "column")
@@ -207,7 +260,16 @@ export async function permanentlyDeleteTrashItem(
   if (kind === "folder") return permanentlyDeleteFolder(id);
   if (kind === "category") return permanentlyDeleteCategory(id);
 
-  const { supabase } = await getAuthenticatedClient();
+  const { supabase, userId } = await getAuthenticatedClient();
+  if (kind === "routine") {
+    const { error } = await supabase
+      .from("class_slots")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId);
+    if (error) throw error;
+    return;
+  }
   if (kind === "note") return permanentlyDeleteNote(supabase, id);
   if (kind === "board") return permanentlyDeleteBoard(supabase, id);
   if (kind === "column") return permanentlyDeleteColumn(supabase, id);

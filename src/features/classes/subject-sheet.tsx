@@ -8,6 +8,7 @@ import {
   MapPin,
   Pencil,
   Plus,
+  Trash2,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ export function SubjectSheet({
   color,
   kindLabel,
   onEdit,
+  onDelete,
   onClose,
 }: {
   slot: ClassSlot;
@@ -43,6 +45,7 @@ export function SubjectSheet({
   color: string;
   kindLabel: string;
   onEdit: (slot: ClassSlot) => void;
+  onDelete: (slot: ClassSlot) => void;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -162,11 +165,11 @@ export function SubjectSheet({
         </p>
         <ul className="mt-2 space-y-1.5">
           {times.map((item) => (
-            <li key={item.id}>
+            <li key={item.id} className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => onEdit(item)}
-                className="flex w-full items-center gap-3 rounded-xl bg-muted/30 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50"
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-xl bg-muted/30 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50"
               >
                 <span className="w-16 shrink-0 font-semibold">
                   {WEEKDAY_NAMES[item.weekday]}
@@ -185,6 +188,14 @@ export function SubjectSheet({
                   className="ml-auto size-3.5 shrink-0 text-muted-foreground"
                   aria-label="Editar"
                 />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(item)}
+                aria-label={`Excluir ${item.name} de ${WEEKDAY_NAMES[item.weekday]}`}
+                className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="size-4" />
               </button>
             </li>
           ))}

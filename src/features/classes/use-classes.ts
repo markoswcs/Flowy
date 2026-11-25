@@ -14,12 +14,16 @@ const classKeys = { all: ["class-slots"] as const };
 
 async function listClasses(): Promise<ClassSlot[]> {
   const { supabase, userId } = await getAuthenticatedClient();
-  const { data, error } = await supabase
-    .from("class_slots")
-    .select("*")
-    .eq("user_id", userId)
-    .order("weekday")
-    .order("starts_at");
+  const query = (onlyKept: boolean) => {
+    const base = supabase.from("class_slots").select("*").eq("user_id", userId);
+    return (onlyKept ? base.is("deleted_at", null) : base)
+      .order("weekday")
+      .order("starts_at");
+  };
+  let { data, error } = await query(true);
+  // Before the routine-trash migration there is no deleted_at column.
+  if (error && /deleted_at/i.test(error.message))
+    ({ data, error } = await query(false));
   if (error) throw error;
   return (data ?? []) as ClassSlot[];
 }
@@ -66,19 +70,66 @@ export function useSaveClass() {
   });
 }
 
+/**
+ * Moves an item to the trash (restorable for 7 days). Returns whether it went
+ * to the trash; before the routine-trash migration it is deleted for good.
+ */
 export function useDeleteClass() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<boolean> => {
+      const { supabase, userId } = await getAuthenticatedClient();
+      const { error } = await supabase
+        .from("class_slots")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("user_id", userId);
+      if (!error) return true;
+      if (!/deleted_at/i.test(error.message)) throw error;
+      const removed = await supabase
+        .from("class_slots")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+      if (removed.error) throw removed.error;
+      return false;
+    },
+    // Gone from the screen at once.
+    onMutate: async (id) => {
+      const previous = queryClient.getQueryData<ClassSlot[]>(classKeys.all);
+      queryClient.setQueryData<ClassSlot[]>(classKeys.all, (list) =>
+        list?.filter((slot) => slot.id !== id),
+      );
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(classKeys.all, context?.previous);
+      toast.error("Não foi possível excluir.");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: classKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ["trash"] });
+    },
+  });
+}
+
+/** Brings an item back from the trash (the "Desfazer" of a deletion). */
+export function useRestoreClass() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       const { supabase, userId } = await getAuthenticatedClient();
       const { error } = await supabase
         .from("class_slots")
-        .delete()
+        .update({ deleted_at: null })
         .eq("id", id)
         .eq("user_id", userId);
       if (error) throw error;
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: classKeys.all }),
-    onError: () => toast.error("Não foi possível apagar."),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: classKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ["trash"] });
+    },
+    onError: () => toast.error("Não foi possível restaurar."),
   });
 }

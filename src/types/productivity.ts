@@ -124,7 +124,7 @@ export interface UpdateCategoryInput {
 }
 
 export type TrashItemKind =
-  "task" | "folder" | "category" | "note" | "board" | "column" | "card";
+  "task" | "folder" | "category" | "note" | "board" | "column" | "card" | "routine";
 
 export interface TrashItem {
   id: string;
