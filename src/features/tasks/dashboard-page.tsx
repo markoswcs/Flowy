@@ -382,7 +382,7 @@ function DashboardContent({
           {tabIndex >= 0 ? (
             <span
               aria-hidden="true"
-              className="absolute bottom-1 left-1 top-1 rounded-xl bg-background shadow-sm ring-1 ring-border/70 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              className="flowy-prism-pill absolute bottom-1 left-1 top-1 rounded-xl transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 width: "calc((100% - 0.5rem) / 3)",
                 transform: `translateX(${tabIndex * 100}%)`,
@@ -397,22 +397,29 @@ function DashboardContent({
                 type="button"
                 role="tab"
                 aria-selected={selected}
+                // Same look as the bottom bar's home button: the icon in the
+                // turning ring, not a border around the whole tab.
+                data-no-glow
                 onClick={() => selectTab(tab.value)}
                 className={cn(
-                  "relative z-10 min-w-0 truncate rounded-xl px-1 py-2 text-[13px] font-medium transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:px-4 sm:text-sm",
+                  "relative z-10 min-w-0 truncate rounded-xl px-1 py-1.5 text-[13px] font-medium transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:px-4 sm:text-sm",
                   selected
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <span className="inline-flex items-center justify-center gap-1.5">
-                  <tab.icon
+                <span className="inline-flex items-center justify-center gap-2">
+                  <span
                     className={cn(
-                      "size-4 shrink-0",
-                      selected ? "flowy-ink" : "opacity-70",
+                      "grid size-7 shrink-0 place-items-center rounded-full transition-all duration-300",
+                      selected ? "flowy-prism" : "",
                     )}
-                    aria-hidden="true"
-                  />
+                  >
+                    <tab.icon
+                      className={cn("size-4", selected ? "" : "opacity-70")}
+                      aria-hidden="true"
+                    />
+                  </span>
                   {tab.label}
                 </span>
               </button>
