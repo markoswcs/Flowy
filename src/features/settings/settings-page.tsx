@@ -728,8 +728,8 @@ export function SettingsPage() {
             <RowLink
               href="/app/classes"
               icon={GraduationCap}
-              title="Grade de aulas"
-              description="Suas aulas fixas da semana. No Hoje aparece a de agora e a próxima."
+              title="Rotina semanal"
+              description="Aulas, trabalho, treino e compromissos fixos da semana. No Hoje aparece o de agora e o próximo."
             />
           </Group>
 

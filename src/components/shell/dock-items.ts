@@ -33,7 +33,7 @@ export const DOCK_ITEMS: DockItem[] = [
   { key: "mapas", label: "Mapas", href: SECTION_HREF.mapa, icon: Network, active: (p) => p.pathname === "/app/notes" && p.section === "mapa" },
   { key: "desenhos", label: "Desenhos", href: SECTION_HREF.desenho, icon: PenTool, active: (p) => p.pathname === "/app/notes" && p.section === "desenho" },
   { key: "treinos", label: "Treinos", href: "/app/workouts", icon: Dumbbell, active: (p) => p.pathname.startsWith("/app/workouts") },
-  { key: "aulas", label: "Grade de aulas", href: "/app/classes", icon: GraduationCap, active: (p) => p.pathname.startsWith("/app/classes") },
+  { key: "aulas", label: "Rotina semanal", href: "/app/classes", icon: GraduationCap, active: (p) => p.pathname.startsWith("/app/classes") },
   { key: "config", label: "Configurações", href: "/app/settings", icon: Settings, active: (p) => p.pathname.startsWith("/app/settings") },
 ];
 

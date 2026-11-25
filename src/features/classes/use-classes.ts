@@ -3,7 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "@/lib/toast";
-import { getAuthenticatedClient, messageFromUnknownError } from "@/services/authenticated-client";
+import {
+  getAuthenticatedClient,
+  messageFromUnknownError,
+} from "@/services/authenticated-client";
 
 import type { ClassSlot, ClassSlotInput } from "./schedule";
 
@@ -35,15 +38,31 @@ export function useSaveClass() {
   return useMutation({
     mutationFn: async ({ id, ...input }: ClassSlotInput & { id?: string }) => {
       const { supabase, userId } = await getAuthenticatedClient();
-      const values = { ...input, name: input.name.trim(), room: input.room?.trim() || null };
-      const query = id
-        ? supabase.from("class_slots").update(values).eq("id", id).eq("user_id", userId)
-        : supabase.from("class_slots").insert({ ...values, user_id: userId });
-      const { error } = await query;
+      const { kind, ...rest } = input;
+      const base = {
+        ...rest,
+        name: input.name.trim(),
+        room: input.room?.trim() || null,
+      };
+      const send = (values: Record<string, unknown>) =>
+        id
+          ? supabase
+              .from("class_slots")
+              .update(values)
+              .eq("id", id)
+              .eq("user_id", userId)
+          : supabase.from("class_slots").insert({ ...values, user_id: userId });
+      let { error } = await send(kind ? { ...base, kind } : base);
+      // Before the routine migration there is no "kind" column: save without it.
+      if (error && kind && /kind/i.test(error.message))
+        ({ error } = await send(base));
       if (error) throw error;
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: classKeys.all }),
-    onError: (error) => toast.error("Não foi possível salvar a aula.", { description: messageFromUnknownError(error) }),
+    onError: (error) =>
+      toast.error("Não foi possível salvar.", {
+        description: messageFromUnknownError(error),
+      }),
   });
 }
 
@@ -52,10 +71,14 @@ export function useDeleteClass() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { supabase, userId } = await getAuthenticatedClient();
-      const { error } = await supabase.from("class_slots").delete().eq("id", id).eq("user_id", userId);
+      const { error } = await supabase
+        .from("class_slots")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw error;
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: classKeys.all }),
-    onError: () => toast.error("Não foi possível apagar a aula."),
+    onError: () => toast.error("Não foi possível apagar."),
   });
 }

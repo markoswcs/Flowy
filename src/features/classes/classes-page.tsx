@@ -1,15 +1,20 @@
 "use client";
 
 import {
+  Briefcase,
+  CalendarCheck,
   CalendarRange,
   Clock,
+  Dumbbell,
   GraduationCap,
   List,
   MapPin,
   Pencil,
   Plus,
+  Sparkles,
   Trash2,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -23,14 +28,17 @@ import {
   classNow,
   hhmm,
   inTime,
+  layoutLanes,
   type ClassSlot,
   type ClassSlotInput,
+  type RoutineKind,
 } from "./schedule";
 import { useClasses, useDeleteClass, useSaveClass } from "./use-classes";
 
-// Monday first, like a school week.
+// Monday first, like a work or school week.
 const WEEK = [1, 2, 3, 4, 5, 6, 0];
 const EMPTY: ClassSlotInput = {
+  kind: "aula",
   name: "",
   room: "",
   weekday: 1,
@@ -43,6 +51,53 @@ const LENGTHS = [
   { label: "2h", minutes: 120 },
   { label: "3h20", minutes: 200 },
 ];
+
+/** What each item of the routine is: its icon, a hint for the name and its colour. */
+const KINDS: {
+  kind: RoutineKind;
+  label: string;
+  icon: LucideIcon;
+  placeholder: string;
+  color: string;
+}[] = [
+  {
+    kind: "aula",
+    label: "Aula",
+    icon: GraduationCap,
+    placeholder: "Matéria (ex.: Anatomia)",
+    color: "#8b5cf6",
+  },
+  {
+    kind: "trabalho",
+    label: "Trabalho",
+    icon: Briefcase,
+    placeholder: "Ex.: Expediente, Reunião semanal",
+    color: "#38bdf8",
+  },
+  {
+    kind: "treino",
+    label: "Treino",
+    icon: Dumbbell,
+    placeholder: "Ex.: Academia, Corrida",
+    color: "#34d399",
+  },
+  {
+    kind: "compromisso",
+    label: "Compromisso",
+    icon: CalendarCheck,
+    placeholder: "Ex.: Curso de inglês, Terapia",
+    color: "#f59e0b",
+  },
+  {
+    kind: "outro",
+    label: "Outro",
+    icon: Sparkles,
+    placeholder: "O que é?",
+    color: "#f472b6",
+  },
+];
+const kindOf = (slot: Pick<ClassSlot, "kind">) =>
+  KINDS.find((item) => item.kind === (slot.kind ?? "aula")) ?? KINDS[0]!;
 
 /** Each subject keeps the same colour everywhere. */
 const PALETTE = [
@@ -106,7 +161,7 @@ function ClassForm({
       }}
     >
       <div className="flex items-center justify-between">
-        <p className="font-semibold">{editing ? "Editar aula" : "Nova aula"}</p>
+        <p className="font-semibold">{editing ? "Editar" : "Novo na rotina"}</p>
         <button
           type="button"
           onClick={onDone}
@@ -115,6 +170,34 @@ function ClassForm({
         >
           <X className="size-4" />
         </button>
+      </div>
+      <div
+        className="flex flex-wrap gap-1.5"
+        role="radiogroup"
+        aria-label="Tipo"
+      >
+        {KINDS.map(({ kind, label, icon: Icon, color: tone }) => {
+          const on = (form.kind ?? "aula") === kind;
+          return (
+            <button
+              key={kind}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              data-no-glow
+              onClick={() => setForm({ ...form, kind })}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                on
+                  ? "border-transparent text-white"
+                  : "border-border/60 text-muted-foreground",
+              )}
+              style={on ? { backgroundColor: tone } : undefined}
+            >
+              <Icon className="size-3.5" /> {label}
+            </button>
+          );
+        })}
       </div>
       <div className="flex items-center gap-2">
         <span
@@ -126,8 +209,11 @@ function ClassForm({
           autoFocus
           value={form.name}
           onChange={(event) => setForm({ ...form, name: event.target.value })}
-          placeholder="Matéria (ex.: Anatomia)"
-          aria-label="Matéria"
+          placeholder={
+            KINDS.find((item) => item.kind === (form.kind ?? "aula"))!
+              .placeholder
+          }
+          aria-label="Nome"
           maxLength={80}
         />
       </div>
@@ -249,7 +335,7 @@ function ClassForm({
           ? "Salvar"
           : days.length > 1
             ? `Salvar em ${days.length} dias`
-            : "Salvar aula"}
+            : "Salvar"}
       </Button>
     </form>
   );
@@ -296,6 +382,7 @@ function ClassCard({
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
+            <KindIcon slot={slot} />
             <span className="truncate font-semibold">{slot.name}</span>
             {live ? (
               <span
@@ -333,6 +420,178 @@ function ClassCard({
         </button>
       </div>
     </article>
+  );
+}
+
+function KindIcon({ slot }: { slot: Pick<ClassSlot, "kind"> }) {
+  const { icon: Icon, label, color } = kindOf(slot);
+  return (
+    <span
+      className="grid size-5 shrink-0 place-items-center rounded-md"
+      style={{ backgroundColor: `${color}26`, color }}
+      title={label}
+    >
+      <Icon className="size-3" aria-hidden="true" />
+    </span>
+  );
+}
+
+/**
+ * Phones: one day at a time. A row of days on top (with a dot per item),
+ * then the chosen day as a timeline where items at the same time sit side
+ * by side.
+ */
+function DayView({
+  slots,
+  onEdit,
+  today,
+  ongoingId,
+}: {
+  slots: ClassSlot[];
+  onEdit: (slot: ClassSlot) => void;
+  today: number;
+  ongoingId: string | null;
+}) {
+  const [day, setDay] = useState(today);
+  const items = slots.filter((slot) => slot.weekday === day);
+  const placed = layoutLanes(items);
+  const start = items.length
+    ? Math.floor(
+        Math.min(...items.map((slot) => toMinutes(slot.starts_at))) / 60,
+      ) * 60
+    : 0;
+  const end = items.length
+    ? Math.ceil(
+        Math.max(...items.map((slot) => toMinutes(slot.ends_at))) / 60,
+      ) * 60
+    : 0;
+  const hours = items.length
+    ? Array.from(
+        { length: (end - start) / 60 + 1 },
+        (_, index) => start + index * 60,
+      )
+    : [];
+  const scale = 1.15; // px per minute
+
+  return (
+    <div className="space-y-3">
+      <div
+        className="grid grid-cols-7 gap-1"
+        role="tablist"
+        aria-label="Dia da semana"
+      >
+        {WEEK.map((weekday) => {
+          const count = slots.filter((slot) => slot.weekday === weekday).length;
+          const on = weekday === day;
+          return (
+            <button
+              key={weekday}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              data-no-glow
+              onClick={() => setDay(weekday)}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-semibold transition-colors",
+                on
+                  ? "bg-primary text-primary-foreground"
+                  : weekday === today
+                    ? "bg-primary/10 flowy-ink"
+                    : "text-muted-foreground",
+              )}
+            >
+              {WEEKDAY_NAMES[weekday]!.slice(0, 3)}
+              <span className="flex h-1.5 gap-0.5">
+                {Array.from({ length: Math.min(count, 3) }, (_, index) => (
+                  <i
+                    key={index}
+                    className={cn(
+                      "size-1.5 rounded-full",
+                      on ? "bg-primary-foreground/80" : "bg-current opacity-60",
+                    )}
+                  />
+                ))}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {items.length ? (
+        <div className="relative flex gap-2">
+          <div
+            className="relative w-9 shrink-0"
+            style={{ height: (end - start) * scale }}
+          >
+            {hours.map((hour) => (
+              <span
+                key={hour}
+                className="absolute right-0 -translate-y-1/2 text-[10px] tabular-nums text-muted-foreground"
+                style={{ top: (hour - start) * scale }}
+              >
+                {String(hour / 60).padStart(2, "0")}h
+              </span>
+            ))}
+          </div>
+          <div
+            className="relative flex-1 rounded-2xl border border-border/40 bg-card/30"
+            style={{ height: (end - start) * scale }}
+          >
+            {hours.map((hour) => (
+              <span
+                key={hour}
+                className="absolute inset-x-0 border-t border-border/30"
+                style={{ top: (hour - start) * scale }}
+                aria-hidden="true"
+              />
+            ))}
+            {placed.map(({ item: slot, lane, lanes }) => {
+              const color = colorOf(slot.name);
+              const { icon: Icon } = kindOf(slot);
+              return (
+                <button
+                  key={slot.id}
+                  type="button"
+                  onClick={() => onEdit(slot)}
+                  className={cn(
+                    "absolute overflow-hidden rounded-xl border px-2 py-1.5 text-left transition-transform active:scale-[0.98]",
+                    ongoingId === slot.id && "ring-2",
+                  )}
+                  style={{
+                    left: `calc(${(lane / lanes) * 100}% + 3px)`,
+                    width: `calc(${100 / lanes}% - 6px)`,
+                    top: (toMinutes(slot.starts_at) - start) * scale + 1,
+                    height: Math.max(34, length(slot) * scale - 3),
+                    backgroundColor: `${color}2e`,
+                    borderColor: `${color}66`,
+                    ...(ongoingId === slot.id
+                      ? { ["--tw-ring-color" as string]: color }
+                      : {}),
+                  }}
+                >
+                  <span className="flex items-center gap-1 text-[13px] font-semibold leading-tight">
+                    <Icon
+                      className="size-3.5 shrink-0"
+                      style={{ color }}
+                      aria-hidden="true"
+                    />
+                    <span className="truncate">{slot.name}</span>
+                  </span>
+                  <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                    {hhmm(slot.starts_at)}–{hhmm(slot.ends_at)}
+                    {slot.room ? ` · ${slot.room}` : ""}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <p className="rounded-2xl border border-dashed border-border/60 py-8 text-center text-sm text-muted-foreground">
+          Nada na {WEEKDAY_NAMES[day]!.toLowerCase()}.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -411,17 +670,19 @@ function WeekGrid({
                 aria-hidden="true"
               />
             ))}
-            {slots
-              .filter((slot) => slot.weekday === weekday)
-              .map((slot) => {
+            {layoutLanes(slots.filter((slot) => slot.weekday === weekday)).map(
+              ({ item: slot, lane, lanes }) => {
                 const color = colorOf(slot.name);
                 return (
                   <button
                     key={slot.id}
                     type="button"
                     onClick={() => onEdit(slot)}
-                    className="absolute inset-x-1 overflow-hidden rounded-lg border px-1.5 py-1 text-left text-[11px] leading-tight transition-transform hover:z-10 hover:scale-[1.03]"
+                    className="absolute overflow-hidden rounded-lg border px-1.5 py-1 text-left text-[11px] leading-tight transition-transform hover:z-10 hover:scale-[1.03]"
                     style={{
+                      // Items at the same time share the column side by side.
+                      left: `calc(${(lane / lanes) * 100}% + 2px)`,
+                      width: `calc(${100 / lanes}% - 4px)`,
                       top: (toMinutes(slot.starts_at) - start) * scale,
                       height: Math.max(22, length(slot) * scale - 2),
                       backgroundColor: `${color}2e`,
@@ -437,7 +698,8 @@ function WeekGrid({
                     </span>
                   </button>
                 );
-              })}
+              },
+            )}
           </div>
         ))}
       </div>
@@ -471,6 +733,7 @@ export function ClassesPage() {
       weekday: slot.weekday,
       starts_at: hhmm(slot.starts_at),
       ends_at: hhmm(slot.ends_at),
+      kind: slot.kind ?? "aula",
     });
 
   return (
@@ -482,19 +745,19 @@ export function ClassesPage() {
           </span>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Grade de aulas
+              Rotina semanal
             </h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
               {slots.length
-                ? `${subjects} ${subjects === 1 ? "matéria" : "matérias"} · ${slots.length} ${slots.length === 1 ? "aula" : "aulas"} · ${Math.round((weeklyMinutes / 60) * 10) / 10} h por semana`
-                : "Cadastre uma vez. No Hoje aparece a aula de agora e a próxima."}
+                ? `${slots.length} ${slots.length === 1 ? "item" : "itens"} · ${subjects} ${subjects === 1 ? "atividade" : "atividades"} · ${Math.round((weeklyMinutes / 60) * 10) / 10} h por semana`
+                : "Aulas, trabalho, treino e compromissos fixos da semana. No Hoje aparece o de agora e o próximo."}
             </p>
           </div>
         </div>
         {!editing ? (
           <Button type="button" className="h-11 gap-2" onClick={newClass}>
             <Plus className="size-4" />
-            Adicionar aula
+            Adicionar
           </Button>
         ) : null}
       </header>
@@ -510,7 +773,7 @@ export function ClassesPage() {
             borderColor: `${colorOf(highlight.name)}55`,
             background: `linear-gradient(120deg, ${colorOf(highlight.name)}30, transparent 70%)`,
           }}
-          aria-label={ongoing ? "Aula de agora" : "Próxima aula"}
+          aria-label={ongoing ? "Agora" : "Próximo"}
         >
           <p
             className="text-[11px] font-bold uppercase tracking-widest"
@@ -518,7 +781,7 @@ export function ClassesPage() {
           >
             {ongoing
               ? "Acontecendo agora"
-              : `Próxima ${minutesToNext !== null ? inTime(minutesToNext) : ""}`}
+              : `Próximo ${minutesToNext !== null ? inTime(minutesToNext) : ""}`}
           </p>
           <p className="mt-1 font-brand text-2xl font-bold">{highlight.name}</p>
           <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -549,12 +812,13 @@ export function ClassesPage() {
           </span>
           <h2 className="mt-4 text-lg font-semibold">Monte sua semana</h2>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Adicione cada matéria com dia, horário e sala. Dá para colocar a
-            mesma aula em vários dias de uma vez.
+            Aulas, expediente, academia, curso, terapia: tudo o que se repete
+            toda semana, com dia, horário e local. Dá para colocar em vários
+            dias de uma vez.
           </p>
           <Button type="button" className="mt-5 h-11 gap-2" onClick={newClass}>
             <Plus className="size-4" />
-            Adicionar a primeira aula
+            Adicionar o primeiro
           </Button>
         </section>
       ) : slots.length ? (
@@ -597,7 +861,19 @@ export function ClassesPage() {
           ) : null}
 
           {view === "semana" ? (
-            <WeekGrid slots={slots} onEdit={edit} today={today} />
+            <>
+              <div className="sm:hidden">
+                <DayView
+                  slots={slots}
+                  onEdit={edit}
+                  today={today}
+                  ongoingId={ongoing?.id ?? null}
+                />
+              </div>
+              <div className="hidden sm:block">
+                <WeekGrid slots={slots} onEdit={edit} today={today} />
+              </div>
+            </>
           ) : (
             WEEK.map((weekday) => {
               const day = slots

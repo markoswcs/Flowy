@@ -31,14 +31,27 @@ export function ClassNowCard() {
         {ongoing ? (
           <span className="block truncate">
             <span className="font-semibold">Agora: {ongoing.name}</span>
-            {ongoing.room ? <span className="text-muted-foreground"> · {ongoing.room}</span> : null}
-            <span className="text-muted-foreground"> até {hhmm(ongoing.ends_at)}</span>
+            {ongoing.room ? (
+              <span className="text-muted-foreground"> · {ongoing.room}</span>
+            ) : null}
+            <span className="text-muted-foreground">
+              {" "}
+              até {hhmm(ongoing.ends_at)}
+            </span>
           </span>
         ) : null}
         {next ? (
-          <span className={ongoing ? "block truncate text-muted-foreground" : "block truncate"}>
-            <span className={ongoing ? "" : "font-semibold"}>Próxima: {next.name}</span>
-            {" "}às {hhmm(next.starts_at)} ({inTime(minutesToNext!)})
+          <span
+            className={
+              ongoing
+                ? "block truncate text-muted-foreground"
+                : "block truncate"
+            }
+          >
+            <span className={ongoing ? "" : "font-semibold"}>
+              Próxima: {next.name}
+            </span>{" "}
+            às {hhmm(next.starts_at)} ({inTime(minutesToNext!)})
             {next.room ? ` · ${next.room}` : ""}
           </span>
         ) : null}
