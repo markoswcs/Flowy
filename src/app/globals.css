@@ -2271,3 +2271,41 @@ html.reduce-motion :is(.flowy-flame-dance, .flowy-flame-core, .flowy-flame-glow,
   background: conic-gradient(from var(--flowy-prism-angle, -20deg), var(--flowy-ring-stops));
   animation-duration: 6s;
 }
+
+/* Match the bottom bar's ring exactly: a thicker, fully coloured ring and a
+   soft violet-pink glow around the selected item (a static shadow, so phones
+   pay nothing for it). */
+:where(
+    [aria-pressed="true"],
+    [role="radio"][aria-checked="true"],
+    [role="tab"][aria-selected="true"],
+    [aria-current="page"],
+    .flowy-glow
+  ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after {
+  inset: -2px;
+  padding: 2.25px;
+  opacity: 1;
+}
+
+:where(
+    [aria-pressed="true"],
+    [role="radio"][aria-checked="true"],
+    [role="tab"][aria-selected="true"],
+    [aria-current="page"],
+    .flowy-glow
+  ):not(.excalidraw *, [data-topic-control], [data-no-glow]) {
+  box-shadow:
+    0 0 14px -3px rgb(168 85 247 / 0.6),
+    0 0 22px -8px rgb(236 72 153 / 0.45);
+}
+
+html.reduce-motion
+  :where(
+    [aria-pressed="true"],
+    [role="radio"][aria-checked="true"],
+    [role="tab"][aria-selected="true"],
+    [aria-current="page"],
+    .flowy-glow
+  ):not(.excalidraw *, [data-topic-control], [data-no-glow]) {
+  box-shadow: none;
+}
