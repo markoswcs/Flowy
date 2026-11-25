@@ -35,14 +35,23 @@ export function GlobalCreateButton({ className }: { className?: string }) {
         setOpen(false);
       }
     };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKey);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [open]);
 
   const openComposer = (voice = false) => {
-    window.dispatchEvent(new CustomEvent("flowy:open-task-composer", { detail: { voice } }));
+    window.dispatchEvent(
+      new CustomEvent("flowy:open-task-composer", { detail: { voice } }),
+    );
     setOpen(false);
   };
 
@@ -87,94 +96,98 @@ export function GlobalCreateButton({ className }: { className?: string }) {
       )}
     >
       <div
+        role="menu"
+        aria-label="Criar"
         className={cn(
-          "absolute bottom-full mb-5 flex flex-col overflow-hidden flowy-glass flowy-glass-strong rounded-2xl border transition-all duration-300 origin-bottom",
-          "left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0 w-[180px]",
+          "absolute bottom-full mb-4 flowy-glass flowy-glass-strong w-[min(20rem,calc(100vw-1.5rem))] rounded-[1.6rem] border p-2.5 transition-all duration-300 origin-bottom",
+          "left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0",
           open
-            ? "visible translate-y-0 opacity-100 scale-100"
-            : "invisible translate-y-4 opacity-0 scale-95",
+            ? "visible translate-y-0 scale-100 opacity-100"
+            : "invisible translate-y-4 scale-95 opacity-0",
         )}
       >
-        <div className="flex flex-col p-1.5 gap-0.5">
+        {/* The other things to create, compact, further from the thumb. */}
+        <p className="px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Criar também
+        </p>
+        <div className="grid grid-cols-5 gap-1">
+          {[
+            {
+              label: "Nota",
+              icon: NotebookPen,
+              tone: "bg-orange-500/15 text-orange-400",
+              run: () => void handleCreateNote(),
+            },
+            {
+              label: "Desenho",
+              icon: PenTool,
+              tone: "bg-sky-500/15 text-sky-400",
+              run: () => void handleCreateNote("excalidraw"),
+            },
+            {
+              label: "Mapa",
+              icon: Network,
+              tone: "bg-emerald-500/15 text-emerald-400",
+              run: handleCreateMap,
+            },
+            {
+              label: "Pasta",
+              icon: Folder,
+              tone: "bg-blue-500/15 text-blue-400",
+              run: () => openOrganizer("folders"),
+            },
+            {
+              label: "Etiqueta",
+              icon: Tag,
+              tone: "bg-purple-500/15 text-purple-400",
+              run: () => openOrganizer("categories"),
+            },
+          ].map(({ label, icon: Icon, tone, run }) => (
+            <button
+              key={label}
+              type="button"
+              role="menuitem"
+              data-no-glow
+              onClick={run}
+              disabled={createNote.isPending}
+              className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl py-2 text-[11px] font-medium text-foreground transition-colors hover:bg-muted/50 active:scale-95 disabled:opacity-50"
+            >
+              <span
+                className={cn(
+                  "grid size-10 place-items-center rounded-xl",
+                  tone,
+                )}
+              >
+                <Icon className="size-5" />
+              </span>
+              <span className="w-full truncate text-center">{label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* The main action, right above the + where the thumb already is. */}
+        <div className="mt-2.5 flex gap-2 border-t border-border/50 pt-2.5">
           <button
+            type="button"
+            role="menuitem"
+            data-no-glow
             onClick={() => openComposer()}
-            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-primary/10 focus-visible:outline-none"
+            className="flex h-14 flex-1 items-center justify-center gap-2.5 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-[0_8px_20px_-10px] shadow-primary transition-transform active:scale-[0.97]"
           >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform group-active:scale-95">
-              <CheckSquare className="size-4" />
-            </div>
-            <span className="text-foreground transition-colors group-hover:flowy-ink">
-              Criar Tarefa
-            </span>
+            <CheckSquare className="size-5" />
+            Criar tarefa
           </button>
           <button
+            type="button"
+            role="menuitem"
+            data-no-glow
             onClick={() => openComposer(true)}
-            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-rose-500/10 focus-visible:outline-none"
+            aria-label="Criar tarefa por voz"
+            title="Criar tarefa por voz"
+            className="flex h-14 w-16 flex-col items-center justify-center gap-0.5 rounded-2xl bg-rose-500/15 text-rose-400 transition-transform active:scale-95"
           >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-rose-500/15 text-rose-500 transition-transform group-active:scale-95">
-              <Mic className="size-4" />
-            </div>
-            <span className="text-foreground transition-colors group-hover:text-rose-500">
-              Tarefa por voz
-            </span>
-          </button>
-          <div className="my-1 h-px mx-2 bg-border/50" />
-          <button
-            onClick={() => openOrganizer("folders")}
-            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-blue-500/10 focus-visible:outline-none"
-          >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 transition-transform group-active:scale-95">
-              <Folder className="size-4" />
-            </div>
-            <span className="text-foreground transition-colors group-hover:text-blue-500">
-              Pasta
-            </span>
-          </button>
-          <button
-            onClick={() => openOrganizer("categories")}
-            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-purple-500/10 focus-visible:outline-none"
-          >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-purple-500/15 text-purple-500 transition-transform group-active:scale-95">
-              <Tag className="size-4" />
-            </div>
-            <span className="text-foreground transition-colors group-hover:text-purple-500">
-              Etiqueta
-            </span>
-          </button>
-          <button
-            onClick={handleCreateMap}
-            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-emerald-500/10 focus-visible:outline-none"
-          >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500 transition-transform group-active:scale-95">
-              <Network className="size-4" />
-            </div>
-            <span className="text-foreground transition-colors group-hover:text-emerald-500">
-              Mapa mental
-            </span>
-          </button>
-          <button
-            onClick={() => void handleCreateNote("excalidraw")}
-            disabled={createNote.isPending}
-            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-sky-500/10 focus-visible:outline-none disabled:opacity-50"
-          >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-500 transition-transform group-active:scale-95">
-              <PenTool className="size-4" />
-            </div>
-            <span className="text-foreground transition-colors group-hover:text-sky-500">
-              Desenho
-            </span>
-          </button>
-          <button
-            onClick={() => void handleCreateNote()}
-            disabled={createNote.isPending}
-            className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium transition-colors hover:bg-orange-500/10 focus-visible:outline-none disabled:opacity-50"
-          >
-            <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-500 transition-transform group-active:scale-95">
-              <NotebookPen className="size-4" />
-            </div>
-            <span className="text-foreground transition-colors group-hover:text-orange-500">
-              Nota
-            </span>
+            <Mic className="size-5" />
+            <span className="text-[10px] font-semibold">Voz</span>
           </button>
         </div>
       </div>
