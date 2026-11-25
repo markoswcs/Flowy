@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, CalendarClock, Check, Trophy } from "lucide-react";
+import { BookOpen, CalendarClock, Check } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -31,8 +31,11 @@ function since(days: number) {
   return localDateKey(date);
 }
 
-/** Days in a row with at least one task done; a tap opens the flame and the ranking. */
-function StreakChip() {
+/**
+ * The streak as a small flame button next to the calendar: the flame of the
+ * level and the number; a tap opens the streak and the ranking.
+ */
+export function StreakButton() {
   const today = localDateKey();
   const [open, setOpen] = useState(false);
   const times = useQuery({
@@ -40,10 +43,11 @@ function StreakChip() {
     queryFn: () => listCompletionDays(since(120)),
     staleTime: 60_000,
   });
-  if (!times.data) return null;
-  const { count, status } = streakState(times.data, today);
+  const days = times.data ?? [];
+  const { count, status } = streakState(days, today);
   const level = levelOf(count);
   const frozen = status === "frozen";
+  const pending = status === "waiting" || frozen;
 
   return (
     <>
@@ -51,46 +55,32 @@ function StreakChip() {
         type="button"
         onClick={() => setOpen(true)}
         data-no-glow
-        className="group flex min-w-0 items-center gap-2.5 rounded-full border py-1 pl-1 pr-3 text-left text-sm transition-all active:scale-95"
+        title="Sua sequência de dias concluindo tarefas"
+        aria-label={`${count} ${count === 1 ? "dia seguido" : "dias seguidos"} concluindo tarefas. Ver sequência e ranking`}
+        className="relative flex h-11 shrink-0 items-center gap-1 rounded-2xl border pl-1.5 pr-2.5 transition-transform active:scale-95"
         style={{
-          borderColor: frozen ? "rgb(56 189 248 / 0.35)" : `${level.color}55`,
-          background: frozen
-            ? "rgb(56 189 248 / 0.08)"
-            : `linear-gradient(90deg, ${level.color}26, transparent)`,
+          borderColor: frozen ? "rgb(56 189 248 / 0.4)" : `${level.color}66`,
+          background: frozen ? "rgb(56 189 248 / 0.1)" : `${level.color}1a`,
         }}
-        aria-label={`${count} ${count === 1 ? "dia seguido" : "dias seguidos"}. Ver sequência e ranking`}
       >
-        <FlameArt days={count} size={32} frozen={frozen} />
-        <span className="min-w-0 leading-tight">
-          <span
-            key={count}
-            className="block truncate animate-in zoom-in-50 fade-in duration-500"
-          >
-            <span className="font-bold">{count}</span>{" "}
-            <span className="text-muted-foreground">
-              {count === 1 ? "dia seguido" : "dias seguidos"}
-            </span>
-          </span>
-          <span
-            className="block truncate text-[11px]"
-            style={{ color: frozen ? "#7dd3fc" : level.color }}
-          >
-            {status === "none"
-              ? "Conclua 1 tarefa por dia e acenda o foguinho"
-              : frozen
-                ? "Congelada · conclua 1 tarefa hoje"
-                : status === "waiting"
-                  ? "Conclua 1 tarefa hoje para manter"
-                  : "concluindo tarefas · ver ranking"}
-          </span>
+        <FlameArt days={count} size={30} frozen={frozen} />
+        <span
+          key={count}
+          className="font-brand text-lg font-extrabold tabular-nums animate-in zoom-in-50 fade-in duration-500"
+          style={{ color: frozen ? "#7dd3fc" : level.color }}
+        >
+          {count}
         </span>
-        <Trophy
-          className="ml-1 size-4 shrink-0 text-amber-300 transition-transform group-hover:scale-110"
-          aria-hidden="true"
-        />
+        {/* Today still open: a small dot asks for one task. */}
+        {pending ? (
+          <span
+            className="absolute -right-1 -top-1 size-3 rounded-full border-2 border-background bg-orange-500"
+            aria-hidden="true"
+          />
+        ) : null}
       </button>
       {open ? (
-        <StreakSheet doneDays={times.data} onClose={() => setOpen(false)} />
+        <StreakSheet doneDays={days} onClose={() => setOpen(false)} />
       ) : null}
     </>
   );
@@ -198,9 +188,6 @@ function Deadlines() {
 export function TodayBoosts() {
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <StreakChip />
-      </div>
       <ClassNowCard />
       <Deadlines />
     </div>

@@ -2080,7 +2080,7 @@ html.reduce-motion .flowy-prism::after {
     /* The light keeps travelling around the item; only the blurred shadows
        (what froze iPhones) are left out on phones. */
     animation:
-      flowy-glow-spin 3s linear infinite,
+      flowy-glow-spin 6s linear infinite,
       flowy-glow-in 220ms ease-out !important;
     filter: none !important;
   }
@@ -2242,4 +2242,32 @@ html.reduce-motion :is(.flowy-flame-dance, .flowy-flame-core, .flowy-flame-glow,
     #38bdf8 345deg,
     rgb(139 92 246 / 0.22) 360deg
   );
+}
+
+/* ---------- One selection look everywhere ----------
+   The selected tab, chip or menu item and the active bottom-bar button share
+   the same ring: Flowy colours turning at the same speed. */
+:root {
+  --flowy-ring-stops: #c4b5fd 0deg, #8b5cf6 55deg, #6d28d9 105deg, #a855f7 150deg, #ec4899 200deg,
+    #f0abfc 235deg, #8b5cf6 280deg, #38bdf8 322deg, #c4b5fd 360deg;
+}
+
+:where(
+    [aria-pressed="true"],
+    [role="radio"][aria-checked="true"],
+    [role="tab"][aria-selected="true"],
+    [aria-current="page"],
+    .flowy-glow
+  ):not(.excalidraw *, [data-topic-control], [data-no-glow])::after {
+  background: conic-gradient(from var(--flowy-glow-angle), var(--flowy-ring-stops));
+  filter: drop-shadow(0 0 5px rgb(139 92 246 / 0.45));
+  animation:
+    flowy-glow-spin 6s linear infinite,
+    flowy-glow-in 220ms ease-out;
+}
+
+.flowy-prism::before,
+.flowy-prism::after {
+  background: conic-gradient(from var(--flowy-prism-angle, -20deg), var(--flowy-ring-stops));
+  animation-duration: 6s;
 }

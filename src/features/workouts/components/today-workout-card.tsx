@@ -6,11 +6,17 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { localDateKey } from "@/features/tasks/date-utils";
+import { cn } from "@/lib/utils";
 import { notify } from "@/providers/notification-provider";
 
 import { buildSession, sessionKeyFor } from "../plan";
 import { FEELING_LABELS, type Feeling } from "../types";
-import { useLogWorkout, useWorkoutLogs, useWorkoutProfile, useWorkoutsEnabled } from "../use-workouts";
+import {
+  useLogWorkout,
+  useWorkoutLogs,
+  useWorkoutProfile,
+  useWorkoutsEnabled,
+} from "../use-workouts";
 
 /**
  * Today's workout on the "Hoje" list, for people who turned Treinos on. Nothing
@@ -33,13 +39,21 @@ export function TodayWorkoutCard() {
 
   if (log) {
     return (
+      // Done: just a small badge, the day's tasks stay the focus.
       <Link
         href="/app/workouts"
-        className="flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-400"
+        className={cn(
+          "inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+          log.status === "done"
+            ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
+            : "bg-muted/50 text-muted-foreground",
+        )}
       >
-        <Check className="size-4" aria-hidden="true" />
-        {log.status === "done" ? "Treino de hoje concluído" : "Treino de hoje pulado"}
-        <ChevronRight className="ml-auto size-4" aria-hidden="true" />
+        <Check className="size-3.5" aria-hidden="true" />
+        {log.status === "done"
+          ? "Treino de hoje concluído"
+          : "Treino de hoje pulado"}
+        <ChevronRight className="size-3.5 opacity-60" aria-hidden="true" />
       </Link>
     );
   }
@@ -62,15 +76,23 @@ export function TodayWorkoutCard() {
           <Dumbbell className="size-5" aria-hidden="true" />
         </span>
         <p className="min-w-0 text-sm leading-5">
-          <span className="block text-xs font-semibold uppercase tracking-widest flowy-ink">Treino de hoje</span>
-          <strong className="block truncate font-semibold">{session.name}</strong>
+          <span className="block text-xs font-semibold uppercase tracking-widest flowy-ink">
+            Treino de hoje
+          </span>
+          <strong className="block truncate font-semibold">
+            {session.name}
+          </strong>
           <span className="block text-muted-foreground">
             ~{profile.minutes} min · {session.exercises.length} exercícios
           </span>
         </p>
       </div>
       {askFeeling ? (
-        <div className="flex shrink-0 gap-1.5" role="group" aria-label="Como foi?">
+        <div
+          className="flex shrink-0 gap-1.5"
+          role="group"
+          aria-label="Como foi?"
+        >
           {(Object.keys(FEELING_LABELS) as Feeling[]).map((feeling) => (
             <Button
               key={feeling}
@@ -92,7 +114,12 @@ export function TodayWorkoutCard() {
           >
             Ver treino
           </Link>
-          <Button type="button" size="sm" onClick={() => setAskFeeling(true)} className="gap-1.5">
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setAskFeeling(true)}
+            className="gap-1.5"
+          >
             <Check className="size-4" />
             Concluí
           </Button>

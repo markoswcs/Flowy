@@ -3,7 +3,21 @@
 import { ReminderSetupCard } from "@/components/system/reminder-setup";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { CalendarDays, CornerDownLeft, Mic, Sun, Moon, MoonStar, Sunrise, Sparkles, Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  CalendarClock,
+  CalendarDays,
+  CornerDownLeft,
+  ListTodo,
+  Mic,
+  Sun,
+  Moon,
+  MoonStar,
+  Sunrise,
+  Sparkles,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -13,11 +27,14 @@ import {
   useSmartTask,
   withDismissed,
 } from "@/features/tasks/components/smart-suggestions";
-import { BulkActionBar, TaskSelectionProvider } from "@/features/tasks/task-selection";
+import {
+  BulkActionBar,
+  TaskSelectionProvider,
+} from "@/features/tasks/task-selection";
 
 import { Input } from "@/components/ui/input";
 import { GettingStarted } from "@/features/onboarding/getting-started";
-import { TodayBoosts } from "@/features/engagement/today-boosts";
+import { StreakButton, TodayBoosts } from "@/features/engagement/today-boosts";
 import { CalendarView } from "@/features/calendar/calendar-view";
 import { AnnouncementCard } from "@/features/announcements/announcements";
 import { StartViewPicker } from "@/features/tasks/start-view-picker";
@@ -38,17 +55,25 @@ import type {
 
 // The filter panel is opened on demand, so its code is only downloaded then.
 const TaskFilters = dynamic(() =>
-  import("@/features/tasks/components/task-filters").then((mod) => mod.TaskFilters),
+  import("@/features/tasks/components/task-filters").then(
+    (mod) => mod.TaskFilters,
+  ),
 );
 
 // Speech recognition code arrives right after the page; until then the same
 // microphone icon holds its place so nothing shifts.
 const VoiceTaskButton = dynamic(
-  () => import("@/features/tasks/components/voice-capture").then((mod) => mod.VoiceTaskButton),
+  () =>
+    import("@/features/tasks/components/voice-capture").then(
+      (mod) => mod.VoiceTaskButton,
+    ),
   {
     ssr: false,
     loading: () => (
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground" aria-hidden="true">
+      <span
+        className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground"
+        aria-hidden="true"
+      >
         <Mic className="size-4" />
       </span>
     ),
@@ -76,9 +101,24 @@ interface DashboardPageProps {
 // Three plain tabs. "Atrasadas" live inside Hoje; "Concluídas" opens from
 // Todas; the calendar has its own button next to the greeting.
 const tabs = [
-  { value: "today", label: "Hoje" },
-  { value: "upcoming", label: "Próximas" },
-  { value: "all", label: "Todas" },
+  {
+    value: "today",
+    label: "Hoje",
+    icon: Sun,
+    hint: "Tarefas de hoje e as que ficaram atrasadas",
+  },
+  {
+    value: "upcoming",
+    label: "Próximas",
+    icon: CalendarClock,
+    hint: "O que vem nos próximos dias, a partir de amanhã",
+  },
+  {
+    value: "all",
+    label: "Todas",
+    icon: ListTodo,
+    hint: "Todas as tarefas abertas, com ou sem data",
+  },
 ] as const;
 type Tab = (typeof tabs)[number]["value"] | "calendar";
 
@@ -90,7 +130,11 @@ export function DashboardPage(props: DashboardPageProps) {
   );
 }
 
-const priorityLabels: Record<TaskPriority, string> = { low: "Baixa", normal: "Normal", high: "Alta" };
+const priorityLabels: Record<TaskPriority, string> = {
+  low: "Baixa",
+  normal: "Normal",
+  high: "Alta",
+};
 const statusLabels: Record<TaskStatus, string> = {
   todo: "A fazer",
   in_progress: "Em andamento",
@@ -127,13 +171,23 @@ function DashboardContent({
   const firstName = displayName.trim().split(/\s+/)[0] || "Usuário";
 
   const searchText = filters.search ?? "";
-  const [dismissed, setDismissed] = useState({ folder: false, categoryIds: [] as string[] });
-  const quickTask = withDismissed(useSmartTask(searchText, folders, categories), dismissed);
+  const [dismissed, setDismissed] = useState({
+    folder: false,
+    categoryIds: [] as string[],
+  });
+  const quickTask = withDismissed(
+    useSmartTask(searchText, folders, categories),
+    dismissed,
+  );
   const quickTaskWhen = quickTask ? smartTaskWhen(quickTask) : null;
 
   // Doubts (unknown client, likely duplicate) go to the full composer for review.
   function reviewInComposer() {
-    window.dispatchEvent(new CustomEvent("flowy:open-task-composer", { detail: { text: searchText } }));
+    window.dispatchEvent(
+      new CustomEvent("flowy:open-task-composer", {
+        detail: { text: searchText },
+      }),
+    );
     setFilters((current) => ({ ...current, search: "" }));
     setDismissed({ folder: false, categoryIds: [] });
   }
@@ -186,7 +240,7 @@ function DashboardContent({
   }, []);
 
   const { hour, ready } = timeState;
-  
+
   let greeting = "Olá";
   let TimeIcon = Sparkles;
   let gradient = "from-primary to-purple-500";
@@ -217,10 +271,13 @@ function DashboardContent({
   }
 
   const personalPhrase =
-    ready && allTasksQuery.data ? buildDailyPhrase(allTasksQuery.data, new Date()) : null;
+    ready && allTasksQuery.data
+      ? buildDailyPhrase(allTasksQuery.data, new Date())
+      : null;
   const activeTab: Tab | null = calendar
     ? null
-    : (tabs.find((tab) => tab.value === (filters.scope ?? "all"))?.value ?? null);
+    : (tabs.find((tab) => tab.value === (filters.scope ?? "all"))?.value ??
+      null);
   const tabIndex = tabs.findIndex((tab) => tab.value === activeTab);
   function selectTab(tab: Tab) {
     setCalendar(tab === "calendar");
@@ -228,10 +285,18 @@ function DashboardContent({
   }
   const activeFilters = [
     filters.priority && filters.priority !== "all"
-      ? { key: "priority", label: `Prioridade: ${priorityLabels[filters.priority]}`, clear: () => setFilters({ ...filters, priority: "all" }) }
+      ? {
+          key: "priority",
+          label: `Prioridade: ${priorityLabels[filters.priority]}`,
+          clear: () => setFilters({ ...filters, priority: "all" }),
+        }
       : null,
     filters.status && filters.status !== "all"
-      ? { key: "status", label: `Status: ${statusLabels[filters.status]}`, clear: () => setFilters({ ...filters, status: "all" }) }
+      ? {
+          key: "status",
+          label: `Status: ${statusLabels[filters.status]}`,
+          clear: () => setFilters({ ...filters, status: "all" }),
+        }
       : null,
     filters.folderId && filters.folderId !== "all"
       ? {
@@ -247,7 +312,9 @@ function DashboardContent({
           clear: () => setFilters({ ...filters, categoryId: "all" }),
         }
       : null,
-  ].filter((item): item is { key: string; label: string; clear: () => void } => Boolean(item));
+  ].filter((item): item is { key: string; label: string; clear: () => void } =>
+    Boolean(item),
+  );
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-6">
@@ -275,19 +342,31 @@ function DashboardContent({
               <span className="line-clamp-2">{personalPhrase ?? phrase}</span>
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => (calendar ? selectTab(tabs.find((tab) => tab.value === filters.scope)?.value ?? "today") : selectTab("calendar"))}
-            aria-pressed={calendar}
-            aria-label={calendar ? "Fechar calendário" : "Abrir calendário"}
-            title="Calendário"
-            className={cn(
-              "grid size-11 shrink-0 place-items-center rounded-2xl border transition-colors active:scale-95",
-              calendar ? "border-primary/50 flowy-active" : "border-border/60 bg-card/40 text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <CalendarDays className="size-5" aria-hidden="true" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <StreakButton />
+            <button
+              type="button"
+              onClick={() =>
+                calendar
+                  ? selectTab(
+                      tabs.find((tab) => tab.value === filters.scope)?.value ??
+                        "today",
+                    )
+                  : selectTab("calendar")
+              }
+              aria-pressed={calendar}
+              aria-label={calendar ? "Fechar calendário" : "Abrir calendário"}
+              title="Calendário"
+              className={cn(
+                "grid size-11 shrink-0 place-items-center rounded-2xl border transition-colors active:scale-95",
+                calendar
+                  ? "border-primary/50 flowy-active"
+                  : "border-border/60 bg-card/40 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <CalendarDays className="size-5" aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         <div
@@ -300,7 +379,10 @@ function DashboardContent({
             <span
               aria-hidden="true"
               className="absolute bottom-1 left-1 top-1 rounded-xl bg-background shadow-sm ring-1 ring-border/70 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-              style={{ width: "calc((100% - 0.5rem) / 3)", transform: `translateX(${tabIndex * 100}%)` }}
+              style={{
+                width: "calc((100% - 0.5rem) / 3)",
+                transform: `translateX(${tabIndex * 100}%)`,
+              }}
             />
           ) : null}
           {tabs.map((tab) => {
@@ -314,19 +396,42 @@ function DashboardContent({
                 onClick={() => selectTab(tab.value)}
                 className={cn(
                   "relative z-10 min-w-0 truncate rounded-xl px-1 py-2 text-[13px] font-medium transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95 sm:px-4 sm:text-sm",
-                  selected ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                  selected
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {tab.label}
+                <span className="inline-flex items-center justify-center gap-1.5">
+                  <tab.icon
+                    className={cn(
+                      "size-4 shrink-0",
+                      selected ? "flowy-ink" : "opacity-70",
+                    )}
+                    aria-hidden="true"
+                  />
+                  {tab.label}
+                </span>
               </button>
             );
           })}
         </div>
+        {/* What the chosen tab shows, in one line. */}
+        {tabIndex >= 0 ? (
+          <p
+            key={activeTab}
+            className="-mt-2 pl-1 text-xs text-muted-foreground animate-in fade-in duration-300"
+          >
+            {tabs[tabIndex]!.hint}
+          </p>
+        ) : null}
 
-        {!calendar && (filters.scope === "overdue" || filters.scope === "completed") ? (
+        {!calendar &&
+        (filters.scope === "overdue" || filters.scope === "completed") ? (
           <button
             type="button"
-            onClick={() => selectTab(filters.scope === "overdue" ? "today" : "all")}
+            onClick={() =>
+              selectTab(filters.scope === "overdue" ? "today" : "all")
+            }
             className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 py-1 pl-3 pr-2 text-xs font-medium flowy-ink"
           >
             {filters.scope === "overdue" ? "Atrasadas" : "Concluídas"}
@@ -339,11 +444,16 @@ function DashboardContent({
             data-tour="quick-add"
             className="group relative flex items-center gap-1 rounded-2xl border border-border/60 bg-card/50 p-1.5 shadow-sm backdrop-blur-xl transition-all duration-300 focus-within:border-primary/50 focus-within:shadow-[0_0_0_4px_hsl(var(--primary)/0.12)]"
           >
-            <Search className="ml-2.5 size-4 shrink-0 text-muted-foreground transition-colors group-focus-within:flowy-ink" aria-hidden="true" />
+            <Search
+              className="ml-2.5 size-4 shrink-0 text-muted-foreground transition-colors group-focus-within:flowy-ink"
+              aria-hidden="true"
+            />
             <Input
               id="quick-task-input"
               value={filters.search ?? ""}
-              onChange={(event) => setFilters({ ...filters, search: event.target.value })}
+              onChange={(event) =>
+                setFilters({ ...filters, search: event.target.value })
+              }
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.nativeEvent.isComposing) {
                   event.preventDefault();
@@ -360,14 +470,22 @@ function DashboardContent({
               inputId="quick-task-input"
               // Dictation always gets the editable preview before anything is saved.
               onResult={(text) =>
-                window.dispatchEvent(new CustomEvent("flowy:open-task-composer", { detail: { text } }))
+                window.dispatchEvent(
+                  new CustomEvent("flowy:open-task-composer", {
+                    detail: { text },
+                  }),
+                )
               }
             />
             <button
               type="button"
               onClick={() => setStatusBarOpen(!statusBarOpen)}
               aria-expanded={statusBarOpen}
-              aria-label={activeFilters.length ? `Filtros (${activeFilters.length} ativos)` : "Filtros"}
+              aria-label={
+                activeFilters.length
+                  ? `Filtros (${activeFilters.length} ativos)`
+                  : "Filtros"
+              }
               className={cn(
                 "relative flex h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-medium transition-all active:scale-95",
                 statusBarOpen || activeFilters.length
@@ -393,10 +511,19 @@ function DashboardContent({
                 disabled={createTask.isPending}
                 className="flex min-h-9 min-w-0 max-w-full items-center gap-2 rounded-full bg-primary px-4 text-left text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-70"
               >
-                <CornerDownLeft className="size-4 shrink-0" aria-hidden="true" />
+                <CornerDownLeft
+                  className="size-4 shrink-0"
+                  aria-hidden="true"
+                />
                 <span className="truncate">
-                  {quickTask.ambiguities.length ? "Revisar" : "Criar"} “{quickTask.title}”
-                  {quickTaskWhen ? <span className="font-normal opacity-80"> · {quickTaskWhen}</span> : null}
+                  {quickTask.ambiguities.length ? "Revisar" : "Criar"} “
+                  {quickTask.title}”
+                  {quickTaskWhen ? (
+                    <span className="font-normal opacity-80">
+                      {" "}
+                      · {quickTaskWhen}
+                    </span>
+                  ) : null}
                 </span>
               </button>
               <button
@@ -410,18 +537,33 @@ function DashboardContent({
                 suggestion={quickTask}
                 folders={folders}
                 categories={categories}
-                onRemoveFolder={() => setDismissed((current) => ({ ...current, folder: true }))}
-                onRemoveCategory={(id) => setDismissed((current) => ({ ...current, categoryIds: [...current.categoryIds, id] }))}
+                onRemoveFolder={() =>
+                  setDismissed((current) => ({ ...current, folder: true }))
+                }
+                onRemoveCategory={(id) =>
+                  setDismissed((current) => ({
+                    ...current,
+                    categoryIds: [...current.categoryIds, id],
+                  }))
+                }
               />
               <SmartTaskDetails task={quickTask} className="w-full" />
             </div>
           ) : null}
 
           {activeFilters.length ? (
-            <div className="flex flex-wrap items-center gap-1.5 animate-in fade-in slide-in-from-top-1" aria-live="polite">
-              <span className="mr-1 text-xs font-medium text-muted-foreground">Filtrando por</span>
+            <div
+              className="flex flex-wrap items-center gap-1.5 animate-in fade-in slide-in-from-top-1"
+              aria-live="polite"
+            >
+              <span className="mr-1 text-xs font-medium text-muted-foreground">
+                Filtrando por
+              </span>
               {activeFilters.map((filter) => (
-                <span key={filter.key} className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 py-1 pl-3 pr-1 text-xs font-medium flowy-ink">
+                <span
+                  key={filter.key}
+                  className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 py-1 pl-3 pr-1 text-xs font-medium flowy-ink"
+                >
                   {filter.label}
                   <button
                     type="button"
@@ -435,7 +577,9 @@ function DashboardContent({
               ))}
               <button
                 type="button"
-                onClick={() => setFilters({ scope: filters.scope, search: filters.search })}
+                onClick={() =>
+                  setFilters({ scope: filters.scope, search: filters.search })
+                }
                 className="rounded-full px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
               >
                 Limpar tudo
@@ -455,7 +599,6 @@ function DashboardContent({
       ) : null}
 
       <div className="space-y-4 sm:space-y-5">
-
         {statusBarOpen && (
           <TaskFilters
             value={filters}
@@ -466,57 +609,71 @@ function DashboardContent({
         )}
 
         <div className="animate-in fade-in slide-in-from-bottom-1 duration-300">
-        {calendar && !debouncedSearch ? (
-          <CalendarView folders={folders} categories={categories} />
-        ) : (
-          <section className="mt-4 animate-slide-up-fade [animation-delay:200ms]" aria-live="polite">
-            <TaskList
-              tasks={tasksQuery.data}
-              folders={folders}
-              categories={categories}
-              loading={tasksQuery.isLoading}
-              error={tasksQuery.error}
-              onRetry={() => tasksQuery.refetch()}
-              // "Hoje" also brings late tasks, so it splits them out on top.
-              grouped={["all", "today"].includes(filters.scope ?? "all") && !debouncedSearch}
-              emptyAction={
-                debouncedSearch ? null : (
-                  <button
-                    type="button"
-                    onClick={() => window.dispatchEvent(new Event("flowy:open-task-composer"))}
-                    className="inline-flex h-10 items-center gap-2 rounded-full bg-violet-500 px-5 text-sm font-semibold text-white shadow-[0_10px_30px_-10px_rgb(124_58_237/0.8)] transition-transform active:scale-95"
-                  >
-                    Criar uma tarefa
-                  </button>
-                )
-              }
-              emptyTitle={
-                filters.scope === "completed"
-                  ? "Nenhuma tarefa concluída."
-                  : filters.scope === "today"
-                    ? "Nada para hoje nem atrasado."
-                    : "Você ainda não tem tarefas."
-              }
-              emptyDescription={
-                debouncedSearch
-                  ? "Aperte Enter para criar essa tarefa."
-                  : "Crie uma tarefa para começar."
-              }
-            />
-            {(filters.scope ?? "all") === "all" && !debouncedSearch ? (
-              <button
-                type="button"
-                onClick={() => setFilters({ ...filters, scope: "completed" })}
-                className="mx-auto mt-4 block rounded-full px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-              >
-                Ver concluídas
-              </button>
-            ) : null}
-          </section>
-        )}
+          {calendar && !debouncedSearch ? (
+            <CalendarView folders={folders} categories={categories} />
+          ) : (
+            <section
+              className="mt-4 animate-slide-up-fade [animation-delay:200ms]"
+              aria-live="polite"
+            >
+              <TaskList
+                tasks={tasksQuery.data}
+                folders={folders}
+                categories={categories}
+                loading={tasksQuery.isLoading}
+                error={tasksQuery.error}
+                onRetry={() => tasksQuery.refetch()}
+                // "Hoje" also brings late tasks, so it splits them out on top.
+                grouped={
+                  ["all", "today"].includes(filters.scope ?? "all") &&
+                  !debouncedSearch
+                }
+                emptyAction={
+                  debouncedSearch ? null : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.dispatchEvent(
+                          new Event("flowy:open-task-composer"),
+                        )
+                      }
+                      className="inline-flex h-10 items-center gap-2 rounded-full bg-violet-500 px-5 text-sm font-semibold text-white shadow-[0_10px_30px_-10px_rgb(124_58_237/0.8)] transition-transform active:scale-95"
+                    >
+                      Criar uma tarefa
+                    </button>
+                  )
+                }
+                emptyTitle={
+                  filters.scope === "completed"
+                    ? "Nenhuma tarefa concluída."
+                    : filters.scope === "today"
+                      ? "Nada para hoje nem atrasado."
+                      : "Você ainda não tem tarefas."
+                }
+                emptyDescription={
+                  debouncedSearch
+                    ? "Aperte Enter para criar essa tarefa."
+                    : "Crie uma tarefa para começar."
+                }
+              />
+              {(filters.scope ?? "all") === "all" && !debouncedSearch ? (
+                <button
+                  type="button"
+                  onClick={() => setFilters({ ...filters, scope: "completed" })}
+                  className="mx-auto mt-4 block rounded-full px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                >
+                  Ver concluídas
+                </button>
+              ) : null}
+            </section>
+          )}
         </div>
       </div>
-      <BulkActionBar tasks={tasksQuery.data ?? []} folders={folders} categories={categories} />
+      <BulkActionBar
+        tasks={tasksQuery.data ?? []}
+        folders={folders}
+        categories={categories}
+      />
     </div>
   );
 }
